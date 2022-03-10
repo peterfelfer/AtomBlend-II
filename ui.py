@@ -77,7 +77,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         column = layout.column(align=True)
 
         row_load_object_btn = column.row(align=True)
-        row_load_object_btn.operator('atom_blend_viewer.load_file', text="Load .epos file", icon="FILE_FOLDER")
+        row_load_object_btn.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
         loaded_row = column.row(align=True)
         if AtomBlendAddon.FileLoaded:
             loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path)
@@ -89,11 +89,11 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
     bl_label = "Open file"
-    bl_description = "Load a file of the following types:\n.epos"
+    bl_description = "Load a file of the following types:\n.epos, .pos"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
     filter_glob: bpy.props.StringProperty(
-        default='*.epos',
+        default='*.epos;*.pos',
         options={'HIDDEN'}
     )
 
@@ -106,7 +106,10 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         AtomBlendAddon.path = self.filepath
         # AtomBlendAddon.setup_scene()
 
-        AtomBlendAddon.load_epos_file()
+        if AtomBlendAddon.path.endswith('.epos'):
+            AtomBlendAddon.load_epos_file(self)
+        elif(AtomBlendAddon.path.endswith('.pos')):
+            AtomBlendAddon.load_pos_file(self)
 
         AtomBlendAddon.FileLoaded = True
         # TODO: wanna catch if someone deletes the object
@@ -116,7 +119,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
         # bpy.data.screens["Modeling-nonnormal"].shading.type = "RENDERED"
 
-        bpy.ops.view3d.toggle_shading(type='RENDERED')
+        # bpy.ops.view3d.toggle_shading(type='RENDERED')
 
         # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
         return {'FINISHED'}
