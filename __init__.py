@@ -1,6 +1,6 @@
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-    "name": "AddonBlend-II",
+    "name": "AtomBlend-II",
     "author": "Juliane Reithmeier",
     "version": (1, 0, 0),
     "blender": (3, 0, 1),
