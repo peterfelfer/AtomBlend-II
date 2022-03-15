@@ -63,7 +63,6 @@ class AtomBlendAddon:
 
         # concatenate the first nine columns of float data and the last second columns from int data
         concat_data = np.concatenate((reshaped_data_float[:, :9], reshaped_data_int[:, 9:]), axis=1)
-        print('SHAPE: ', concat_data)
 
         # creating the mesh in blender
         # create a new mesh and a new object
@@ -82,7 +81,6 @@ class AtomBlendAddon:
             coords.append((x, y, z))
 
         # Make a mesh from a list of vertices/edges/faces
-
         mesh.from_pydata(coords, edges, faces)
 
         # update the mesh
@@ -91,11 +89,40 @@ class AtomBlendAddon:
         # Link object to the active collection
         bpy.context.collection.objects.link(point_cloud)
 
+        # select generated object
+        point_cloud.select_set(True)
+        bpy.context.view_layer.objects.active = point_cloud
 
-        # scene = bpy.context.scene
-        # scene.objects.link(point_cloud)  # put the object into the scene (link)
-        # scene.objects.active = point_cloud  # set as the active object in the scene
-        # point_cloud.select = True  # select object
+        ### attributes of point_cloud
+        # generate attributes on currently selected object point_cloud
+        point_cloud.data.attributes.new(name='m/n', type='FLOAT', domain='POINT')
+        point_cloud.data.attributes.new(name='TOF', type='FLOAT', domain='POINT')
+        point_cloud.data.attributes.new(name='Vspec', type='FLOAT', domain='POINT')
+        point_cloud.data.attributes.new(name='Vap', type='FLOAT', domain='POINT')
+        point_cloud.data.attributes.new(name='xdet', type='FLOAT', domain='POINT')
+        point_cloud.data.attributes.new(name='ydet', type='FLOAT', domain='POINT')
+        point_cloud.data.attributes.new(name='delta pulse', type='INT', domain='POINT')
+        point_cloud.data.attributes.new(name='ions/pulse', type='INT', domain='POINT')
+
+        # extract columns of data
+        m_n = concat_data[:, 3:4]
+        tof = concat_data[:, 4:5]
+        vspec = concat_data[:, 5:6]
+        vap = concat_data[:, 6:7]
+        xdet = concat_data[:, 7:8]
+        ydet = concat_data[:, 8:9]
+        delta_pulse = concat_data[:, 9:10]
+        ions_pulse = concat_data[:, 10:11]
+
+        # set attribute values in point_cloud
+        point_cloud.data.attributes['m/n'].data.foreach_set('value', m_n.ravel())
+        point_cloud.data.attributes['TOF'].data.foreach_set('value', tof.ravel())
+        point_cloud.data.attributes['Vspec'].data.foreach_set('value', vspec.ravel())
+        point_cloud.data.attributes['Vap'].data.foreach_set('value', vap.ravel())
+        point_cloud.data.attributes['xdet'].data.foreach_set('value', xdet.ravel())
+        point_cloud.data.attributes['ydet'].data.foreach_set('value', ydet.ravel())
+        point_cloud.data.attributes['delta pulse'].data.foreach_set('value', delta_pulse.ravel())
+        point_cloud.data.attributes['ions/pulse'].data.foreach_set('value', ions_pulse.ravel())
 
     def load_pos_file(self):
         print('LOADING .POS FILE')
@@ -125,6 +152,7 @@ class AtomBlendAddon:
         faces = []
 
         for atom in reshaped_data:
+            # generate points with x, y, z values
             x = atom[0]
             y = atom[1]
             z = atom[2]
@@ -138,6 +166,20 @@ class AtomBlendAddon:
 
         # Link object to the active collection
         bpy.context.collection.objects.link(point_cloud)
+
+        # select generated object
+        point_cloud.select_set(True)
+        bpy.context.view_layer.objects.active = point_cloud
+
+        ### attributes of point_cloud
+        # generate attributes on currently selected object point_cloud
+        point_cloud.data.attributes.new(name='m/n', type='FLOAT', domain='POINT')
+
+        # extract columns of data
+        m_n = reshaped_data[:, 3:4]
+
+        # set attribute values in point_cloud
+        point_cloud.data.attributes['m/n'].data.foreach_set('value', m_n)
 
     # @staticmethod
     # def setup_scene():
