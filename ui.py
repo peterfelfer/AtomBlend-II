@@ -19,22 +19,23 @@ sys.path.insert(0, AtomBlendAddon.addon_path)
 # ------------- Add-on UI -------------
 # Class that contains all functions relevant for the UI
 class AtomBlendAddonUI:
-    def update_background(self, context):
-        print("BACKGOUND_COLOR")
-        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = context.scene.holo_addon_settings.background_color
-        bpy.data.scenes["Scene"].node_tree.nodes["RGB"].outputs[0].default_value = context.scene.holo_addon_settings.background_color
-        return None
+    def update_vertex_percentage(self, context):
+        print('SELECT VERTEX PERCENTAGE')
+
 
 
 # Preferences pane for this Addon in the Blender preferences
 class AtomBlendAddonSettings(bpy.types.PropertyGroup):
-    background_color: bpy.props.FloatVectorProperty(
-        name="Background Color",
-        min=0.0,
-        max=1.0,
-        subtype="COLOR",
-        size=4,
-        update=AtomBlendAddonUI.update_background,
+    vertex_percentage: bpy.props.IntProperty(
+        name="Atoms shown",
+        default=10,
+        min=1,
+        max=100,
+        soft_min=1,
+        step=10,
+        description="Percentage of atoms shown",
+        subtype='PERCENTAGE',
+        update=AtomBlendAddonUI.update_vertex_percentage,
     )
 
 
@@ -53,7 +54,7 @@ class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         column = layout.column()
-        column.label(text=".epos file")
+        # column.label(text=".epos file")
 
 
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
@@ -73,12 +74,15 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        # define a column of UI elements
-        column = layout.column(align=True)
+        # define a box of UI elements
+        box = layout.box()
+        vertex_percentage_row = box.row()
+        vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
-        row_load_object_btn = column.row(align=True)
-        row_load_object_btn.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
-        loaded_row = column.row(align=True)
+        load_file_row = box.row()
+        load_file_row.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
+
+        loaded_row = box.row()
         if AtomBlendAddon.FileLoaded:
             loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path)
         else:
@@ -106,13 +110,17 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         AtomBlendAddon.path = self.filepath
         # AtomBlendAddon.setup_scene()
 
+        # if there's already an object loaded we want to delete it so we can load another object
+        if AtomBlendAddon.FileLoaded:
+            obj_to_delte = bpy.data.objects['Atoms']
+            bpy.data.objects.remove(obj_to_delte, do_unlink=True)
+
         if AtomBlendAddon.path.endswith('.epos'):
-            AtomBlendAddon.load_epos_file(self)
-        elif(AtomBlendAddon.path.endswith('.pos')):
-            AtomBlendAddon.load_pos_file(self)
+            AtomBlendAddon.load_epos_file(self, context)
+        elif AtomBlendAddon.path.endswith('.pos'):
+            AtomBlendAddon.load_pos_file(self, context)
 
         AtomBlendAddon.FileLoaded = True
-        # TODO: wanna catch if someone deletes the object
         print(f"Object Loaded: {AtomBlendAddon.FileLoaded}")
 
         # print(bpy.data.screens["Modeling-nonnormal"].shading.type)
