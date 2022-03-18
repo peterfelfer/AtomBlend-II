@@ -1,6 +1,6 @@
 import bpy
 
-from .globals import *
+from .read_data import *
 
 # ------------------- EXTERNAL MODULES -------------------
 import sys
@@ -28,7 +28,7 @@ class AtomBlendAddonUI:
 class AtomBlendAddonSettings(bpy.types.PropertyGroup):
     vertex_percentage: bpy.props.IntProperty(
         name="Atoms shown",
-        default=10,
+        default=1,
         min=1,
         max=100,
         soft_min=1,
@@ -56,6 +56,68 @@ class ATOMBLEND_PT_panel_general(bpy.types.Panel):
         column = layout.column()
         # column.label(text=".epos file")
 
+class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_panel_rrng_file"  # unique identifier for buttons and menu items to reference.
+    bl_label = "Load .rrng file"  # display name in the interface.
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_panel_general"
+
+    # define own poll method to be able to hide / show the panel on demand
+    @classmethod
+    def poll(cls, context):
+        # the panel should always be drawn
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        # define a box of UI elements
+        box = layout.box()
+        load_file_row = box.row()
+        load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load file", icon="FILE_FOLDER")
+
+        loaded_row = box.row()
+        if AtomBlendAddon.FileLoadedRRNG:
+            loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path_rrng)
+        else:
+            loaded_row.label(text='No file loaded yet...')
+
+# Operators used for buttons
+class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
+    bl_idname = "atom_blend_viewer.load_rrng_file"
+    bl_label = "Open file"
+    bl_description = "Load a file of the following types:\n.rrng"
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    filter_glob: bpy.props.StringProperty(
+        default='*.rrng',
+        options={'HIDDEN'}
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def execute(self, context):
+        print("the selected filepath" + self.filepath)
+        AtomBlendAddon.path_rrng = self.filepath
+        # AtomBlendAddon.setup_scene()
+
+        if AtomBlendAddon.path_rrng.endswith('.rrng'):
+            AtomBlendAddon.load_rrng_file(self, context)
+
+        AtomBlendAddon.FileLoadedRRNG = True
+        print(f"Object Loaded: {AtomBlendAddon.FileLoadedRRNG}")
+
+        # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        print("the selected filepath" + self.filepath)
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_file"  # unique identifier for buttons and menu items to reference.
@@ -87,7 +149,6 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
             loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path)
         else:
             loaded_row.label(text='No file loaded yet...')
-
 
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):

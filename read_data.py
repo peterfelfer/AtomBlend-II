@@ -31,8 +31,18 @@ class AtomBlendAddon:
 
     # path: str = None
     FileLoaded = False
+    FileLoadedRRNG = False
 
     path: str = None
+    path_rrng: str = None
+
+    def load_rrng_file(self, context):
+        print('LOADING .RRNG FILE')
+        if(AtomBlendAddon.path_rrng == None):
+            print('No file loaded')
+            return
+
+        file_path = AtomBlendAddon.path_rrng
 
     def load_epos_file(self, context):
         print('LOADING .EPOS FILE')

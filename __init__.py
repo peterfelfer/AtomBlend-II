@@ -26,7 +26,7 @@ import bpy
 from bpy.types import AddonPreferences
 from bpy.app.handlers import persistent
 
-from AtomBlend.globals import *
+from AtomBlend.read_data import *
 from AtomBlend.ui import *
 
 # ------------- LOAD INTERNAL MODULES ----------------
@@ -57,11 +57,13 @@ def register():
     bpy.utils.register_class(AtomBlendAddonSettings)
     # bpy.utils.register_class(AtomBlendAddonUI)
     bpy.utils.register_class(ATOMBLEND_OT_load_file)
+    bpy.utils.register_class(ATOMBLEND_OT_load_rrng_file)
 
     # UI elements
     # add-on panels
     bpy.utils.register_class(ATOMBLEND_PT_panel_general)
     bpy.utils.register_class(ATOMBLEND_PT_panel_file)
+    bpy.utils.register_class(ATOMBLEND_PT_panel_rrng_file)
 
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
 
@@ -70,6 +72,7 @@ def unregister():
     bpy.utils.unregister_class(AtomBlendAddonSettings)
     # bpy.utils.unregister_class(AtomBlendAddonUI)
     bpy.utils.unregister_class(ATOMBLEND_OT_load_file)
+    bpy.utils.unregister_class(ATOMBLEND_OT_load_rrng_file)
 
     # remove initialization helper app handler
     bpy.app.handlers.load_post.remove(atom_blend_addon_init_handler)
@@ -77,6 +80,7 @@ def unregister():
     # UI elements
     if hasattr(bpy.types, "ATOMBLEND_PT_panel_general"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_general)
     if hasattr(bpy.types, "ATOMBLEND_PT_panel_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_file)
+    if hasattr(bpy.types, "ATOMBLEND_PT_panel_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_rrng_file)
     # delete all variables
     if hasattr(bpy.types.Scene, "holo_addon_settings"): del bpy.types.Scene.holo_addon_settings
 
