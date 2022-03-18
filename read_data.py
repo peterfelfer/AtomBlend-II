@@ -10,7 +10,20 @@ from bpy.app.handlers import persistent
 import math
 from bpy_extras.io_utils import ImportHelper
 import numpy as np
+from dataclasses import dataclass
 
+# ------------- Atom Data -------------
+# Class that contains all relevant information about atoms in range files
+@dataclass
+class AtomData:
+    num_of_ion: int = 0
+    num_of_range: int = 0
+    start_range: float = 0.0
+    end_range: float = 0.0
+    vol: float = 0.0
+    element = None
+    charge: int = 0
+    color = None
 
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
@@ -36,6 +49,9 @@ class AtomBlendAddon:
     path: str = None
     path_rrng: str = None
 
+    # atom data
+    all_atoms = []
+
     def make_mesh_from_vertices(self):
         ### visualize every vertex we have as mesh (currently: icosphere)
         # make new node group
@@ -55,7 +71,6 @@ class AtomBlendAddon:
         geometry_nodes_group.links.new(mesh_node.outputs[0], iop_node.inputs[2])
         geometry_nodes_group.links.new(iop_node.outputs[0], output_node.inputs[0])
 
-
     def load_rrng_file(self, context):
         print('LOADING .RRNG FILE')
         if(AtomBlendAddon.path_rrng == None):
@@ -63,6 +78,51 @@ class AtomBlendAddon:
             return
 
         file_path = AtomBlendAddon.path_rrng
+        rrng_file = open(file_path, 'r')
+
+        for line in rrng_file:
+            if line.startswith('Range'):
+                # this_atom = AtomData()
+                this_atom = {}
+
+                # splitting line by space
+                splitted_line = line.split(' ')
+
+                # setting num of range, start and end value of range
+                first_string = splitted_line[0].split('=')
+                range_num = first_string[0].split('e')[1]
+                this_atom['num_of_range'] = float(range_num)
+
+                start_range = first_string[1].replace(',', '.')
+                this_atom['start_range'] = float(start_range)
+                end_range = splitted_line[1].replace(',', '.')
+                this_atom['end_range'] = float(end_range)
+
+                # setting vol value of range
+                vol = splitted_line[2].split(':')
+                vol = vol[1].replace(',', '.')
+                this_atom['vol'] = float(vol)
+
+                # setting element name and charge
+                elem = splitted_line[3].split(':')
+                this_atom['element'] = elem[0]
+                this_atom['charge'] = int(elem[1])
+
+                # setting the color
+                col = splitted_line[4].split(':')
+                col = col[1].replace('\n', '')
+                this_atom['color'] = col
+                print(this_atom)
+
+                # add this atom to atom list
+                AtomBlendAddon.all_atoms.append(this_atom)
+
+        # sort atoms by start range
+        AtomBlendAddon.all_atoms.sort(key=lambda x: x.get('start_range'))
+
+        for l in AtomBlendAddon.all_atoms:
+            print(l['start_range'])
+
 
     def load_epos_file(self, context):
         print('LOADING .EPOS FILE')
