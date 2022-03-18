@@ -36,6 +36,26 @@ class AtomBlendAddon:
     path: str = None
     path_rrng: str = None
 
+    def make_mesh_from_vertices(self):
+        ### visualize every vertex we have as mesh (currently: icosphere)
+        # make new node group
+        bpy.ops.node.new_geometry_nodes_modifier()
+        geometry_nodes_group = bpy.data.node_groups['Geometry Nodes']
+
+        # add new nodes
+        input_node = geometry_nodes_group.nodes['Group Input']
+        output_node = geometry_nodes_group.nodes['Group Output']
+        iop_node = geometry_nodes_group.nodes.new(type='GeometryNodeInstanceOnPoints')
+        mesh_node = geometry_nodes_group.nodes.new(type='GeometryNodeMeshIcoSphere')
+        mesh_node.location = (-300, -100)
+        mesh_node.inputs[0].default_value = 0.3
+
+        # link nodes
+        geometry_nodes_group.links.new(input_node.outputs[0], iop_node.inputs[0])
+        geometry_nodes_group.links.new(mesh_node.outputs[0], iop_node.inputs[2])
+        geometry_nodes_group.links.new(iop_node.outputs[0], output_node.inputs[0])
+
+
     def load_rrng_file(self, context):
         print('LOADING .RRNG FILE')
         if(AtomBlendAddon.path_rrng == None):
@@ -147,6 +167,8 @@ class AtomBlendAddon:
         point_cloud.data.attributes['delta pulse'].data.foreach_set('value', delta_pulse.ravel())
         point_cloud.data.attributes['ions/pulse'].data.foreach_set('value', ions_pulse.ravel())
 
+        AtomBlendAddon.make_mesh_from_vertices(self)
+
     def load_pos_file(self, context):
         print('LOADING .POS FILE')
         if (AtomBlendAddon.path == None):
@@ -213,3 +235,5 @@ class AtomBlendAddon:
 
         # set attribute values in point_cloud
         point_cloud.data.attributes['m/n'].data.foreach_set('value', m_n.ravel())
+
+        AtomBlendAddon.make_mesh_from_vertices(self)
