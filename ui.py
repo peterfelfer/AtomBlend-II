@@ -24,16 +24,17 @@ class AtomBlendAddonUI:
 
 # Preferences pane for this Addon in the Blender preferences
 class AtomBlendAddonSettings(bpy.types.PropertyGroup):
-    vertex_percentage: bpy.props.IntProperty(
+    vertex_percentage: bpy.props.FloatProperty(
         name="Atoms shown",
-        default=1,
-        min=1,
+        default=0.01,
+        min=0.0001,
         max=100,
         soft_min=1,
         step=10,
         description="Percentage of atoms shown",
         subtype='PERCENTAGE',
         update=AtomBlendAddonUI.update_vertex_percentage,
+        precision=3
     )
 
 
@@ -108,7 +109,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         load_file_row.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
 
         loaded_row = box.row()
-        if AtomBlendAddon.FileLoaded:
+        if AtomBlendAddon.FileLoaded_e_pos:
             loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path)
         else:
             loaded_row.label(text='No file loaded yet...')
@@ -135,7 +136,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         # AtomBlendAddon.setup_scene()
 
         # if there's already an object loaded we want to delete it so we can load another object
-        if AtomBlendAddon.FileLoaded:
+        if AtomBlendAddon.FileLoaded_e_pos:
             obj_to_delete = bpy.data.objects['Atoms']
             bpy.data.objects.remove(obj_to_delete, do_unlink=True)
 
@@ -148,8 +149,8 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         elif AtomBlendAddon.path.lower().endswith('.pos'):
             AtomBlendAddon.load_pos_file(self, context)
 
-        AtomBlendAddon.FileLoaded = True
-        print(f"Object Loaded: {AtomBlendAddon.FileLoaded}")
+        AtomBlendAddon.FileLoaded_e_pos = True
+        print(f"Object Loaded: {AtomBlendAddon.FileLoaded_e_pos}")
 
         # print(bpy.data.screens["Modeling-nonnormal"].shading.type)
 
