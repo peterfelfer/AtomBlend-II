@@ -28,6 +28,7 @@ from bpy.app.handlers import persistent
 
 from AtomBlend.read_data import *
 from AtomBlend.ui import *
+from AtomBlend.atomic_numbers import *
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
@@ -35,6 +36,9 @@ sys.path.insert(0, AtomBlendAddon.addon_path)
 
 # define add-on name for display purposes
 AtomBlendAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
+
+# set atomic number dict
+AtomBlendAddon.atomic_numbers = AtomBlend.atomic_numbers_dict
 
 # Check Blender Version
 # +++++++++++++++++++++++++++++++++++++++++++++
