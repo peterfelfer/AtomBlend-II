@@ -98,7 +98,8 @@ class AtomBlendAddon:
 
         point_cloud.data.attributes['element'].data.foreach_set('value', elements)
         print(bpy.data.materials)
-        ### add materials
+
+        # add materials
         for elem in AtomBlendAddon.all_elements:
             name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
             if bpy.data.materials.get(name_and_charge) is None:
@@ -120,6 +121,7 @@ class AtomBlendAddon:
         # base_node_group.nodes['Group Input'].tree_socket_add(in_out='IN')
         base_node_group.inputs.new('NodeSocketInt', 'element')
 
+        bpy.ops.object.convert(target='POINTCLOUD')
 
         for mat in bpy.data.materials:
             print(mat.name)
@@ -176,7 +178,7 @@ class AtomBlendAddon:
             node_group.links.new(group_inputs.outputs[0], iop_node.inputs[0])
             node_group.links.new(group_inputs.outputs[1], compare_node.inputs[0])
             node_group.links.new(compare_node.outputs[0], iop_node.inputs[1])
-            node_group.links.new(cube_node.outputs[0], iop_node.inputs[2])
+            # node_group.links.new(cube_node.outputs[0], iop_node.inputs[2])
             node_group.links.new(iop_node.outputs[0], set_material_node.inputs[0])
             node_group.links.new(set_material_node.outputs[0], group_outputs.inputs[0])
 
@@ -238,7 +240,7 @@ class AtomBlendAddon:
         input_node = geometry_nodes_group.nodes['Group Input']
         output_node = geometry_nodes_group.nodes['Group Output']
         iop_node = geometry_nodes_group.nodes.new(type='GeometryNodeInstanceOnPoints')
-        # mesh_node = geometry_nodes_group.nodes.new(type='GeometryNodeMeshCube')
+        mesh_node = geometry_nodes_group.nodes.new(type='GeometryNodeMeshCube')
         # mesh_node.location = (-300, -100)
         # mesh_node.inputs[0].default_value = 0.3
         join_geometry_node = geometry_nodes_group.nodes.new(type='GeometryNodeJoinGeometry')
@@ -248,7 +250,7 @@ class AtomBlendAddon:
 
         # link nodes
         geometry_nodes_group.links.new(input_node.outputs[0], iop_node.inputs[0])
-        # geometry_nodes_group.links.new(mesh_node.outputs[0], iop_node.inputs[2])
+        geometry_nodes_group.links.new(mesh_node.outputs[0], iop_node.inputs[2])
         geometry_nodes_group.links.new(iop_node.outputs[0], join_geometry_node.inputs[0])
         geometry_nodes_group.links.new(input_node.outputs[0], join_geometry_node.inputs[0])
         geometry_nodes_group.links.new(join_geometry_node.outputs[0], output_node.inputs[0])

@@ -68,6 +68,7 @@ def register():
     bpy.utils.register_class(ATOMBLEND_PT_panel_general)
     bpy.utils.register_class(ATOMBLEND_PT_panel_file)
     bpy.utils.register_class(ATOMBLEND_PT_panel_rrng_file)
+    bpy.utils.register_class(ATOMBLEND_PT_color_settings)
 
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
 
@@ -77,6 +78,7 @@ def unregister():
     # bpy.utils.unregister_class(AtomBlendAddonUI)
     bpy.utils.unregister_class(ATOMBLEND_OT_load_file)
     bpy.utils.unregister_class(ATOMBLEND_OT_load_rrng_file)
+    bpy.utils.unregister_class(ATOMBLEND_PT_color_settings)
 
     # remove initialization helper app handler
     bpy.app.handlers.load_post.remove(atom_blend_addon_init_handler)
@@ -84,7 +86,8 @@ def unregister():
     # UI elements
     if hasattr(bpy.types, "ATOMBLEND_PT_panel_general"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_general)
     if hasattr(bpy.types, "ATOMBLEND_PT_panel_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_file)
-    if hasattr(bpy.types, "ATOMBLEND_PT_panel_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_rrng_file)
+    if hasattr(bpy.types, "ATOMBLEND_PT_panel_rrng_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_rrng_file)
+    if hasattr(bpy.types, "ATOMBLEND_PT_panel_color_settings"): bpy.utils.unregister_class(ATOMBLEND_PT_color_settings)
     # delete all variables
     if hasattr(bpy.types.Scene, "holo_addon_settings"): del bpy.types.Scene.holo_addon_settings
 
