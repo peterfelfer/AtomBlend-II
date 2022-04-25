@@ -114,6 +114,21 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         else:
             loaded_row.label(text='No file loaded yet...')
 
+class ATOMBLEND_PT_color_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_color_settings"  # unique identifier for buttons and menu items to reference.
+    bl_label = "Color settings"  # display name in the interface.
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_panel_general"
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def draw(self, context):
+        print('hello')
+
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
@@ -200,3 +215,4 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         print("the selected filepath" + self.filepath)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
