@@ -72,8 +72,10 @@ class AtomBlendAddon:
             if s.type == 'VIEW_3D':
                 s.spaces[0].shading.type = 'RENDERED'
 
+        # set render mode to cycles & GPU rendering
+        bpy.data.scenes["Scene"].render.engine = 'CYCLES'
+        bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
-    # if both rrng and (e)pos file are loaded, this function is called
     def combine_rrng_and_e_pos_file(self):
         print('both files loaded!')
 
@@ -81,146 +83,68 @@ class AtomBlendAddon:
         point_cloud.data.attributes.new(name='element', type='INT', domain='POINT')
         point_cloud.data.attributes.new(name='charge', type='FLOAT', domain='POINT')
 
-        m_n = AtomBlendAddon.all_data[:, 3:4]
+        # get position
+        num_atoms = len(point_cloud.data.attributes['m/n'].data)
+        atom_positions = np.zeros(num_atoms * 3, dtype=np.float)
+        num_of_atoms = int(len(atom_positions) / 3)
+        point_cloud.data.vertices.foreach_get('co', atom_positions)
+        atom_positions = np.reshape(atom_positions, (num_of_atoms, 3))
 
-        elements = []
+        # match every atom to element according to m_n
+        pc_mn = point_cloud.data.attributes['m/n']
 
-        for mn in m_n:
+        # dict with one entry per element, atoms are stored in an array for each element
+        elem_verts = {}
+        elem_verts['unknown_element'] = [] # atoms that couldn't be matched to an element
+
+        # loop through all the atoms and check all element if m/n fits the range of this element
+        vert_count = 0
+        for v in pc_mn.data:
             element_found = False
             for elem in AtomBlendAddon.all_elements:
-                if elem['start_range'] <= mn <= elem['end_range']:
+                start_range = elem['start_range']
+                end_range = elem['end_range']
+                elem_name = elem['element_name'] + '_' + str(elem['charge'])
+
+                print('elem_verts')
+                for i in elem_verts:
+                    print(i)
+
+                if elem_name not in elem_verts:
+                    print('if', elem_name)
+                    elem_verts[elem_name] = []
+
+                if v.value >= start_range and v.value <= end_range:
                     element_found = True
-                    this_elem_name = elem['atomic_number']
-                    elements.append(this_elem_name)
+                    print('if', v.value, start_range, end_range, elem_name)
+                    pos = atom_positions[vert_count]
+                    elem_verts[elem_name].append((pos[0], pos[1], pos[2]))
 
             if not element_found:
-                elements.append(-1)
+                pos = atom_positions[vert_count]
+                elem_verts['unknown_element'].append((pos[0], pos[1], pos[2]))
 
-        point_cloud.data.attributes['element'].data.foreach_set('value', elements)
-        print(bpy.data.materials)
-
-        # add materials
-        for elem in AtomBlendAddon.all_elements:
-            name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
-            if bpy.data.materials.get(name_and_charge) is None:
-                mat = bpy.data.materials.new(name=name_and_charge)
-                mat.diffuse_color = elem['color']
-
-                point_cloud.data.materials.append(mat)
-        print(bpy.data.materials)
-
-        # add node groups
-        node_counter = 0
-        base_node_group = bpy.data.node_groups['Geometry Nodes']
-
-        # remove instance on points node as we use this node in each group
-        node_to_remove = base_node_group.nodes['Instance on Points']
-        base_node_group.nodes.remove(node_to_remove)
-
-        # add input to base node group
-        # base_node_group.nodes['Group Input'].tree_socket_add(in_out='IN')
-        base_node_group.inputs.new('NodeSocketInt', 'element')
-
-        bpy.ops.object.convert(target='POINTCLOUD')
-
-        for mat in bpy.data.materials:
-            print(mat.name)
-            if mat.name == 'Dots Stroke' or mat.name == 'Material': # todo why?
-                continue
-
-            split_mat_name = mat.name.split('_')
-            print(split_mat_name)
-            atomic_number = AtomBlendAddon.atomic_numbers[split_mat_name[0]]
-
-            node_group = bpy.data.node_groups.new(mat.name, 'GeometryNodeTree')
-            group_inputs = node_group.nodes.new('NodeGroupInput')
-            # group_inputs.location = (0, 0)
-            # node_group.inputs.new('Geometry', name='Atoms')
+            vert_count += 1
 
 
-            # node_group.inputs.new('Geometry', name='Geometry')
+        # create own object for each element and convert them to point clouds afterwards
+        for elem_name in elem_verts:
+            this_elem_mesh = bpy.data.meshes.new(elem_name)
 
-            # point_cloud.modifiers["GeometryNodes"]["Input_1_attribute_name"]
+            this_elem_mesh.from_pydata(elem_verts[elem_name], [], [])
+            this_elem_mesh.update()
 
-            compare_node = node_group.nodes.new('ShaderNodeMath')
-            compare_node.operation = 'COMPARE'
-            compare_node.inputs[1].default_value = atomic_number
-            compare_node.inputs[2].default_value = 0.0
-            compare_node.location = (200, -150)
+            this_elem_object = bpy.data.objects.new(elem_name, this_elem_mesh)
+            bpy.context.collection.objects.link(this_elem_object)
 
-            cube_node = node_group.nodes.new('GeometryNodeMeshCube')
-            cube_node.inputs[0].default_value = (0.2, 0.2, 0.2)
-            cube_node.location = (-30, -100)
+            bpy.data.objects[elem_name].select_set(True)
+            bpy.ops.object.convert(target='POINTCLOUD')
 
-            iop_node = node_group.nodes.new('GeometryNodeInstanceOnPoints')
-            iop_node.location = (400, 0)
+        # we can remove the atoms object as each element has its own object now
+        bpy.data.objects.remove(bpy.data.objects['Atoms'], do_unlink=True)
 
-            set_material_node = node_group.nodes.new('GeometryNodeSetMaterial')
-            set_material_node.inputs[2].default_value = mat
-            set_material_node.location = (600, 0)
-
-            group_outputs = node_group.nodes.new('NodeGroupOutput')
-            group_outputs.location = (800, 0)
-            node_group.outputs.new('Geometry', 'Output Geometry')
-
-            # set input for node value
-            # bpy.ops.object.geometry_nodes_input_attribute_toggle()
-            # bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_1_use_attribute\"]", modifier_name="GeometryNodes")
-
-            # add geometry node of this element to the base node group
-            element_group = base_node_group.nodes.new('GeometryNodeGroup')
-            element_group.node_tree = bpy.data.node_groups[mat.name]
-            element_group.location = (-25, node_counter * 150)
-            # geometry_nodes_base_group.nodes.new('C_1')
-            # bpy.ops.node.add_node(type='GeometryNodeGroup')
-
-            # link nodes
-            node_group.links.new(group_inputs.outputs[0], iop_node.inputs[0])
-            node_group.links.new(group_inputs.outputs[1], compare_node.inputs[0])
-            node_group.links.new(compare_node.outputs[0], iop_node.inputs[1])
-            # node_group.links.new(cube_node.outputs[0], iop_node.inputs[2])
-            node_group.links.new(iop_node.outputs[0], set_material_node.inputs[0])
-            node_group.links.new(set_material_node.outputs[0], group_outputs.inputs[0])
-
-            # link nodes in base geometry node group
-            base_node_group.links.new(base_node_group.nodes['Group Input'].outputs[0], element_group.inputs[0])
-            base_node_group.links.new(base_node_group.nodes['Group Input'].outputs[1], element_group.inputs[1])
-            base_node_group.links.new(element_group.outputs[0], base_node_group.nodes['Join Geometry'].inputs[0])
-
-
-
-            node_counter += 1
-
-        # for gnmod in point_cloud.modifiers:
-        #     # node_group.inputs.new('NodeSocketInt', name='Atomic number')
-        #     print('gnmod', gnmod)
-        #     # bpy.ops.object.geometry_nodes_input_attribute_toggle(prop_path="[\"Input_1_use_attribute\"]", modifier_name="GeometryNodes")
-        #     # bpy.context.object.modifiers["GeometryNodes"].Input_1_use_attribute = "element"
-        #
-        #     # if gnmod.type == "NODES":
-        #     #     break
-        #     print('type', gnmod.type)
-        #
-        #     inputs = gnmod.node_group.inputs
-        #     print('inputs', inputs)
-        #     if "Value" not in inputs:
-        #         print('if')
-        #         inputs.new("NodeSocketInt", "Value")
-        #
-        #     id = inputs["Value"].identifier
-        #     print('id', id)
-        #     gnmod[id] = "element"
-        #     gnmod[id] = True
-
-
-
-
-        point_cloud.data.attributes['charge'].data.foreach_set('value', m_n.ravel())
-        # point_cloud.data.attributes['material_index'].data.foreach_set('value', elem.ravel())
-
-        # add geometry nodes
-        geometry_nodes_group = bpy.data.node_groups['Geometry Nodes']
-
+        # todo: wrong context bug?
+        # todo: make geometry node for each element -> color with element
 
 
 
@@ -250,7 +174,7 @@ class AtomBlendAddon:
 
         # link nodes
         geometry_nodes_group.links.new(input_node.outputs[0], iop_node.inputs[0])
-        geometry_nodes_group.links.new(mesh_node.outputs[0], iop_node.inputs[2])
+        # geometry_nodes_group.links.new(mesh_node.outputs[0], iop_node.inputs[2])
         geometry_nodes_group.links.new(iop_node.outputs[0], join_geometry_node.inputs[0])
         geometry_nodes_group.links.new(input_node.outputs[0], join_geometry_node.inputs[0])
         geometry_nodes_group.links.new(join_geometry_node.outputs[0], output_node.inputs[0])
@@ -268,8 +192,8 @@ class AtomBlendAddon:
 
         for line in rrng_file:
             if line.startswith('Range'):
-                # this_atom = AtomData()
-                this_atom = {}
+                # this_element = AtomData()
+                this_element = {}
 
                 # splitting line by space
                 splitted_line = line.split(' ')
@@ -277,26 +201,26 @@ class AtomBlendAddon:
                 # setting num of range, start and end value of range
                 first_string = splitted_line[0].split('=')
                 range_num = first_string[0].split('e')[1]
-                this_atom['num_of_range'] = float(range_num)
+                this_element['num_of_range'] = float(range_num)
 
                 start_range = first_string[1].replace(',', '.')
-                this_atom['start_range'] = float(start_range)
+                this_element['start_range'] = float(start_range)
                 end_range = splitted_line[1].replace(',', '.')
-                this_atom['end_range'] = float(end_range)
+                this_element['end_range'] = float(end_range)
 
                 # setting vol value of range
                 vol = splitted_line[2].split(':')
                 vol = vol[1].replace(',', '.')
-                this_atom['vol'] = float(vol)
+                this_element['vol'] = float(vol)
 
                 # setting element name and charge
                 elem = splitted_line[3].split(':')
-                this_atom['element_name'] = elem[0]
-                this_atom['charge'] = int(elem[1])
+                this_element['element_name'] = elem[0]
+                this_element['charge'] = int(elem[1])
 
                 # setting atomic number
-                print(this_atom['element_name'], AtomBlendAddon.atomic_numbers)
-                this_atom['atomic_number'] = AtomBlendAddon.atomic_numbers[this_atom['element_name']]
+                print(this_element['element_name'], AtomBlendAddon.atomic_numbers)
+                this_element['atomic_number'] = AtomBlendAddon.atomic_numbers[this_element['element_name']]
 
                 # setting the color
                 hex_col = splitted_line[4].split(':')
@@ -308,11 +232,11 @@ class AtomBlendAddon:
                 b_hex = hex_col[4:6]
                 rgb_color = (int(r_hex, 16), int(g_hex, 16), int(b_hex, 16), 1)
 
-                this_atom['color'] = rgb_color
-                # print(this_atom)
+                this_element['color'] = rgb_color
+                # print(this_element)
 
                 # add this atom to atom list
-                AtomBlendAddon.all_elements.append(this_atom)
+                AtomBlendAddon.all_elements.append(this_element)
 
         # sort atoms by start range
         AtomBlendAddon.all_elements.sort(key=lambda x: x.get('start_range'))
@@ -424,7 +348,6 @@ class AtomBlendAddon:
         # select generated object
         point_cloud.select_set(True)
         bpy.context.view_layer.objects.active = point_cloud
-
 
         ### attributes of point_cloud
         # generate attributes on currently selected object point_cloud
