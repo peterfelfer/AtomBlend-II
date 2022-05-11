@@ -83,6 +83,20 @@ class AtomBlendAddon:
         point_cloud.data.attributes.new(name='element', type='INT', domain='POINT')
         point_cloud.data.attributes.new(name='charge', type='FLOAT', domain='POINT')
 
+        # add materials
+        for elem in AtomBlendAddon.all_elements:
+            name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
+            if bpy.data.materials.get(name_and_charge) is None:
+                mat = bpy.data.materials.new(name=name_and_charge)
+                mat.diffuse_color = elem['color']
+
+                point_cloud.data.materials.append(mat)
+
+        # add material for unknown elements
+        unknown_element_mat = bpy.data.materials.new(name='unknown_element')
+        unknown_element_mat.diffuse_color = (0.4, 0.4, 0.4, 1.0)
+        point_cloud.data.materials.append(unknown_element_mat)
+
         # get position
         num_atoms = len(point_cloud.data.attributes['m/n'].data)
         atom_positions = np.zeros(num_atoms * 3, dtype=np.float)
@@ -97,28 +111,28 @@ class AtomBlendAddon:
         elem_verts = {}
         elem_verts['unknown_element'] = [] # atoms that couldn't be matched to an element
 
-        # loop through all the atoms and check all element if m/n fits the range of this element
+        # loop through all the atoms and check all elements if m/n fits the range of this element.
+        # as the atoms are sorted by m/n and the elements are also sorted by charge we want
+        # to start at the id with the current charge
         vert_count = 0
+        start_id = 0
         for v in pc_mn.data:
             element_found = False
-            for elem in AtomBlendAddon.all_elements:
+            # for elem in AtomBlendAddon.all_elements:
+            for i in range(0, len(AtomBlendAddon.all_elements)):
+                elem = AtomBlendAddon.all_elements[i]
                 start_range = elem['start_range']
                 end_range = elem['end_range']
                 elem_name = elem['element_name'] + '_' + str(elem['charge'])
 
-                print('elem_verts')
-                for i in elem_verts:
-                    print(i)
-
                 if elem_name not in elem_verts:
-                    print('if', elem_name)
                     elem_verts[elem_name] = []
 
                 if v.value >= start_range and v.value <= end_range:
                     element_found = True
-                    print('if', v.value, start_range, end_range, elem_name)
                     pos = atom_positions[vert_count]
                     elem_verts[elem_name].append((pos[0], pos[1], pos[2]))
+                    # break?
 
             if not element_found:
                 pos = atom_positions[vert_count]
@@ -127,6 +141,7 @@ class AtomBlendAddon:
             vert_count += 1
 
 
+        '''
         # create own object for each element and convert them to point clouds afterwards
         for elem_name in elem_verts:
             this_elem_mesh = bpy.data.meshes.new(elem_name)
@@ -140,11 +155,51 @@ class AtomBlendAddon:
             bpy.data.objects[elem_name].select_set(True)
             bpy.ops.object.convert(target='POINTCLOUD')
 
+            # create new node group
+            # bpy.ops.object.modifier_add(type='NODES')
+            # bpy.ops.node.new_geometry_node_group_assign()
+            # bpy.data.objects[elem_name].modifiers["GeometryNodes.001"].name = elem_name
+            # node_group = bpy.data.node_groups[elem_name]
+            # bpy.ops.node.new_geometry_nodes_modifier()
+            # node_group = bpy.data.node_groups.new(elem_name, 'GeometryNodeTree')
+            modifier = this_elem_object.modifiers.new(elem_name, 'NODES')
+            node_group = bpy.data.node_groups.new(type='GeometryNodeTree', name=elem_name)
+            modifier.node_group = node_group
+
+            # input node
+            group_inputs = node_group.nodes.new('NodeGroupInput')
+
+            # set point radius node
+            set_point_radius = node_group.nodes.new('GeometryNodeSetPointRadius')
+            set_point_radius.location = (400, 0)
+            set_point_radius.inputs[2].default_value = 0.2
+
+            # material node
+
+
+            mat = bpy.data.materials[elem_name]
+            set_material_node = node_group.nodes.new('GeometryNodeSetMaterial')
+            set_material_node.inputs[2].default_value = mat
+            set_material_node.location = (600, 0)
+
+            # output node
+            group_outputs = node_group.nodes.new('NodeGroupOutput')
+            group_outputs.location = (800, 0)
+            # node_group.outputs.new('Geometry', 'Output Geometry')
+
+            # link nodes
+            node_group.links.new(group_inputs.outputs[0], set_point_radius.inputs[0])
+            node_group.links.new(set_point_radius.outputs[0], set_material_node.inputs[0])
+            node_group.links.new(set_material_node.outputs[0], group_outputs.inputs[0])
+
+            # deselect object
+            bpy.data.objects[elem_name].select_set(False)
+       
+
         # we can remove the atoms object as each element has its own object now
         bpy.data.objects.remove(bpy.data.objects['Atoms'], do_unlink=True)
 
-        # todo: wrong context bug?
-        # todo: make geometry node for each element -> color with element
+        '''
 
 
 
@@ -322,7 +377,12 @@ class AtomBlendAddon:
 
         num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
         concat_data_percentage = concat_data[:num_of_atoms_percentage]
-        AtomBlendAddon.all_data = concat_data_percentage
+
+        # sort atoms by ['m/n']
+        print('sort by m/n')
+        sorted_by_mn = concat_data_percentage[concat_data_percentage[:, 3].argsort()]
+
+        AtomBlendAddon.all_data = sorted_by_mn
 
         print('concat', time.perf_counter() - start)
 
@@ -333,7 +393,7 @@ class AtomBlendAddon:
         #     z = atom[2]
         #     coords.append((x, y, z))
 
-        coords = [(atom[0], atom[1], atom[2]) for atom in concat_data_percentage]
+        coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
         print('adding verts', time.perf_counter() - start)
 
         # Make a mesh from a list of vertices/edges/faces
@@ -363,14 +423,14 @@ class AtomBlendAddon:
         print('new attributes', time.perf_counter() - start)
 
         # extract columns of data
-        m_n = concat_data_percentage[:, 3:4]
-        tof = concat_data_percentage[:, 4:5]
-        vspec = concat_data_percentage[:, 5:6]
-        vap = concat_data_percentage[:, 6:7]
-        xdet = concat_data_percentage[:, 7:8]
-        ydet = concat_data_percentage[:, 8:9]
-        delta_pulse = concat_data_percentage[:, 9:10]
-        ions_pulse = concat_data_percentage[:, 10:11]
+        m_n = sorted_by_mn[:, 3:4]
+        tof = sorted_by_mn[:, 4:5]
+        vspec = sorted_by_mn[:, 5:6]
+        vap = sorted_by_mn[:, 6:7]
+        xdet = sorted_by_mn[:, 7:8]
+        ydet = sorted_by_mn[:, 8:9]
+        delta_pulse = sorted_by_mn[:, 9:10]
+        ions_pulse = sorted_by_mn[:, 10:11]
 
         print('SHAPE ', m_n.shape)
 
@@ -396,6 +456,7 @@ class AtomBlendAddon:
 
         AtomBlendAddon.make_mesh_from_vertices(self)
 
+
         print('combine', time.perf_counter() - start)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
@@ -403,6 +464,8 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self)
 
         print('end', time.perf_counter() - start)
+
+
 
 
 
@@ -441,7 +504,12 @@ class AtomBlendAddon:
         num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
         # print(num_of_atoms, num_of_atoms_percentage)
         reshaped_data_percentage = reshaped_data[:num_of_atoms_percentage]
-        AtomBlendAddon.all_data = reshaped_data_percentage
+
+        # sort atoms by ['m/n']
+        print('sort by m/n')
+        sorted_by_mn = reshaped_data_percentage[reshaped_data_percentage[:, 3].argsort()]
+
+        AtomBlendAddon.all_data = sorted_by_mn
 
         coords = [(atom[0], atom[1], atom[2]) for atom in reshaped_data_percentage]
 
