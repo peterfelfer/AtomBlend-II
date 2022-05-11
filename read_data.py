@@ -141,7 +141,7 @@ class AtomBlendAddon:
             vert_count += 1
 
 
-        '''
+
         # create own object for each element and convert them to point clouds afterwards
         for elem_name in elem_verts:
             this_elem_mesh = bpy.data.meshes.new(elem_name)
@@ -199,7 +199,7 @@ class AtomBlendAddon:
         # we can remove the atoms object as each element has its own object now
         bpy.data.objects.remove(bpy.data.objects['Atoms'], do_unlink=True)
 
-        '''
+
 
 
 
