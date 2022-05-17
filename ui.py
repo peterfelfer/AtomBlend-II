@@ -177,11 +177,8 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
         # ll = bpy.props.CollectionProperty(type=MaterialSetting)
         # ll.add()
         # box = layout.box()
-        col = layout.column(align=True)
         # element_row = box.row()
 
-        for my_item in bpy.context.scene.my_settings:
-            print(my_item.name, my_item.value)
 
         # element_row.prop(context.scene.my_settings, 'material_settings')
 
@@ -202,6 +199,21 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
             # my_item.name = "Spam"
             # my_item.value = (1.0, 0.0, 0.0, 1.0)
 
+            # make one top row for labeling
+
+            col = layout.column(align=True)
+            row = col.row(align=True)
+            # row = col.row(align=True)
+            name_col = row.column(align=True)
+            charge_col = row.column(align=True)
+            color_col = row.column(align=True)
+
+            name_col.label(text='Name')
+            charge_col.label(text='Charge')
+            color_col.label(text='Color')
+
+            col.separator()
+
             for obj in bpy.data.objects:
                 print(obj)
                 obj_mats = [m.material for m in obj.material_slots]
@@ -220,20 +232,29 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
                         bsdf = mat.node_tree.nodes.get("Principled BSDF")
                         row = col.row(align=True)
                         name_col = row.column(align=True)
+                        charge_col = row.column(align=True)
                         color_col = row.column(align=True)
-                        name_col.label(text=mat.name)
 
+                        splitted_name = mat.name.split('_')
+
+                        print(splitted_name)
+
+                        name_col.label(text=splitted_name[0])
+                        charge_col.label(text=splitted_name[1])
 
                         color_col.prop(bsdf.inputs['Base Color'], "default_value", text='')
 
-            # add unknown element at the end of the list
-            unknown_element_mat = bpy.data.objects['unknown_element'].material_slots[0].material
+            # add unknown element to the end of the list
+            mat = bpy.data.objects['unknown_element'].material_slots[0].material
             if mat and mat.use_nodes:
                 bsdf = mat.node_tree.nodes.get("Principled BSDF")
                 row = col.row(align=True)
                 name_col = row.column(align=True)
+                charge_col = row.column(align=True)
                 color_col = row.column(align=True)
+
                 name_col.label(text='Unknown')
+                charge_col.label(text='?')
                 color_col.prop(bsdf.inputs['Base Color'], "default_value", text='')
 
                 # AtomBlendAddon.all_elements[mat.name]
@@ -264,8 +285,8 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
                 # context.scene.atom_blend_addon_settings.vertex_percentage.name = 'x'
                 # AtomBlendAddonSettings.material_settings.name = 'x'
         else:
-            box = layout.column(align=True)
-            text_row = box.row()
+            col = layout.column(align=True)
+            text_row = col.row()
             text_row.label(text='Load .epos/.pos and .rrng file')
 
 
