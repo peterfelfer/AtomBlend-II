@@ -7,7 +7,7 @@ import sys
 from math import *
 
 import bpy
-from bpy.props import FloatProperty, PointerProperty
+from bpy.props import StringProperty
 from bpy.types import PropertyGroup
 
 import numpy as np
@@ -22,7 +22,7 @@ class AtomBlendAddonUI:
     def update_vertex_percentage(self, context):
         print('SELECT VERTEX PERCENTAGE')
 
-# Preferences pane for this Addon in the Blender preferences
+# Preferences panel for this Addon in the Blender preferences
 class AtomBlendAddonSettings(bpy.types.PropertyGroup):
     vertex_percentage: bpy.props.FloatProperty(
         name="Atoms shown",
@@ -35,6 +35,18 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         subtype='PERCENTAGE',
         update=AtomBlendAddonUI.update_vertex_percentage,
         precision=3
+    )
+
+    stuff = {}
+
+
+    material_settings: bpy.props.FloatVectorProperty(
+        name="Material",
+        min=0.0,
+        max=1.0,
+        subtype="COLOR",
+        size=4,
+        # update=AtomBlendAddonUI.update_background,
     )
 
 
@@ -73,15 +85,17 @@ class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
         layout = self.layout
 
         # define a box of UI elements
-        box = layout.box()
-        load_file_row = box.row()
+        col = layout.column(align=True)
+        load_file_row = col.row(align=True)
         load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load file", icon="FILE_FOLDER")
 
-        loaded_row = box.row()
+        loaded_row = col.row()
         if AtomBlendAddon.FileLoadedRRNG:
             loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path_rrng)
         else:
             loaded_row.label(text='No file loaded yet...')
+
+        col.row(align=True)
 
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_file"  # unique identifier for buttons and menu items to reference.
@@ -101,18 +115,39 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         layout = self.layout
 
         # define a box of UI elements
-        box = layout.box()
-        vertex_percentage_row = box.row()
+        col = layout.column(align=True)
+        vertex_percentage_row = col.row()
         vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
-        load_file_row = box.row()
+        load_file_row = col.row()
         load_file_row.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
 
-        loaded_row = box.row()
+        loaded_row = col.row()
         if AtomBlendAddon.FileLoaded_e_pos:
             loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path)
         else:
             loaded_row.label(text='No file loaded yet...')
+
+        col.row(align=True)
+
+
+class UElementPropertyGroup(bpy.types.PropertyGroup):
+    s = StringProperty(default="UElement")
+    print('ue element prop group')
+
+class MaterialSetting(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
+    value: bpy.props.FloatVectorProperty(name="Test Property")
+
+    # bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=UElementPropertyGroup)
+
+    # list = bpy.props.CollectionProperty(type=MaterialSetting)
+    print('mat settings')
+    # print('list: ', list)
+    # def fill_to(self):
+    # list.add()
+    print('fill to')
+
 
 class ATOMBLEND_PT_color_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_color_settings"  # unique identifier for buttons and menu items to reference.
@@ -126,8 +161,113 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
     def poll(cls, context):
         return True  # context.object is not None
 
+    bpy.types.Object.material_settings = bpy.props.FloatVectorProperty(
+        name="Material",
+        min=0.0,
+        max=1.0,
+        subtype="COLOR",
+        size=4,
+        # update=AtomBlendAddonUI.update_background,
+    )
+
     def draw(self, context):
         print('hello')
+        layout = self.layout
+        # only draw if both files are loaded
+        # ll = bpy.props.CollectionProperty(type=MaterialSetting)
+        # ll.add()
+        # box = layout.box()
+        col = layout.column(align=True)
+        # element_row = box.row()
+
+        for my_item in bpy.context.scene.my_settings:
+            print(my_item.name, my_item.value)
+
+        # element_row.prop(context.scene.my_settings, 'material_settings')
+
+        AtomBlendAddonSettings.stuff['test'] = bpy.props.FloatVectorProperty(
+            name="Material",
+            min=0.0,
+            max=1.0,
+            subtype="COLOR",
+            size=4,
+            # update=AtomBlendAddonUI.update_background,
+        )
+
+        # element_row.prop(self, 'material_settings')
+        if AtomBlendAddon.FileLoadedRRNG and AtomBlendAddon.FileLoaded_e_pos:
+            # context.scene.my_settings = CollectionProperty(type=MaterialSetting)
+
+            # my_item = bpy.context.scene.my_settings.add()
+            # my_item.name = "Spam"
+            # my_item.value = (1.0, 0.0, 0.0, 1.0)
+
+            for obj in bpy.data.objects:
+                print(obj)
+                obj_mats = [m.material for m in obj.material_slots]
+                for mat in obj_mats:
+                    print(mat)
+                    # mat = obj.material_slots[0].material
+                    # if len(obj.material_slots) < 1:
+                    #     print('mat slots < 1')
+
+                    # add unknown element at the end because elements are stored alphabetically
+                    if mat.name == 'unknown_element':
+                        continue
+
+                    if mat and mat.use_nodes:
+                        print(mat)
+                        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                        row = col.row(align=True)
+                        name_col = row.column(align=True)
+                        color_col = row.column(align=True)
+                        name_col.label(text=mat.name)
+
+
+                        color_col.prop(bsdf.inputs['Base Color'], "default_value", text='')
+
+            # add unknown element at the end of the list
+            unknown_element_mat = bpy.data.objects['unknown_element'].material_slots[0].material
+            if mat and mat.use_nodes:
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                row = col.row(align=True)
+                name_col = row.column(align=True)
+                color_col = row.column(align=True)
+                name_col.label(text='Unknown')
+                color_col.prop(bsdf.inputs['Base Color'], "default_value", text='')
+
+                # AtomBlendAddon.all_elements[mat.name]
+                # bpy.data.materials["Fe_1"].node_tree.nodes["Principled BSDF"].inputs[0].default_value = (1.0, 0.0, 0.0, 1)
+
+            # for elem in AtomBlendAddon.all_elements:
+            #     # define a box of UI elements
+            #     box = layout.box()
+            #     element_row = box.row()
+
+                # my_item = bpy.context.material.my_settings.add()
+                # my_item.name = "Spam"
+                # my_item.value = (1.0, 0.0, 0.0, 1.0)
+
+                # print(elem)
+                # material_settings: bpy.props.FloatVectorProperty(
+                #     name="Material",
+                #     min=0.0,
+                #     max=1.0,
+                #     subtype="COLOR",
+                #     size=4,
+                #     # update=AtomBlendAddonUI.update_background,
+                # )
+
+                # element_row.prop(context.object, 'material_settings')
+
+                # element_row.prop(context.scene.atom_blend_addon_settings, 'material_settings')
+                # context.scene.atom_blend_addon_settings.vertex_percentage.name = 'x'
+                # AtomBlendAddonSettings.material_settings.name = 'x'
+        else:
+            box = layout.column(align=True)
+            text_row = box.row()
+            text_row.label(text='Load .epos/.pos and .rrng file')
+
 
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
