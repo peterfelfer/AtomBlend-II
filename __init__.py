@@ -51,6 +51,15 @@ if bpy.app.version < bl_info['blender']:
 def atom_blend_addon_init_handler(dummy1, dummy2):
     # load the panel variables
     bpy.types.Scene.atom_blend_addon_settings = bpy.props.PointerProperty(type=AtomBlendAddonSettings)
+    bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=MaterialSetting)
+
+    # my_item = bpy.context.scene.my_settings.add()
+    # my_item.name = "Spam"
+    # my_item.value = 1000
+    #
+    # my_item = bpy.context.scene.my_settings.add()
+    # my_item.name = "Eggs"
+    # my_item.value = 30
 
     # get the active window
     AtomBlendAddon.BlenderWindow = bpy.context.window
@@ -62,6 +71,7 @@ def register():
     # bpy.utils.register_class(AtomBlendAddonUI)
     bpy.utils.register_class(ATOMBLEND_OT_load_file)
     bpy.utils.register_class(ATOMBLEND_OT_load_rrng_file)
+    bpy.utils.register_class(MaterialSetting)
 
     # UI elements
     # add-on panels
@@ -79,6 +89,8 @@ def unregister():
     bpy.utils.unregister_class(ATOMBLEND_OT_load_file)
     bpy.utils.unregister_class(ATOMBLEND_OT_load_rrng_file)
     bpy.utils.unregister_class(ATOMBLEND_PT_color_settings)
+    bpy.utils.unregister_class(MaterialSetting)
+
 
     # remove initialization helper app handler
     bpy.app.handlers.load_post.remove(atom_blend_addon_init_handler)

@@ -87,14 +87,17 @@ class AtomBlendAddon:
         for elem in AtomBlendAddon.all_elements:
             name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
             if bpy.data.materials.get(name_and_charge) is None:
+
                 mat = bpy.data.materials.new(name=name_and_charge)
                 mat.diffuse_color = elem['color']
+                mat.use_nodes = True
 
                 point_cloud.data.materials.append(mat)
 
         # add material for unknown elements
         unknown_element_mat = bpy.data.materials.new(name='unknown_element')
         unknown_element_mat.diffuse_color = (0.4, 0.4, 0.4, 1.0)
+        unknown_element_mat.use_nodes = True
         point_cloud.data.materials.append(unknown_element_mat)
 
         # get position
@@ -140,8 +143,6 @@ class AtomBlendAddon:
 
             vert_count += 1
 
-
-
         # create own object for each element and convert them to point clouds afterwards
         for elem_name in elem_verts:
             this_elem_mesh = bpy.data.meshes.new(elem_name)
@@ -154,6 +155,17 @@ class AtomBlendAddon:
 
             bpy.data.objects[elem_name].select_set(True)
             bpy.ops.object.convert(target='POINTCLOUD')
+
+            # set material to object
+            this_mat = bpy.data.materials[elem_name]
+            this_obj = bpy.data.objects[elem_name]
+            this_obj.data.materials.append(this_mat)
+
+            for elem in AtomBlendAddon.all_elements:
+                elem_and_charge = elem['element_name'] + '_' + str(elem['charge'])
+                if elem_and_charge == elem_name:
+                    col = elem['color']
+                    bpy.data.materials[elem_name].node_tree.nodes["Principled BSDF"].inputs[0].default_value = col
 
             # create new node group
             # bpy.ops.object.modifier_add(type='NODES')
@@ -175,12 +187,10 @@ class AtomBlendAddon:
             set_point_radius.inputs[2].default_value = 0.2
 
             # material node
-
-
-            mat = bpy.data.materials[elem_name]
-            set_material_node = node_group.nodes.new('GeometryNodeSetMaterial')
-            set_material_node.inputs[2].default_value = mat
-            set_material_node.location = (600, 0)
+            # mat = bpy.data.materials[elem_name]
+            # set_material_node = node_group.nodes.new('GeometryNodeSetMaterial')
+            # set_material_node.inputs[2].default_value = mat
+            # set_material_node.location = (600, 0)
 
             # output node
             group_outputs = node_group.nodes.new('NodeGroupOutput')
@@ -189,8 +199,10 @@ class AtomBlendAddon:
 
             # link nodes
             node_group.links.new(group_inputs.outputs[0], set_point_radius.inputs[0])
-            node_group.links.new(set_point_radius.outputs[0], set_material_node.inputs[0])
-            node_group.links.new(set_material_node.outputs[0], group_outputs.inputs[0])
+            # node_group.links.new(set_point_radius.outputs[0], set_material_node.inputs[0])
+            # node_group.links.new(set_material_node.outputs[0], group_outputs.inputs[0])
+            node_group.links.new(set_point_radius.outputs[0], group_outputs.inputs[0])
+
 
             # deselect object
             bpy.data.objects[elem_name].select_set(False)
@@ -199,8 +211,8 @@ class AtomBlendAddon:
         # we can remove the atoms object as each element has its own object now
         bpy.data.objects.remove(bpy.data.objects['Atoms'], do_unlink=True)
 
-
-
+        # resetting colors of materials because the color gets reset when making property in ui
+        # for
 
 
     def make_mesh_from_vertices(self):
