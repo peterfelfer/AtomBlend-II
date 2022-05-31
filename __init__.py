@@ -84,8 +84,8 @@ def unregister():
         if hasattr(bpy.types, str(c)): bpy.utils.unregister_class(c)
 
 classes = (
-    AtomBlendAddonSettings, MaterialSetting, AtomBlendAddonShaders,
-    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_color_settings, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_panel_file,
+    AtomBlendAddonSettings, MaterialSetting,
+    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_color_settings,
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
 )
 
