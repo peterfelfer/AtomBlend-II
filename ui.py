@@ -208,7 +208,7 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
             charge_col = row.column(align=True)
             color_col = row.column(align=True)
 
-            name_col.label(text='Name')
+            name_col.label(text='Element')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
 

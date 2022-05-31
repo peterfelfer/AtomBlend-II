@@ -29,6 +29,7 @@ from bpy.app.handlers import persistent
 from AtomBlend.read_data import *
 from AtomBlend.ui import *
 from AtomBlend.atomic_numbers import *
+from AtomBlend.shaders import *
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
@@ -66,42 +67,27 @@ def atom_blend_addon_init_handler(dummy1, dummy2):
 
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
-    # register all basic operators of the addon
-    bpy.utils.register_class(AtomBlendAddonSettings)
-    # bpy.utils.register_class(AtomBlendAddonUI)
-    bpy.utils.register_class(ATOMBLEND_OT_load_file)
-    bpy.utils.register_class(ATOMBLEND_OT_load_rrng_file)
-    bpy.utils.register_class(MaterialSetting)
-
-    # UI elements
-    # add-on panels
-    bpy.utils.register_class(ATOMBLEND_PT_panel_general)
-    bpy.utils.register_class(ATOMBLEND_PT_panel_file)
-    bpy.utils.register_class(ATOMBLEND_PT_panel_rrng_file)
-    bpy.utils.register_class(ATOMBLEND_PT_color_settings)
+    for c in classes:
+        bpy.utils.register_class(c)
 
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
 
 def unregister():
-    # unregister all classes of the addon
-    bpy.utils.unregister_class(AtomBlendAddonSettings)
-    # bpy.utils.unregister_class(AtomBlendAddonUI)
-    bpy.utils.unregister_class(ATOMBLEND_OT_load_file)
-    bpy.utils.unregister_class(ATOMBLEND_OT_load_rrng_file)
-    bpy.utils.unregister_class(ATOMBLEND_PT_color_settings)
-    bpy.utils.unregister_class(MaterialSetting)
-
+    for c in classes:
+        bpy.utils.unregister_class(c)
 
     # remove initialization helper app handler
     bpy.app.handlers.load_post.remove(atom_blend_addon_init_handler)
 
     # UI elements
-    if hasattr(bpy.types, "ATOMBLEND_PT_panel_general"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_general)
-    if hasattr(bpy.types, "ATOMBLEND_PT_panel_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_file)
-    if hasattr(bpy.types, "ATOMBLEND_PT_panel_rrng_file"): bpy.utils.unregister_class(ATOMBLEND_PT_panel_rrng_file)
-    if hasattr(bpy.types, "ATOMBLEND_PT_panel_color_settings"): bpy.utils.unregister_class(ATOMBLEND_PT_color_settings)
-    # delete all variables
-    if hasattr(bpy.types.Scene, "holo_addon_settings"): del bpy.types.Scene.holo_addon_settings
+    for c in reversed(classes):
+        if hasattr(bpy.types, str(c)): bpy.utils.unregister_class(c)
+
+classes = (
+    AtomBlendAddonSettings, MaterialSetting, AtomBlendAddonShaders,
+    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_color_settings, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_panel_file,
+    ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
+)
 
 # this should only be needed if we want to start the addon with the play button from within blender
 if __name__ == "__main__":
