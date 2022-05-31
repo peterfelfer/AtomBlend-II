@@ -17,6 +17,7 @@ import os
 # ------------- Atom Data -------------
 # Class that contains all relevant information about atoms in range files
 import AtomBlend
+from AtomBlend.shader_management import *
 
 
 @dataclass
@@ -203,7 +204,6 @@ class AtomBlendAddon:
             # node_group.links.new(set_material_node.outputs[0], group_outputs.inputs[0])
             node_group.links.new(set_point_radius.outputs[0], group_outputs.inputs[0])
 
-
             # deselect object
             bpy.data.objects[elem_name].select_set(False)
        
@@ -245,7 +245,6 @@ class AtomBlendAddon:
         geometry_nodes_group.links.new(iop_node.outputs[0], join_geometry_node.inputs[0])
         geometry_nodes_group.links.new(input_node.outputs[0], join_geometry_node.inputs[0])
         geometry_nodes_group.links.new(join_geometry_node.outputs[0], output_node.inputs[0])
-
 
 
     def load_rrng_file(self, context):
@@ -408,6 +407,7 @@ class AtomBlendAddon:
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
         print('adding verts', time.perf_counter() - start)
 
+        '''
         # Make a mesh from a list of vertices/edges/faces
         mesh.from_pydata(coords, [], [])
 
@@ -420,6 +420,7 @@ class AtomBlendAddon:
         # select generated object
         point_cloud.select_set(True)
         bpy.context.view_layer.objects.active = point_cloud
+        
 
         ### attributes of point_cloud
         # generate attributes on currently selected object point_cloud
@@ -465,8 +466,11 @@ class AtomBlendAddon:
         print('ions pulse', time.perf_counter() - start)
 
         print('attributes', time.perf_counter() - start)
+'''
 
-        AtomBlendAddon.make_mesh_from_vertices(self)
+        # shader experiments !
+        # AtomBlendAddon.make_mesh_from_vertices(self)
+        ABManagement.init_shader(coords)
 
 
         print('combine', time.perf_counter() - start)
@@ -478,9 +482,6 @@ class AtomBlendAddon:
         print('end', time.perf_counter() - start)
 
 
-
-
-
     def load_pos_file(self, context):
         print('LOADING .POS FILE')
         if (AtomBlendAddon.path == None):
@@ -489,8 +490,7 @@ class AtomBlendAddon:
 
         AtomBlendAddon.setup(self, context)
 
-
-    # file_path = 'T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.epos'
+        # file_path = 'T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.epos'
         file_path = AtomBlendAddon.path
         # data_in_bytes = np.fromfile(file_path, dtype='uint8')
         data_in_bytes = np.fromfile(file_path, dtype='>f')

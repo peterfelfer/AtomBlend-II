@@ -29,7 +29,6 @@ from bpy.app.handlers import persistent
 from AtomBlend.read_data import *
 from AtomBlend.ui import *
 from AtomBlend.atomic_numbers import *
-from AtomBlend.shaders import *
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
@@ -47,12 +46,12 @@ AtomBlendAddon.atomic_numbers = AtomBlend.atomic_numbers_dict
 if bpy.app.version < bl_info['blender']:
     raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
 
+
 # ----------------- ADDON INITIALIZATION --------------------
 @persistent
 def atom_blend_addon_init_handler(dummy1, dummy2):
     # load the panel variables
     bpy.types.Scene.atom_blend_addon_settings = bpy.props.PointerProperty(type=AtomBlendAddonSettings)
-    bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=MaterialSetting)
 
     # my_item = bpy.context.scene.my_settings.add()
     # my_item.name = "Spam"
@@ -65,12 +64,15 @@ def atom_blend_addon_init_handler(dummy1, dummy2):
     # get the active window
     AtomBlendAddon.BlenderWindow = bpy.context.window
 
+
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
     for c in classes:
         bpy.utils.register_class(c)
 
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
+    bpy.app.handlers.frame_change_post.append(ABManagement.handler)
+
 
 def unregister():
     for c in classes:
@@ -78,13 +80,15 @@ def unregister():
 
     # remove initialization helper app handler
     bpy.app.handlers.load_post.remove(atom_blend_addon_init_handler)
+    bpy.app.handlers.frame_change_post.remove(ABManagement.handler)
 
     # UI elements
     for c in reversed(classes):
         if hasattr(bpy.types, str(c)): bpy.utils.unregister_class(c)
 
+
 classes = (
-    AtomBlendAddonSettings, MaterialSetting,
+    AtomBlendAddonSettings,
     ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_color_settings,
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
 )

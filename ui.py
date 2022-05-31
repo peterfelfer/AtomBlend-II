@@ -133,7 +133,6 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
 class UElementPropertyGroup(bpy.types.PropertyGroup):
     s = StringProperty(default="UElement")
-    print('ue element prop group')
 
 class MaterialSetting(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
@@ -161,17 +160,16 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
     def poll(cls, context):
         return True  # context.object is not None
 
-    bpy.types.Object.material_settings = bpy.props.FloatVectorProperty(
-        name="Material",
-        min=0.0,
-        max=1.0,
-        subtype="COLOR",
-        size=4,
-        # update=AtomBlendAddonUI.update_background,
-    )
+    # bpy.types.Object.material_settings = bpy.props.FloatVectorProperty(
+    #     name="Material",
+    #     min=0.0,
+    #     max=1.0,
+    #     subtype="COLOR",
+    #     size=4,
+    #     # update=AtomBlendAddonUI.update_background,
+    # )
 
     def draw(self, context):
-        print('hello')
         layout = self.layout
         # only draw if both files are loaded
         # ll = bpy.props.CollectionProperty(type=MaterialSetting)
@@ -182,14 +180,7 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
 
         # element_row.prop(context.scene.my_settings, 'material_settings')
 
-        AtomBlendAddonSettings.stuff['test'] = bpy.props.FloatVectorProperty(
-            name="Material",
-            min=0.0,
-            max=1.0,
-            subtype="COLOR",
-            size=4,
-            # update=AtomBlendAddonUI.update_background,
-        )
+
 
         # element_row.prop(self, 'material_settings')
         if AtomBlendAddon.FileLoadedRRNG and AtomBlendAddon.FileLoaded_e_pos:
@@ -307,7 +298,6 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        print("the selected filepath" + self.filepath)
         AtomBlendAddon.path = self.filepath
         # AtomBlendAddon.setup_scene()
 
@@ -338,7 +328,6 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        print("the selected filepath" + self.filepath)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -358,7 +347,6 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        print("the selected filepath" + self.filepath)
         AtomBlendAddon.path_rrng = self.filepath
         # AtomBlendAddon.setup_scene()
 
@@ -373,7 +361,6 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        print("the selected filepath" + self.filepath)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 

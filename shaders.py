@@ -1,4 +1,4 @@
-class AtomBlendAddonShaders():
+class ABShaders:
     vertex_shader_simple = '''
             in vec3 position;
             in vec4 color;
