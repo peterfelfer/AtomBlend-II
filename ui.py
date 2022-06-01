@@ -49,7 +49,6 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         # update=AtomBlendAddonUI.update_background,
     )
 
-
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
     bl_label = "AtomBlend-II"  # display name in the interface.
@@ -69,7 +68,7 @@ class ATOMBLEND_PT_panel_general(bpy.types.Panel):
 
 class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_rrng_file"  # unique identifier for buttons and menu items to reference.
-    bl_label = "Load .rrng file"  # display name in the interface.
+    bl_label = "Load second file"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -116,8 +115,8 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
         # define a box of UI elements
         col = layout.column(align=True)
-        vertex_percentage_row = col.row()
-        vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
+        # vertex_percentage_row = col.row()
+        # vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
         load_file_row = col.row()
         load_file_row.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
@@ -136,7 +135,7 @@ class UElementPropertyGroup(bpy.types.PropertyGroup):
 
 class MaterialSetting(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    value: bpy.props.FloatVectorProperty(name="Test Property")
+    value: bpy.props.IntProperty(name="Test Property")
 
     # bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=UElementPropertyGroup)
 
@@ -146,6 +145,54 @@ class MaterialSetting(bpy.types.PropertyGroup):
     # def fill_to(self):
     # list.add()
     print('fill to')
+
+def test(self, context):
+    cube1_item = bpy.context.scene.my_settings.add()
+    cube1_item.name = 'Cube1'
+    cube1_item.value = 100
+
+    cube2_item = bpy.context.scene.my_settings.add()
+    cube2_item.name = 'Cube2'
+    cube2_item.value = 5
+
+
+
+class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_shader_color_settings"  # unique identifier for buttons and menu items to reference.
+    bl_label = "shader color settings"  # display name in the interface.
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_panel_general"
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def draw(self, context):
+        print('shader settings!')
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row()
+        row.label(text='shader color settings')
+
+        cube1 = bpy.data.objects['Cube']
+        cube2 = bpy.data.objects['Cube.001']
+
+
+        # test(self, context)
+        # cube1_item = bpy.context.scene.my_settings.add()
+        # cube1_item.name = 'Cube1'
+        # cube1_item.value = 100
+
+        print(len(bpy.context.scene.my_settings))
+        # for my_item in bpy.context.scene.my_settings:
+        #     print(my_item.name, my_item.value)
+        #     print(my_item)
+        #     col.prop(my_item, "value")
+
+        col.prop(bpy.context.scene.my_settings['Cube1'], 'value')
+        col.prop(bpy.context.scene.my_settings['Cube2'], 'value')
 
 
 class ATOMBLEND_PT_color_settings(bpy.types.Panel):
@@ -160,15 +207,6 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
     def poll(cls, context):
         return True  # context.object is not None
 
-    # bpy.types.Object.material_settings = bpy.props.FloatVectorProperty(
-    #     name="Material",
-    #     min=0.0,
-    #     max=1.0,
-    #     subtype="COLOR",
-    #     size=4,
-    #     # update=AtomBlendAddonUI.update_background,
-    # )
-
     def draw(self, context):
         layout = self.layout
         # only draw if both files are loaded
@@ -177,21 +215,9 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
         # box = layout.box()
         # element_row = box.row()
 
-
-        # element_row.prop(context.scene.my_settings, 'material_settings')
-
-
-
-        # element_row.prop(self, 'material_settings')
         if AtomBlendAddon.FileLoadedRRNG and AtomBlendAddon.FileLoaded_e_pos:
-            # context.scene.my_settings = CollectionProperty(type=MaterialSetting)
-
-            # my_item = bpy.context.scene.my_settings.add()
-            # my_item.name = "Spam"
-            # my_item.value = (1.0, 0.0, 0.0, 1.0)
 
             # make one top row for labeling
-
             col = layout.column(align=True)
             row = col.row(align=True)
             # row = col.row(align=True)
@@ -206,20 +232,14 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
             col.separator()
 
             for obj in bpy.data.objects:
-                print(obj)
                 obj_mats = [m.material for m in obj.material_slots]
                 for mat in obj_mats:
-                    print(mat)
-                    # mat = obj.material_slots[0].material
-                    # if len(obj.material_slots) < 1:
-                    #     print('mat slots < 1')
 
                     # add unknown element at the end because elements are stored alphabetically
                     if mat.name == 'unknown_element':
                         continue
 
                     if mat and mat.use_nodes:
-                        print(mat)
                         bsdf = mat.node_tree.nodes.get("Principled BSDF")
                         row = col.row(align=True)
                         name_col = row.column(align=True)
@@ -227,8 +247,6 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
                         color_col = row.column(align=True)
 
                         splitted_name = mat.name.split('_')
-
-                        print(splitted_name)
 
                         name_col.label(text=splitted_name[0])
                         charge_col.label(text=splitted_name[1])
@@ -248,36 +266,10 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
                 charge_col.label(text='?')
                 color_col.prop(bsdf.inputs['Base Color'], "default_value", text='')
 
-                # AtomBlendAddon.all_elements[mat.name]
-                # bpy.data.materials["Fe_1"].node_tree.nodes["Principled BSDF"].inputs[0].default_value = (1.0, 0.0, 0.0, 1)
-
-            # for elem in AtomBlendAddon.all_elements:
-            #     # define a box of UI elements
-            #     box = layout.box()
-            #     element_row = box.row()
-
-                # my_item = bpy.context.material.my_settings.add()
-                # my_item.name = "Spam"
-                # my_item.value = (1.0, 0.0, 0.0, 1.0)
-
-                # print(elem)
-                # material_settings: bpy.props.FloatVectorProperty(
-                #     name="Material",
-                #     min=0.0,
-                #     max=1.0,
-                #     subtype="COLOR",
-                #     size=4,
-                #     # update=AtomBlendAddonUI.update_background,
-                # )
-
-                # element_row.prop(context.object, 'material_settings')
-
-                # element_row.prop(context.scene.atom_blend_addon_settings, 'material_settings')
-                # context.scene.atom_blend_addon_settings.vertex_percentage.name = 'x'
-                # AtomBlendAddonSettings.material_settings.name = 'x'
         else:
             col = layout.column(align=True)
             text_row = col.row()
+            # text_row.label(text='Load .epos/.pos and .rrng file')
             text_row.label(text='Load .epos/.pos and .rrng file')
 
 
