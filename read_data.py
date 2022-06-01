@@ -31,6 +31,10 @@ class AtomData:
     charge: int = 0
     color = None
 
+class MaterialSetting(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
+    value: bpy.props.IntProperty(name="Test Property")
+
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class AtomBlendAddon:
@@ -77,8 +81,11 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].render.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
+
     def combine_rrng_and_e_pos_file(self):
         print('both files loaded!')
+
+
 
         point_cloud = bpy.data.objects['Atoms']
         point_cloud.data.attributes.new(name='element', type='INT', domain='POINT')
@@ -114,6 +121,7 @@ class AtomBlendAddon:
         # dict with one entry per element, atoms are stored in an array for each element
         elem_verts = {}
         elem_verts['unknown_element'] = [] # atoms that couldn't be matched to an element
+        elem_colors = []
 
         # loop through all the atoms and check all elements if m/n fits the range of this element.
         # as the atoms are sorted by m/n and the elements are also sorted by charge we want
@@ -169,12 +177,6 @@ class AtomBlendAddon:
                     bpy.data.materials[elem_name].node_tree.nodes["Principled BSDF"].inputs[0].default_value = col
 
             # create new node group
-            # bpy.ops.object.modifier_add(type='NODES')
-            # bpy.ops.node.new_geometry_node_group_assign()
-            # bpy.data.objects[elem_name].modifiers["GeometryNodes.001"].name = elem_name
-            # node_group = bpy.data.node_groups[elem_name]
-            # bpy.ops.node.new_geometry_nodes_modifier()
-            # node_group = bpy.data.node_groups.new(elem_name, 'GeometryNodeTree')
             modifier = this_elem_object.modifiers.new(elem_name, 'NODES')
             node_group = bpy.data.node_groups.new(type='GeometryNodeTree', name=elem_name)
             modifier.node_group = node_group
@@ -206,14 +208,12 @@ class AtomBlendAddon:
 
             # deselect object
             bpy.data.objects[elem_name].select_set(False)
-       
 
         # we can remove the atoms object as each element has its own object now
         bpy.data.objects.remove(bpy.data.objects['Atoms'], do_unlink=True)
 
         # resetting colors of materials because the color gets reset when making property in ui
         # for
-
 
     def make_mesh_from_vertices(self):
         ### visualize every vertex we have as mesh (currently: icosphere)
@@ -317,6 +317,15 @@ class AtomBlendAddon:
         if (AtomBlendAddon.path == None):
             print('No file loaded')
             return
+
+        # debug shader experiments!
+        cube1_item = bpy.context.scene.my_settings.add()
+        cube1_item.name = 'Cube1'
+        cube1_item.value = 5
+
+        cube2_item = bpy.context.scene.my_settings.add()
+        cube2_item.name = 'Cube2'
+        cube2_item.value = 100
 
         start = time.perf_counter()
         print('start', start)

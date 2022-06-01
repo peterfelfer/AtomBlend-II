@@ -10,14 +10,14 @@ class ABManagement:
 
     @classmethod
     def init_shader(cls, coords):
-        print('INIT')
+        # print('INIT')
         # init shader
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
         # shader input
-        color_list = [(1.0, 0.0, 0.0, 1.0)] * len(coords)
+        color_list = [(0.0, 1.0, 0.0, 1.0)] * len(coords)
         batch = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': color_list, })
         print('CLS', cls)
-        # add draw handler that will called every time this region in this space type will be drawn
+        # add draw handler that will be called every time this region in this space type will be drawn
         cls.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (), 'WINDOW', 'POST_VIEW')
 
         # save in cache
@@ -27,12 +27,12 @@ class ABManagement:
 
     @classmethod
     def handler(cls):
-        print('HANDLER')
+        # print('HANDLER')
         cls.render()
 
     @classmethod
     def render(cls):
-        print('RENDER')
+        # print('RENDER')
         cache = ABManagement.cache
 
         bgl.glEnable(bgl.GL_PROGRAM_POINT_SIZE)
@@ -40,7 +40,7 @@ class ABManagement:
         bgl.glEnable(bgl.GL_BLEND)
         # uniform preparations
         perspective_matrix = bpy.context.region_data.perspective_matrix
-        object_matrix = bpy.data.objects['Plane'].matrix_world # TODO correct object like Atoms or something
+        object_matrix = bpy.data.objects['Plane'].matrix_world # TODO change to empty object that is created in this function
 
         # uniforms
         shader = cache['shader']
@@ -48,7 +48,7 @@ class ABManagement:
         shader.uniform_float('perspective_matrix', perspective_matrix)
         shader.uniform_float('object_matrix', object_matrix)
         shader.uniform_float('point_size', 5.0)
-        shader.uniform_float('alpha_radius', 1000.0)
+        shader.uniform_float('alpha_radius', 1.0)
         shader.uniform_float('global_alpha', 1.0)
 
         # draw
