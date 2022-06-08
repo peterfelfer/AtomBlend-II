@@ -69,12 +69,6 @@ def atom_blend_addon_init_handler(dummy1, dummy2):
     # cube1_item.name = 'Cube1'
     # cube1_item.value = 100
 
-def add_prop():
-    bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=MaterialSetting)
-
-    cube1_item = bpy.context.scene.my_settings.add()
-    cube1_item.name = 'Cube1'
-    cube1_item.value = 100
 
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
@@ -84,7 +78,7 @@ def register():
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
     bpy.app.handlers.frame_change_post.append(ABManagement.handler)
 
-    bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=MaterialSetting)
+    bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=MaterialSetting)
 
 
 def unregister():
@@ -102,7 +96,7 @@ def unregister():
 
 classes = (
     AtomBlendAddonSettings, MaterialSetting,
-    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_color_settings, ATOMBLEND_PT_shader_color_settings,
+    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_shader_color_settings,
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
 )
 

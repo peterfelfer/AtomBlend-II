@@ -68,7 +68,7 @@ class ATOMBLEND_PT_panel_general(bpy.types.Panel):
 
 class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_rrng_file"  # unique identifier for buttons and menu items to reference.
-    bl_label = "Load second file"  # display name in the interface.
+    bl_label = "Load .rrng file"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -86,7 +86,7 @@ class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
         # define a box of UI elements
         col = layout.column(align=True)
         load_file_row = col.row(align=True)
-        load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load file", icon="FILE_FOLDER")
+        load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load .rrng file", icon="FILE_FOLDER")
 
         loaded_row = col.row()
         if AtomBlendAddon.FileLoadedRRNG:
@@ -98,7 +98,7 @@ class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
 
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_file"  # unique identifier for buttons and menu items to reference.
-    bl_label = "Load file"  # display name in the interface.
+    bl_label = "Load .pos/.epos file"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -115,11 +115,11 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
         # define a box of UI elements
         col = layout.column(align=True)
-        # vertex_percentage_row = col.row()
-        # vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
+        vertex_percentage_row = col.row()
+        vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
         load_file_row = col.row()
-        load_file_row.operator('atom_blend_viewer.load_file', text="Load file", icon="FILE_FOLDER")
+        load_file_row.operator('atom_blend_viewer.load_file', text="Load .pos/.epos file", icon="FILE_FOLDER")
 
         loaded_row = col.row()
         if AtomBlendAddon.FileLoaded_e_pos:
@@ -135,7 +135,7 @@ class UElementPropertyGroup(bpy.types.PropertyGroup):
 
 class MaterialSetting(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    value: bpy.props.IntProperty(name="Test Property")
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0))
 
     # bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=UElementPropertyGroup)
 
@@ -146,20 +146,20 @@ class MaterialSetting(bpy.types.PropertyGroup):
     # list.add()
     print('fill to')
 
-def test(self, context):
-    cube1_item = bpy.context.scene.my_settings.add()
-    cube1_item.name = 'Cube1'
-    cube1_item.value = 100
-
-    cube2_item = bpy.context.scene.my_settings.add()
-    cube2_item.name = 'Cube2'
-    cube2_item.value = 5
+# def test(self, context):
+#     cube1_item = bpy.context.scene.my_settings.add()
+#     cube1_item.name = 'Cube1'
+#     cube1_item.value = 100
+#
+#     cube2_item = bpy.context.scene.my_settings.add()
+#     cube2_item.name = 'Cube2'
+#     cube2_item.value = 5
 
 
 
 class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_shader_color_settings"  # unique identifier for buttons and menu items to reference.
-    bl_label = "shader color settings"  # display name in the interface.
+    bl_label = "Color settings"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -172,27 +172,36 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
     def draw(self, context):
         print('shader settings!')
         layout = self.layout
-        col = layout.column(align=True)
-        row = col.row()
-        row.label(text='shader color settings')
-
-        cube1 = bpy.data.objects['Cube']
-        cube2 = bpy.data.objects['Cube.001']
-
+        row = layout.row()
+        name_col = row.column(align=True)
+        charge_col = row.column(align=True)
+        color_col = row.column(align=True)
 
         # test(self, context)
         # cube1_item = bpy.context.scene.my_settings.add()
         # cube1_item.name = 'Cube1'
         # cube1_item.value = 100
 
-        print(len(bpy.context.scene.my_settings))
+        print(len(bpy.context.scene.color_settings))
         # for my_item in bpy.context.scene.my_settings:
         #     print(my_item.name, my_item.value)
         #     print(my_item)
         #     col.prop(my_item, "value")
 
-        col.prop(bpy.context.scene.my_settings['Cube1'], 'value')
-        col.prop(bpy.context.scene.my_settings['Cube2'], 'value')
+
+        # label row
+        if AtomBlendAddon.FileLoadedRRNG:
+            name_col.label(text='Name')
+            charge_col.label(text='Charge')
+            color_col.label(text='Color')
+            for prop in bpy.context.scene.color_settings:
+                print(prop.name)
+                elem_name_charge = prop.name
+                elem_name = elem_name_charge.split('_')[0]
+                eleme_charge = elem_name_charge.split('_')[1]
+                name_col.label(text=elem_name)
+                charge_col.label(text=eleme_charge)
+                color_col.prop(prop, 'color')
 
 
 class ATOMBLEND_PT_color_settings(bpy.types.Panel):
