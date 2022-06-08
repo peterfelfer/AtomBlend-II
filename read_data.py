@@ -31,10 +31,6 @@ class AtomData:
     charge: int = 0
     color = None
 
-class MaterialSetting(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    value: bpy.props.IntProperty(name="Test Property")
-
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class AtomBlendAddon:
@@ -84,8 +80,6 @@ class AtomBlendAddon:
 
     def combine_rrng_and_e_pos_file(self):
         print('both files loaded!')
-
-
 
         point_cloud = bpy.data.objects['Atoms']
         point_cloud.data.attributes.new(name='element', type='INT', domain='POINT')
@@ -301,8 +295,21 @@ class AtomBlendAddon:
                 this_element['color'] = rgb_color
                 # print(this_element)
 
-                # add this atom to atom list
+                # add this element to element list
                 AtomBlendAddon.all_elements.append(this_element)
+
+                # add this element to element property group to create a color picker in the color settings tab
+                elem_name = this_element['element_name'] + '_' + str(this_element['charge'])
+                if elem_name not in bpy.context.scene.color_settings:
+                    element_color_settings = bpy.context.scene.color_settings.add()
+                    element_color_settings.name = elem_name
+                    element_color_settings.color = this_element['color']
+
+        # add property for unknown elements to property group
+        element_color_settings = bpy.context.scene.color_settings.add()
+        element_color_settings.name = 'Unknown_?'
+        element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
+
 
         # sort atoms by start range
         AtomBlendAddon.all_elements.sort(key=lambda x: x.get('start_range'))
@@ -319,11 +326,11 @@ class AtomBlendAddon:
             return
 
         # debug shader experiments!
-        cube1_item = bpy.context.scene.my_settings.add()
+        cube1_item = bpy.context.scene.color_settings.add()
         cube1_item.name = 'Cube1'
         cube1_item.value = 5
 
-        cube2_item = bpy.context.scene.my_settings.add()
+        cube2_item = bpy.context.scene.color_settings.add()
         cube2_item.name = 'Cube2'
         cube2_item.value = 100
 

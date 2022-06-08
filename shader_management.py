@@ -4,7 +4,6 @@ from gpu.types import GPUShader
 from AtomBlend.shaders import *
 from gpu_extras.batch import batch_for_shader
 
-
 class ABManagement:
     cache = {}
 
