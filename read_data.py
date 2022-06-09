@@ -17,7 +17,7 @@ import os
 # ------------- Atom Data -------------
 # Class that contains all relevant information about atoms in range files
 import AtomBlend
-from AtomBlend.shader_management import *
+import AtomBlend.shader_management
 
 
 @dataclass
@@ -59,6 +59,7 @@ class AtomBlendAddon:
     all_elements = []
     all_data = []
     atomic_numbers = []
+    element_count = {} # counts the amount of each element to pass the correct amount of colors to the shader later
 
     def setup(self, context):
         # set material mode in layer screen
@@ -76,6 +77,127 @@ class AtomBlendAddon:
         # set render mode to cycles & GPU rendering
         bpy.data.scenes["Scene"].render.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
+
+    def combine_rrng_and_e_pos_file_new(self):
+        all_atoms = AtomBlendAddon.all_data # all atoms sorted by m/n
+        all_elements = AtomBlendAddon.all_elements
+
+        print(all_atoms[:,3])
+        print(all_elements)
+
+        print(AtomBlendAddon.element_count)
+
+        # atoms and elements are sorted by m/n, so we can loop through the list from the start element (the first by defalt)
+        # and increase the start index if the atom gets bigger than the current start element
+        start_index = 0
+        else_counter = 0
+        for atom in all_atoms:
+            added = 0
+            m_n = atom[3] # m/n of current atom
+            # for i in range(start_index, len(all_elements)):
+            this_elem = all_elements[start_index]
+            # next_elem = all_elements[(start_index + 1) % len(all_elements)]
+
+            # check if charge of this atom is between start and end range of the current element
+            if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
+                print('range of this element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
+                AtomBlendAddon.element_count[elem_name] += 1
+                added += 1
+
+            elif m_n < this_elem['start_range']:
+                print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                AtomBlendAddon.element_count['Unknown_?'] += 1
+                added += 1
+
+            elif m_n > this_elem['end_range']:
+                print('greater than this element -> increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                if start_index + 1 < len(all_elements):
+                    start_index += 1
+
+                # check if this atom fits the range of one of the next elements
+                for i in range(start_index, len(all_elements)):
+                    this_elem = all_elements[i]
+                    if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
+                        print('range of next element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
+                        AtomBlendAddon.element_count[elem_name] += 1
+                        added += 1
+                        break
+
+                    if m_n < this_elem['start_range']:
+
+                        print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        AtomBlendAddon.element_count['Unknown_?'] += 1
+                        added += 1
+                        break
+
+                    if start_index == len(all_elements) -1 and m_n > this_elem['end_range']:
+                        # print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        # AtomBlendAddon.element_count['Unknown_?'] += 1
+                        else_counter += 1
+                        AtomBlendAddon.element_count['Unknown_?'] += 1
+                        added += 1
+                        print('else', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+
+            if added != 1:
+                print(added)
+                raise Exception('added not 1')
+
+        print(AtomBlendAddon.element_count)
+        print('len:', len(all_atoms))
+        print('sum:', sum(AtomBlendAddon.element_count.values()))
+        print('else:', else_counter)
+
+        if len(all_atoms) != sum(AtomBlendAddon.element_count.values()):
+            raise Exception('#atoms != #element_count')
+
+
+
+
+        '''
+            # if not in range of current element, check if it's in the range of one of the next elements
+            # if yes, increase start_index
+            else:
+                for i in range(start_index, len(all_elements)):
+                    next_elem = all_elements[i]
+                    if m_n >= next_elem['start_range'] and m_n <= next_elem['end_range']:
+                        print('range of one of the next atoms', m_n, next_elem['start_range'], next_elem['end_range'], start_index)
+                        next_elem_name = next_elem['element_name'] + '_' + str(next_elem['charge'])
+                        AtomBlendAddon.element_count[next_elem_name] += 1
+                        start_index = i
+
+                    elif m_n > next_elem['end_range']: # or m_n < next_elem['start_range']:
+                        print('unknown', m_n, next_elem['start_range'], next_elem['end_range'], start_index)
+                        AtomBlendAddon.element_count['Unknown_?'] += 1
+                        break
+
+
+                        # else:
+                        #     print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        #     AtomBlendAddon.element_count['Unknown_?'] += 1
+
+                    else:
+                        print('+1', m_n, next_elem['start_range'], next_elem['end_range'], start_index)
+
+                        start_index += 1
+
+
+                    # if m_n >= next_elem['start_range'] and m_n <= next_elem['end_range']:
+                    #     print('range of next atom', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                    #     start_index += 1
+                    #     next_elem_name = next_elem['element_name'] + '_' + str(next_elem['charge'])
+                    #     AtomBlendAddon.element_count[next_elem_name] += 1
+
+            # element is unknown
+            # else:
+            #     print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+            #     AtomBlendAddon.element_count['Unknown_?'] += 1
+
+
+        print(AtomBlendAddon.element_count)
+        '''
+
 
 
     def combine_rrng_and_e_pos_file(self):
@@ -304,19 +426,20 @@ class AtomBlendAddon:
                     element_color_settings = bpy.context.scene.color_settings.add()
                     element_color_settings.name = elem_name
                     element_color_settings.color = this_element['color']
+                    AtomBlendAddon.element_count[elem_name] = 0
 
         # add property for unknown elements to property group
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = 'Unknown_?'
         element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
-
+        AtomBlendAddon.element_count['Unknown_?'] = 0
 
         # sort atoms by start range
         AtomBlendAddon.all_elements.sort(key=lambda x: x.get('start_range'))
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if(AtomBlendAddon.FileLoaded_e_pos):
-            AtomBlendAddon.combine_rrng_and_e_pos_file(self)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
 
 
     def load_epos_file(self, context):
@@ -324,15 +447,6 @@ class AtomBlendAddon:
         if (AtomBlendAddon.path == None):
             print('No file loaded')
             return
-
-        # debug shader experiments!
-        cube1_item = bpy.context.scene.color_settings.add()
-        cube1_item.name = 'Cube1'
-        cube1_item.value = 5
-
-        cube2_item = bpy.context.scene.color_settings.add()
-        cube2_item.name = 'Cube2'
-        cube2_item.value = 100
 
         start = time.perf_counter()
         print('start', start)
@@ -423,6 +537,9 @@ class AtomBlendAddon:
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
         print('adding verts', time.perf_counter() - start)
 
+        AtomBlend.shader_management.ABManagement.init_shader(coords)
+
+
         '''
         # Make a mesh from a list of vertices/edges/faces
         mesh.from_pydata(coords, [], [])
@@ -486,14 +603,12 @@ class AtomBlendAddon:
 
         # shader experiments !
         # AtomBlendAddon.make_mesh_from_vertices(self)
-        ABManagement.init_shader(coords)
-
 
         print('combine', time.perf_counter() - start)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if(AtomBlendAddon.FileLoadedRRNG):
-            AtomBlendAddon.combine_rrng_and_e_pos_file(self)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
 
         print('end', time.perf_counter() - start)
 
@@ -568,4 +683,4 @@ class AtomBlendAddon:
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if (AtomBlendAddon.FileLoadedRRNG):
-            AtomBlendAddon.combine_rrng_and_e_pos_file(self)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
