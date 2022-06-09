@@ -2,6 +2,8 @@ import bpy
 import bgl
 from gpu.types import GPUShader
 from AtomBlend.shaders import *
+# from AtomBlend.read_data import AtomBlendAddon
+import AtomBlend.read_data
 from gpu_extras.batch import batch_for_shader
 
 class ABManagement:
@@ -14,6 +16,15 @@ class ABManagement:
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
         # shader input
         color_list = [(0.0, 1.0, 0.0, 1.0)] * len(coords)
+
+        element_count = AtomBlend.read_data.AtomBlendAddon.element_count
+        all_elements = AtomBlend.read_data.AtomBlendAddon.all_elements
+
+        for elem_name in element_count:
+            color = all_elements[elem_name]['color']
+            print(color)
+
+
         batch = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': color_list, })
         print('CLS', cls)
         # add draw handler that will be called every time this region in this space type will be drawn

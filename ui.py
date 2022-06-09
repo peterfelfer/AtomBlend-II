@@ -49,6 +49,9 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         # update=AtomBlendAddonUI.update_background,
     )
 
+    def color_update(self, context):
+        print('color update!')
+
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
     bl_label = "AtomBlend-II"  # display name in the interface.
@@ -129,15 +132,10 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
         col.row(align=True)
 
-
-class UElementPropertyGroup(bpy.types.PropertyGroup):
-    s = StringProperty(default="UElement")
-
 class MaterialSetting(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0))
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0),  update=AtomBlendAddonSettings.color_update)
 
-    # bpy.types.Scene.my_settings = bpy.props.CollectionProperty(type=UElementPropertyGroup)
 
     # list = bpy.props.CollectionProperty(type=MaterialSetting)
     print('mat settings')
@@ -170,38 +168,30 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
         return True  # context.object is not None
 
     def draw(self, context):
-        print('shader settings!')
         layout = self.layout
         row = layout.row()
+
         name_col = row.column(align=True)
         charge_col = row.column(align=True)
         color_col = row.column(align=True)
 
-        # test(self, context)
-        # cube1_item = bpy.context.scene.my_settings.add()
-        # cube1_item.name = 'Cube1'
-        # cube1_item.value = 100
-
-        print(len(bpy.context.scene.color_settings))
-        # for my_item in bpy.context.scene.my_settings:
-        #     print(my_item.name, my_item.value)
-        #     print(my_item)
-        #     col.prop(my_item, "value")
-
-
-        # label row
         if AtomBlendAddon.FileLoadedRRNG:
+            # label row
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
-            for prop in bpy.context.scene.color_settings:
-                print(prop.name)
-                elem_name_charge = prop.name
-                elem_name = elem_name_charge.split('_')[0]
-                eleme_charge = elem_name_charge.split('_')[1]
-                name_col.label(text=elem_name)
-                charge_col.label(text=eleme_charge)
-                color_col.prop(prop, 'color')
+        else:
+            col = layout.column(align=True)
+            text_row = col.row()
+            text_row.label(text='Load .epos/.pos and .rrng file')
+
+        for prop in bpy.context.scene.color_settings:
+            elem_name_charge = prop.name
+            elem_name = elem_name_charge.split('_')[0]
+            eleme_charge = elem_name_charge.split('_')[1]
+            name_col.label(text=elem_name)
+            charge_col.label(text=eleme_charge)
+            color_col.prop(prop, 'color')
 
 
 class ATOMBLEND_PT_color_settings(bpy.types.Panel):

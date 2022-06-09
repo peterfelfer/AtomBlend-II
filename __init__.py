@@ -29,6 +29,7 @@ from bpy.app.handlers import persistent
 from AtomBlend.read_data import *
 from AtomBlend.ui import *
 from AtomBlend.atomic_numbers import *
+from AtomBlend.shader_management import ABManagement
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
