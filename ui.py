@@ -12,8 +12,10 @@ from bpy.types import PropertyGroup
 
 import numpy as np
 
+from AtomBlend.globals import ABGlobals
+
 # append the add-on's path to Blender's python PATH
-sys.path.insert(0, AtomBlendAddon.addon_path)
+sys.path.insert(0, ABGlobals.addon_path)
 
 
 # ------------- Add-on UI -------------
@@ -92,8 +94,8 @@ class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
         load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load .rrng file", icon="FILE_FOLDER")
 
         loaded_row = col.row()
-        if AtomBlendAddon.FileLoadedRRNG:
-            loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path_rrng)
+        if ABGlobals.FileLoadedRRNG:
+            loaded_row.label(text='Loaded File: ' + ABGlobals.path_rrng)
         else:
             loaded_row.label(text='No file loaded yet...')
 
@@ -125,8 +127,8 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         load_file_row.operator('atom_blend_viewer.load_file', text="Load .pos/.epos file", icon="FILE_FOLDER")
 
         loaded_row = col.row()
-        if AtomBlendAddon.FileLoaded_e_pos:
-            loaded_row.label(text='Loaded File: ' + AtomBlendAddon.path)
+        if ABGlobals.FileLoaded_e_pos:
+            loaded_row.label(text='Loaded File: ' + ABGlobals.path)
         else:
             loaded_row.label(text='No file loaded yet...')
 
@@ -175,7 +177,7 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
         charge_col = row.column(align=True)
         color_col = row.column(align=True)
 
-        if AtomBlendAddon.FileLoadedRRNG:
+        if ABGlobals.FileLoadedRRNG:
             # label row
             name_col.label(text='Name')
             charge_col.label(text='Charge')
@@ -214,7 +216,7 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
         # box = layout.box()
         # element_row = box.row()
 
-        if AtomBlendAddon.FileLoadedRRNG and AtomBlendAddon.FileLoaded_e_pos:
+        if ABGlobals.FileLoadedRRNG and ABGlobals.FileLoaded_e_pos:
 
             # make one top row for labeling
             col = layout.column(align=True)
@@ -289,11 +291,11 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        AtomBlendAddon.path = self.filepath
-        # AtomBlendAddon.setup_scene()
+        ABGlobals.path = self.filepath
+        # ABGlobals.setup_scene()
 
         # if there's already an object loaded we want to delete it so we can load another object
-        if AtomBlendAddon.FileLoaded_e_pos:
+        if ABGlobals.FileLoaded_e_pos:
             obj_to_delete = bpy.data.objects['Atoms']
             bpy.data.objects.remove(obj_to_delete, do_unlink=True)
 
@@ -301,13 +303,13 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
             geometry_nodes_group = bpy.data.node_groups['Geometry Nodes']
             bpy.data.node_groups.remove(geometry_nodes_group)
 
-        if AtomBlendAddon.path.lower().endswith('.epos'):
+        if ABGlobals.path.lower().endswith('.epos'):
             AtomBlendAddon.load_epos_file(self, context)
-        elif AtomBlendAddon.path.lower().endswith('.pos'):
+        elif ABGlobals.path.lower().endswith('.pos'):
             AtomBlendAddon.load_pos_file(self, context)
 
-        AtomBlendAddon.FileLoaded_e_pos = True
-        print(f"Object Loaded: {AtomBlendAddon.FileLoaded_e_pos}")
+        ABGlobals.FileLoaded_e_pos = True
+        print(f"Object Loaded: {ABGlobals.FileLoaded_e_pos}")
 
         # print(bpy.data.screens["Modeling-nonnormal"].shading.type)
 
@@ -338,15 +340,15 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        AtomBlendAddon.path_rrng = self.filepath
-        # AtomBlendAddon.setup_scene()
+        ABGlobals.path_rrng = self.filepath
+        # ABGlobals.setup_scene()
 
 
-        if AtomBlendAddon.path_rrng.lower().endswith('.rrng'):
+        if ABGlobals.path_rrng.lower().endswith('.rrng'):
             AtomBlendAddon.load_rrng_file(self, context)
 
-        AtomBlendAddon.FileLoadedRRNG = True
-        print(f"Object Loaded: {AtomBlendAddon.FileLoadedRRNG}")
+        ABGlobals.FileLoadedRRNG = True
+        print(f"Object Loaded: {ABGlobals.FileLoadedRRNG}")
 
         # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
         return {'FINISHED'}

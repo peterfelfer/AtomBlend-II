@@ -30,16 +30,17 @@ from AtomBlend.read_data import *
 from AtomBlend.ui import *
 from AtomBlend.atomic_numbers import *
 from AtomBlend.shader_management import ABManagement
+from AtomBlend.globals import ABGlobals
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
-sys.path.insert(0, AtomBlendAddon.addon_path)
+sys.path.insert(0, ABGlobals.addon_path)
 
 # define add-on name for display purposes
-AtomBlendAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
+ABGlobals.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
 
 # set atomic number dict
-AtomBlendAddon.atomic_numbers = AtomBlend.atomic_numbers_dict
+ABGlobals.atomic_numbers = atomic_numbers.atomic_numbers_dict
 
 # Check Blender Version
 # +++++++++++++++++++++++++++++++++++++++++++++
