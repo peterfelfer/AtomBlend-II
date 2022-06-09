@@ -28,3 +28,5 @@ class ABGlobals:
     all_data = []
     atomic_numbers = []
     element_count = {}  # counts the amount of each element to pass the correct amount of colors to the shader later
+    atom_coords = []
+    atom_color_list = []

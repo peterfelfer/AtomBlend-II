@@ -39,9 +39,6 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         precision=3
     )
 
-    stuff = {}
-
-
     material_settings: bpy.props.FloatVectorProperty(
         name="Material",
         min=0.0,
@@ -52,6 +49,25 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
     )
 
     def color_update(self, context):
+        # reset color list
+        ABGlobals.atom_color_list = []
+
+        element_count = ABGlobals.element_count
+
+        for elem_name in element_count:
+            elem_amount = element_count[elem_name]
+
+            col_struct = bpy.context.scene.color_settings[elem_name].color
+            col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            ABGlobals.atom_color_list.append([col] * elem_amount)
+            print(elem_amount, elem_name, col)
+            print([col] * elem_amount)
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
+        print('atomc ol list', ABGlobals.atom_color_list)
+        print(len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
         print('color update!')
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
@@ -135,8 +151,12 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.row(align=True)
 
 class MaterialSetting(bpy.types.PropertyGroup):
+    def get_color(self):
+        return self.color
+
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0),  update=AtomBlendAddonSettings.color_update)
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.color_update)
+
 
 
     # list = bpy.props.CollectionProperty(type=MaterialSetting)
@@ -190,10 +210,11 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
         for prop in bpy.context.scene.color_settings:
             elem_name_charge = prop.name
             elem_name = elem_name_charge.split('_')[0]
-            eleme_charge = elem_name_charge.split('_')[1]
+            elem_charge = elem_name_charge.split('_')[1]
             name_col.label(text=elem_name)
-            charge_col.label(text=eleme_charge)
+            charge_col.label(text=elem_charge)
             color_col.prop(prop, 'color')
+            # print(prop.color[0])
 
 
 class ATOMBLEND_PT_color_settings(bpy.types.Panel):

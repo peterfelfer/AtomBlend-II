@@ -18,7 +18,7 @@ from AtomBlend.globals import ABGlobals
 # ------------- Atom Data -------------
 # Class that contains all relevant information about atoms in range files
 import AtomBlend
-import AtomBlend.shader_management
+from AtomBlend.shader_management import ABManagement
 
 
 @dataclass
@@ -153,7 +153,7 @@ class AtomBlendAddon:
         if len(all_atoms) != sum(ABGlobals.element_count.values()):
             raise Exception('#atoms != #element_count')
 
-
+        ABManagement.init_shader()
 
 
         '''
@@ -538,7 +538,8 @@ class AtomBlendAddon:
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
         print('adding verts', time.perf_counter() - start)
 
-        AtomBlend.shader_management.ABManagement.init_shader(coords)
+        ABGlobals.atom_coords = coords
+
 
 
         '''
