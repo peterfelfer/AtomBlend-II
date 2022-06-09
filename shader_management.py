@@ -5,6 +5,7 @@ from AtomBlend.shaders import *
 # from AtomBlend.read_data import AtomBlendAddon
 import AtomBlend.read_data
 from gpu_extras.batch import batch_for_shader
+from AtomBlend.globals import ABGlobals
 
 class ABManagement:
     cache = {}
@@ -17,8 +18,8 @@ class ABManagement:
         # shader input
         color_list = [(0.0, 1.0, 0.0, 1.0)] * len(coords)
 
-        element_count = AtomBlend.read_data.AtomBlendAddon.element_count
-        all_elements = AtomBlend.read_data.AtomBlendAddon.all_elements
+        element_count = ABGlobals.element_count
+        all_elements = ABGlobals.all_elements
 
         for elem_name in element_count:
             color = all_elements[elem_name]['color']

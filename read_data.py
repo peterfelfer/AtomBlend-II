@@ -13,6 +13,7 @@ import numpy as np
 from dataclasses import dataclass
 import time
 import os
+from AtomBlend.globals import ABGlobals
 
 # ------------- Atom Data -------------
 # Class that contains all relevant information about atoms in range files
@@ -34,32 +35,32 @@ class AtomData:
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class AtomBlendAddon:
-    # addon name
-    name = None
-
-    # path to the addon directory
-    addon_path = bpy.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-
-    # The active Window and Viewport the user is currently working in
-    BlenderWindow = None
-    BlenderViewport = None
-
-    # Rendering status
-    RenderInvoked = False
-    RenderAnimation = None
-
+    # # addon name
+    # name = None
+    #
+    # # path to the addon directory
+    # addon_path = bpy.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+    #
+    # # The active Window and Viewport the user is currently working in
+    # BlenderWindow = None
+    # BlenderViewport = None
+    #
+    # # Rendering status
+    # RenderInvoked = False
+    # RenderAnimation = None
+    #
+    # # path: str = None
+    # FileLoaded_e_pos = False
+    # FileLoadedRRNG = False
+    #
     # path: str = None
-    FileLoaded_e_pos = False
-    FileLoadedRRNG = False
-
-    path: str = None
-    path_rrng: str = None
-
-    # atom data
-    all_elements = []
-    all_data = []
-    atomic_numbers = []
-    element_count = {} # counts the amount of each element to pass the correct amount of colors to the shader later
+    # path_rrng: str = None
+    #
+    # # atom data
+    # all_elements = []
+    # all_data = []
+    # atomic_numbers = []
+    # element_count = {} # counts the amount of each element to pass the correct amount of colors to the shader later
 
     def setup(self, context):
         # set material mode in layer screen
@@ -79,13 +80,13 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
     def combine_rrng_and_e_pos_file_new(self):
-        all_atoms = AtomBlendAddon.all_data # all atoms sorted by m/n
-        all_elements = AtomBlendAddon.all_elements
+        all_atoms = ABGlobals.all_data # all atoms sorted by m/n
+        all_elements = ABGlobals.all_elements
 
         print(all_atoms[:,3])
         print(all_elements)
 
-        print(AtomBlendAddon.element_count)
+        print(ABGlobals.element_count)
 
         # atoms and elements are sorted by m/n, so we can loop through the list from the start element (the first by defalt)
         # and increase the start index if the atom gets bigger than the current start element
@@ -102,12 +103,12 @@ class AtomBlendAddon:
             if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
                 print('range of this element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
-                AtomBlendAddon.element_count[elem_name] += 1
+                ABGlobals.element_count[elem_name] += 1
                 added += 1
 
             elif m_n < this_elem['start_range']:
                 print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                AtomBlendAddon.element_count['Unknown_?'] += 1
+                ABGlobals.element_count['Unknown_?'] += 1
                 added += 1
 
             elif m_n > this_elem['end_range']:
@@ -121,22 +122,22 @@ class AtomBlendAddon:
                     if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
                         print('range of next element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                         elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
-                        AtomBlendAddon.element_count[elem_name] += 1
+                        ABGlobals.element_count[elem_name] += 1
                         added += 1
                         break
 
                     if m_n < this_elem['start_range']:
 
                         print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                        AtomBlendAddon.element_count['Unknown_?'] += 1
+                        ABGlobals.element_count['Unknown_?'] += 1
                         added += 1
                         break
 
                     if start_index == len(all_elements) -1 and m_n > this_elem['end_range']:
                         # print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                        # AtomBlendAddon.element_count['Unknown_?'] += 1
+                        # ABGlobals.element_count['Unknown_?'] += 1
                         else_counter += 1
-                        AtomBlendAddon.element_count['Unknown_?'] += 1
+                        ABGlobals.element_count['Unknown_?'] += 1
                         added += 1
                         print('else', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
 
@@ -144,12 +145,12 @@ class AtomBlendAddon:
                 print(added)
                 raise Exception('added not 1')
 
-        print(AtomBlendAddon.element_count)
+        print(ABGlobals.element_count)
         print('len:', len(all_atoms))
-        print('sum:', sum(AtomBlendAddon.element_count.values()))
+        print('sum:', sum(ABGlobals.element_count.values()))
         print('else:', else_counter)
 
-        if len(all_atoms) != sum(AtomBlendAddon.element_count.values()):
+        if len(all_atoms) != sum(ABGlobals.element_count.values()):
             raise Exception('#atoms != #element_count')
 
 
@@ -164,18 +165,18 @@ class AtomBlendAddon:
                     if m_n >= next_elem['start_range'] and m_n <= next_elem['end_range']:
                         print('range of one of the next atoms', m_n, next_elem['start_range'], next_elem['end_range'], start_index)
                         next_elem_name = next_elem['element_name'] + '_' + str(next_elem['charge'])
-                        AtomBlendAddon.element_count[next_elem_name] += 1
+                        ABGlobals.element_count[next_elem_name] += 1
                         start_index = i
 
                     elif m_n > next_elem['end_range']: # or m_n < next_elem['start_range']:
                         print('unknown', m_n, next_elem['start_range'], next_elem['end_range'], start_index)
-                        AtomBlendAddon.element_count['Unknown_?'] += 1
+                        ABGlobals.element_count['Unknown_?'] += 1
                         break
 
 
                         # else:
                         #     print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                        #     AtomBlendAddon.element_count['Unknown_?'] += 1
+                        #     ABGlobals.element_count['Unknown_?'] += 1
 
                     else:
                         print('+1', m_n, next_elem['start_range'], next_elem['end_range'], start_index)
@@ -187,15 +188,15 @@ class AtomBlendAddon:
                     #     print('range of next atom', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                     #     start_index += 1
                     #     next_elem_name = next_elem['element_name'] + '_' + str(next_elem['charge'])
-                    #     AtomBlendAddon.element_count[next_elem_name] += 1
+                    #     ABGlobals.element_count[next_elem_name] += 1
 
             # element is unknown
             # else:
             #     print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-            #     AtomBlendAddon.element_count['Unknown_?'] += 1
+            #     ABGlobals.element_count['Unknown_?'] += 1
 
 
-        print(AtomBlendAddon.element_count)
+        print(ABGlobals.element_count)
         '''
 
 
@@ -208,7 +209,7 @@ class AtomBlendAddon:
         point_cloud.data.attributes.new(name='charge', type='FLOAT', domain='POINT')
 
         # add materials
-        for elem in AtomBlendAddon.all_elements:
+        for elem in ABGlobals.all_elements:
             name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
             if bpy.data.materials.get(name_and_charge) is None:
 
@@ -246,9 +247,9 @@ class AtomBlendAddon:
         start_id = 0
         for v in pc_mn.data:
             element_found = False
-            # for elem in AtomBlendAddon.all_elements:
-            for i in range(0, len(AtomBlendAddon.all_elements)):
-                elem = AtomBlendAddon.all_elements[i]
+            # for elem in ABGlobals.all_elements:
+            for i in range(0, len(ABGlobals.all_elements)):
+                elem = ABGlobals.all_elements[i]
                 start_range = elem['start_range']
                 end_range = elem['end_range']
                 elem_name = elem['element_name'] + '_' + str(elem['charge'])
@@ -286,7 +287,7 @@ class AtomBlendAddon:
             this_obj = bpy.data.objects[elem_name]
             this_obj.data.materials.append(this_mat)
 
-            for elem in AtomBlendAddon.all_elements:
+            for elem in ABGlobals.all_elements:
                 elem_and_charge = elem['element_name'] + '_' + str(elem['charge'])
                 if elem_and_charge == elem_name:
                     col = elem['color']
@@ -365,11 +366,11 @@ class AtomBlendAddon:
 
     def load_rrng_file(self, context):
         print('LOADING .RRNG FILE')
-        if(AtomBlendAddon.path_rrng == None):
+        if(ABGlobals.path_rrng == None):
             print('No file loaded')
             return
 
-        file_path = AtomBlendAddon.path_rrng
+        file_path = ABGlobals.path_rrng
         rrng_file = open(file_path, 'r')
 
         for line in rrng_file:
@@ -401,8 +402,8 @@ class AtomBlendAddon:
                 this_element['charge'] = int(elem[1])
 
                 # setting atomic number
-                print(this_element['element_name'], AtomBlendAddon.atomic_numbers)
-                this_element['atomic_number'] = AtomBlendAddon.atomic_numbers[this_element['element_name']]
+                print(this_element['element_name'], ABGlobals.atomic_numbers)
+                this_element['atomic_number'] = ABGlobals.atomic_numbers[this_element['element_name']]
 
                 # setting the color
                 hex_col = splitted_line[4].split(':')
@@ -418,7 +419,7 @@ class AtomBlendAddon:
                 # print(this_element)
 
                 # add this element to element list
-                AtomBlendAddon.all_elements.append(this_element)
+                ABGlobals.all_elements.append(this_element)
 
                 # add this element to element property group to create a color picker in the color settings tab
                 elem_name = this_element['element_name'] + '_' + str(this_element['charge'])
@@ -426,25 +427,25 @@ class AtomBlendAddon:
                     element_color_settings = bpy.context.scene.color_settings.add()
                     element_color_settings.name = elem_name
                     element_color_settings.color = this_element['color']
-                    AtomBlendAddon.element_count[elem_name] = 0
+                    ABGlobals.element_count[elem_name] = 0
 
         # add property for unknown elements to property group
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = 'Unknown_?'
         element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
-        AtomBlendAddon.element_count['Unknown_?'] = 0
+        ABGlobals.element_count['Unknown_?'] = 0
 
         # sort atoms by start range
-        AtomBlendAddon.all_elements.sort(key=lambda x: x.get('start_range'))
+        ABGlobals.all_elements.sort(key=lambda x: x.get('start_range'))
 
         # if both rrng and (e)pos file are loaded, we combine these two files
-        if(AtomBlendAddon.FileLoaded_e_pos):
+        if(ABGlobals.FileLoaded_e_pos):
             AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
 
 
     def load_epos_file(self, context):
         print('LOADING .EPOS FILE')
-        if (AtomBlendAddon.path == None):
+        if (ABGlobals.path == None):
             print('No file loaded')
             return
 
@@ -454,7 +455,7 @@ class AtomBlendAddon:
         AtomBlendAddon.setup(self, context)
 
         # file_path = 'T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.epos'
-        file_path = AtomBlendAddon.path
+        file_path = ABGlobals.path
 
         # reading the given binary file and store it into a numpy array
         # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
@@ -523,7 +524,7 @@ class AtomBlendAddon:
         print('sort by m/n')
         sorted_by_mn = concat_data_percentage[concat_data_percentage[:, 3].argsort()]
 
-        AtomBlendAddon.all_data = sorted_by_mn
+        ABGlobals.all_data = sorted_by_mn
 
         print('concat', time.perf_counter() - start)
 
@@ -602,12 +603,12 @@ class AtomBlendAddon:
 '''
 
         # shader experiments !
-        # AtomBlendAddon.make_mesh_from_vertices(self)
+        # ABGlobals.make_mesh_from_vertices(self)
 
         print('combine', time.perf_counter() - start)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
-        if(AtomBlendAddon.FileLoadedRRNG):
+        if(ABGlobals.FileLoadedRRNG):
             AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
 
         print('end', time.perf_counter() - start)
@@ -615,14 +616,14 @@ class AtomBlendAddon:
 
     def load_pos_file(self, context):
         print('LOADING .POS FILE')
-        if (AtomBlendAddon.path == None):
+        if (ABGlobals.path == None):
             print('No file loaded')
             return
 
         AtomBlendAddon.setup(self, context)
 
         # file_path = 'T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.epos'
-        file_path = AtomBlendAddon.path
+        file_path = ABGlobals.path
         # data_in_bytes = np.fromfile(file_path, dtype='uint8')
         data_in_bytes = np.fromfile(file_path, dtype='>f')
         print(data_in_bytes)
@@ -652,7 +653,7 @@ class AtomBlendAddon:
         print('sort by m/n')
         sorted_by_mn = reshaped_data_percentage[reshaped_data_percentage[:, 3].argsort()]
 
-        AtomBlendAddon.all_data = sorted_by_mn
+        ABGlobals.all_data = sorted_by_mn
 
         coords = [(atom[0], atom[1], atom[2]) for atom in reshaped_data_percentage]
 
@@ -682,5 +683,5 @@ class AtomBlendAddon:
         AtomBlendAddon.make_mesh_from_vertices(self)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
-        if (AtomBlendAddon.FileLoadedRRNG):
+        if (ABGlobals.FileLoadedRRNG):
             AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
