@@ -38,6 +38,9 @@ class ABManagement:
         # add draw handler that will be called every time this region in this space type will be drawn
         cls.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (), 'WINDOW', 'POST_VIEW')
 
+        # create empty object for object matrix
+        bpy.ops.object.empty_add(type='PLAIN_AXES')
+
         # save in cache
         cache = ABManagement.cache
         cache['shader'] = shader
@@ -58,10 +61,14 @@ class ABManagement:
         bgl.glEnable(bgl.GL_PROGRAM_POINT_SIZE)
         bgl.glEnable(bgl.GL_DEPTH_TEST)
         bgl.glEnable(bgl.GL_BLEND)
+
         # uniform preparations
         perspective_matrix = bpy.context.region_data.perspective_matrix
-        object_matrix = bpy.data.objects['Plane'].matrix_world # TODO change to empty object that is created in this function
 
+
+        # object_matrix = bpy.data.objects['Plane'].matrix_world # TODO change to empty object that is created in this function
+
+        object_matrix = bpy.data.objects['Empty'].matrix_world
         cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': ABGlobals.atom_color_list, })
 
         # uniforms
