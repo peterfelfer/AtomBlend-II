@@ -25,6 +25,7 @@ class ABManagement:
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            # col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
@@ -78,7 +79,7 @@ class ABManagement:
         shader.uniform_float('object_matrix', object_matrix)
         shader.uniform_float('point_size', 5.0)
         shader.uniform_float('alpha_radius', 1.0)
-        shader.uniform_float('global_alpha', 1.0)
+        # shader.uniform_float('global_alpha', 0.0)
 
         # draw
         batch = cache['batch']

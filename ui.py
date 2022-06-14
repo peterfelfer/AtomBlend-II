@@ -75,15 +75,30 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
-            # print(elem_amount, elem_name, col)
-            # print([col] * elem_amount)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-        # print('atom col list', ABGlobals.atom_color_list)
-        # print(len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
-        # print('color update!')
+
+    def alpha_update(self, context):
+        # reset color list
+        ABGlobals.atom_color_list = []
+
+        element_count = ABGlobals.element_count
+
+        for elem_name in element_count:
+                elem_amount = element_count[elem_name]
+
+                col_struct = bpy.context.scene.color_settings[elem_name].color
+                if bpy.context.scene.color_settings[elem_name].display:
+                    col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+                else:
+                    col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
+                ABGlobals.atom_color_list.append([col] * elem_amount)
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
@@ -126,7 +141,8 @@ class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
 
         loaded_row = col.row()
         if ABGlobals.FileLoadedRRNG:
-            loaded_row.label(text='Loaded File: ' + ABGlobals.path_rrng)
+            split_path = ABGlobals.path_rrng.split('\\')
+            loaded_row.label(text='Loaded file: ' + split_path[-1])
         else:
             loaded_row.label(text='No file loaded yet...')
 
@@ -159,18 +175,22 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
         loaded_row = col.row()
         if ABGlobals.FileLoaded_e_pos:
-            loaded_row.label(text='Loaded File: ' + ABGlobals.path)
+            split_path = ABGlobals.path.split('\\')
+            loaded_row.label(text='Loaded file: ' + split_path[-1])
+            atoms_shown = col.row()
+            atoms_amount = str(len(ABGlobals.all_data))
+
+            atoms_shown.label(text='Atoms shown: ' + str(len(ABGlobals.all_data)))
         else:
             loaded_row.label(text='No file loaded yet...')
 
         col.row(align=True)
 
 class MaterialSetting(bpy.types.PropertyGroup):
-    def get_color(self):
-        return self.color
 
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.color_update)
+    display: bpy.props.BoolProperty(name="", default=True, update=AtomBlendAddonSettings.alpha_update)
 
     # list = bpy.props.CollectionProperty(type=MaterialSetting)
     print('mat settings')
@@ -206,15 +226,19 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
         layout = self.layout
         row = layout.row()
 
+        display_col = row.column(align=True)
         name_col = row.column(align=True)
         charge_col = row.column(align=True)
         color_col = row.column(align=True)
+        amount_col = row.column(align=True)
 
         if ABGlobals.FileLoadedRRNG:
             # label row
+            display_col.label(text='Display')
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
+            amount_col.label(text='Amount')
         else:
             col = layout.column(align=True)
             text_row = col.row()
@@ -224,9 +248,11 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
             elem_name_charge = prop.name
             elem_name = elem_name_charge.split('_')[0]
             elem_charge = elem_name_charge.split('_')[1]
+            display_col.prop(prop, 'display', icon='HIDE_OFF')
             name_col.label(text=elem_name)
             charge_col.label(text=elem_charge)
             color_col.prop(prop, 'color')
+            amount_col.label(text=str(ABGlobals.element_count[prop.name]))
             # print(prop.color[0])
 
 
