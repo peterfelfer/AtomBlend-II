@@ -100,7 +100,7 @@ class AtomBlendAddon:
             # check if charge of this atom is between start and end range of the current element
             # if so, we have found the element of our atom
             if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
-                print('range of this element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                # print('range of this element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
                 ABGlobals.element_count[elem_name] += 1
                 added += 1
@@ -108,14 +108,14 @@ class AtomBlendAddon:
             # check if charge of this atom is smaller than start range of current element
             # if so, the element is unknown
             elif m_n < this_elem['start_range']:
-                print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                # print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 ABGlobals.element_count['Unknown_?'] += 1
                 added += 1
 
             # check if charge of this atom is greater than end of current element
             # if so, we increase the start_index when searching in our element list
             elif m_n > this_elem['end_range']:
-                print('greater than this element -> increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                # print('greater than this element -> increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 if start_index + 1 < len(all_elements):
                     start_index += 1
 
@@ -127,7 +127,7 @@ class AtomBlendAddon:
                     # check if the charge of this atom matches the range of the current element in the loop
                     # if so, we have found the element of the current atom
                     if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
-                        print('range of next element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        # print('range of next element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                         elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
                         ABGlobals.element_count[elem_name] += 1
                         added += 1
@@ -136,7 +136,7 @@ class AtomBlendAddon:
                     # check if the charge of this atom is smaller than the start range of the current element in the loop
                     # if so, we can't match this atom to an element in our list, so the element is unknown
                     if m_n < this_elem['start_range']:
-                        print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        # print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                         ABGlobals.element_count['Unknown_?'] += 1
                         added += 1
                         break
@@ -147,7 +147,7 @@ class AtomBlendAddon:
                         else_counter += 1
                         ABGlobals.element_count['Unknown_?'] += 1
                         added += 1
-                        print('m_n greater than end range -> increasing start index if not last element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        # print('m_n greater than end range -> increasing start index if not last element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                         if start_index != len(all_elements)-1:
                             start_index += 1
                         break

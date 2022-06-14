@@ -48,6 +48,21 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         # update=AtomBlendAddonUI.update_background,
     )
 
+    # for debug purposes
+    debug_automatic_file_loading: bpy.props.BoolProperty(
+        name='Automatic file loading',
+        default=True,
+    )
+
+
+    debug_dataset_selection: bpy.props.EnumProperty(
+        name='Dataset Selection',
+        items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
+               ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
+        ],
+        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
+    )
+
     def color_update(self, context):
         # reset color list
         ABGlobals.atom_color_list = []
@@ -60,15 +75,15 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
-            print(elem_amount, elem_name, col)
-            print([col] * elem_amount)
+            # print(elem_amount, elem_name, col)
+            # print([col] * elem_amount)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-        print('atomc ol list', ABGlobals.atom_color_list)
-        print(len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
-        print('color update!')
+        # print('atom col list', ABGlobals.atom_color_list)
+        # print(len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
+        # print('color update!')
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
@@ -156,8 +171,6 @@ class MaterialSetting(bpy.types.PropertyGroup):
 
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.color_update)
-
-
 
     # list = bpy.props.CollectionProperty(type=MaterialSetting)
     print('mat settings')
@@ -295,6 +308,27 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
             text_row.label(text='Load .epos/.pos and .rrng file')
 
 
+class ATOMBLEND_PT_panel_debug(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_panel_debug"  # unique identifier for buttons and menu items to reference.
+    bl_label = "DEBUG"  # display name in the interface.
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_panel_general"
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        col.prop(context.scene.atom_blend_addon_settings, 'debug_dataset_selection')
+        col.prop(context.scene.atom_blend_addon_settings, 'debug_automatic_file_loading')
+        print(context.scene.atom_blend_addon_settings.debug_dataset_selection)
+
+
+
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
@@ -309,9 +343,11 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
+        print('POLL')
         return True  # context.object is not None
 
     def execute(self, context):
+        print('EXECUTE')
         ABGlobals.path = self.filepath
         # ABGlobals.setup_scene()
 
@@ -342,8 +378,14 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
+        print('INVOKE')
+
+        if context.scene.atom_blend_addon_settings.debug_automatic_file_loading:
+            self.filepath = context.scene.atom_blend_addon_settings.debug_dataset_selection + '.epos'
+            return self.execute(context)
+        else:
+            context.window_manager.fileselect_add(self)
+            return {'RUNNING_MODAL'}
 
 class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_rrng_file"
@@ -364,7 +406,6 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         ABGlobals.path_rrng = self.filepath
         # ABGlobals.setup_scene()
 
-
         if ABGlobals.path_rrng.lower().endswith('.rrng'):
             AtomBlendAddon.load_rrng_file(self, context)
 
@@ -375,6 +416,10 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
+        if context.scene.atom_blend_addon_settings.debug_automatic_file_loading:
+            self.filepath = context.scene.atom_blend_addon_settings.debug_dataset_selection + '.rrng'
+            return self.execute(context)
+        else:
+            context.window_manager.fileselect_add(self)
+            return {'RUNNING_MODAL'}
 
