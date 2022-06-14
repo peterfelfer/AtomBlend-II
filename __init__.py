@@ -98,7 +98,10 @@ def unregister():
 
 classes = (
     AtomBlendAddonSettings, MaterialSetting,
-    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file, ATOMBLEND_PT_shader_color_settings,
+
+    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_debug, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file,
+    ATOMBLEND_PT_shader_color_settings,
+
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
 )
 
