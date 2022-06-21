@@ -62,6 +62,22 @@ class AtomBlendAddon:
     # atomic_numbers = []
     # element_count = {} # counts the amount of each element to pass the correct amount of colors to the shader later
 
+    # prepare for shader after loading rrng file, i.e. reset stuff done in e_pos_shader_prep()
+    def rrng_shader_prep(self, context):
+        ABGlobals.element_count = {}
+        # bpy.context.scene.color_settings.clear()
+        bpy.context.scene.color_settings.remove(0)
+
+    # prepare for shader after loading (e)pos file when rrng file is not loaded
+    def e_pos_shader_prep(self, context):
+        element_color_settings = bpy.context.scene.color_settings.add()
+        element_color_settings.name = 'Unknown_n/a'
+        element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
+
+        ABGlobals.element_count['Unknown_n/a'] = len(ABGlobals.atom_coords)
+
+        ABManagement.init_shader()
+
     def setup(self, context):
         # set material mode in layer screen
         space = bpy.data.screens["Layout"]
@@ -79,7 +95,7 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].render.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
-    def combine_rrng_and_e_pos_file_new(self):
+    def combine_rrng_and_e_pos_file_new(self, context):
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
         all_elements = ABGlobals.all_elements
 
@@ -109,7 +125,7 @@ class AtomBlendAddon:
             # if so, the element is unknown
             elif m_n < this_elem['start_range']:
                 # print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                ABGlobals.element_count['Unknown_?'] += 1
+                ABGlobals.element_count['Unknown_n/a'] += 1
                 added += 1
 
             # check if charge of this atom is greater than end of current element
@@ -137,7 +153,7 @@ class AtomBlendAddon:
                     # if so, we can't match this atom to an element in our list, so the element is unknown
                     if m_n < this_elem['start_range']:
                         # print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                        ABGlobals.element_count['Unknown_?'] += 1
+                        ABGlobals.element_count['Unknown_n/a'] += 1
                         added += 1
                         break
 
@@ -145,7 +161,7 @@ class AtomBlendAddon:
                     # if so, we increase the start_index when searching in our element list
                     if m_n > this_elem['end_range']:
                         else_counter += 1
-                        ABGlobals.element_count['Unknown_?'] += 1
+                        ABGlobals.element_count['Unknown_n/a'] += 1
                         added += 1
                         # print('m_n greater than end range -> increasing start index if not last element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                         if start_index != len(all_elements)-1:
@@ -167,6 +183,7 @@ class AtomBlendAddon:
 
         if len(all_atoms) != sum(ABGlobals.element_count.values()):
             raise Exception('#atoms != #element_count')
+
 
         ABManagement.init_shader()
 
@@ -339,6 +356,9 @@ class AtomBlendAddon:
             print('No file loaded')
             return
 
+        # shader preperations
+        AtomBlendAddon.rrng_shader_prep(self, context)
+
         file_path = ABGlobals.path_rrng
         rrng_file = open(file_path, 'r')
 
@@ -371,7 +391,6 @@ class AtomBlendAddon:
                 this_element['charge'] = int(elem[1])
 
                 # setting atomic number
-                print(this_element['element_name'], ABGlobals.atomic_numbers)
                 this_element['atomic_number'] = ABGlobals.atomic_numbers[this_element['element_name']]
 
                 # setting the color
@@ -400,16 +419,16 @@ class AtomBlendAddon:
 
         # add property for unknown elements to property group
         element_color_settings = bpy.context.scene.color_settings.add()
-        element_color_settings.name = 'Unknown_?'
+        element_color_settings.name = 'Unknown_n/a'
         element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
-        ABGlobals.element_count['Unknown_?'] = 0
+        ABGlobals.element_count['Unknown_n/a'] = 0
 
         # sort atoms by start range
         ABGlobals.all_elements.sort(key=lambda x: x.get('start_range'))
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if(ABGlobals.FileLoaded_e_pos):
-            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self, context)
 
 
     def load_epos_file(self, context):
@@ -479,8 +498,6 @@ class AtomBlendAddon:
         #         counter = 0
         #     else:
         #         counter += 1
-
-
 
         concat_data = np.random.permutation(concat_data)
         concat_data_percentage = concat_data
@@ -579,7 +596,9 @@ class AtomBlendAddon:
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if(ABGlobals.FileLoadedRRNG):
-            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self, context)
+        else:
+            AtomBlendAddon.e_pos_shader_prep(self, context)
 
         print('end', time.perf_counter() - start)
 
@@ -626,6 +645,7 @@ class AtomBlendAddon:
         ABGlobals.all_data = sorted_by_mn
 
         coords = [(atom[0], atom[1], atom[2]) for atom in reshaped_data_percentage]
+        ABGlobals.atom_coords = coords
 
         # Make a mesh from a list of vertices/edges/faces
         mesh.from_pydata(coords, [], [])
@@ -654,4 +674,6 @@ class AtomBlendAddon:
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if (ABGlobals.FileLoadedRRNG):
-            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self, context)
+        else:
+            AtomBlendAddon.e_pos_shader_prep(self, context)

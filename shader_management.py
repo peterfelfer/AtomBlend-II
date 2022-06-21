@@ -1,5 +1,5 @@
 import bpy
-import bgl
+import gpu
 from gpu.types import GPUShader
 from AtomBlend.shaders import *
 # from AtomBlend.read_data import AtomBlendAddon
@@ -20,6 +20,7 @@ class ABManagement:
         coords = ABGlobals.atom_coords
         element_count = ABGlobals.element_count
 
+        print('LENGTH ELEMENT COUNT', len(element_count))
         for elem_name in element_count:
             elem_amount = element_count[elem_name]
 
@@ -36,6 +37,7 @@ class ABManagement:
 
         batch = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': ABGlobals.atom_color_list, })
         print('CLS', cls)
+
         # add draw handler that will be called every time this region in this space type will be drawn
         cls.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (), 'WINDOW', 'POST_VIEW')
 
@@ -59,15 +61,15 @@ class ABManagement:
         shader = cache['shader']
         coords = ABGlobals.atom_coords
 
-        bgl.glEnable(bgl.GL_PROGRAM_POINT_SIZE)
-        bgl.glEnable(bgl.GL_DEPTH_TEST)
-        bgl.glEnable(bgl.GL_BLEND)
+        # bgl.glEnable(bgl.GL_PROGRAM_POINT_SIZE)
+        # bgl.glEnable(bgl.GL_DEPTH_TEST)
+        # bgl.glEnable(bgl.GL_BLEND)
+        gpu.state.blend_set('ALPHA')
+        gpu.state.program_point_size_set(True)
+        gpu.state.depth_mask_set
 
         # uniform preparations
         perspective_matrix = bpy.context.region_data.perspective_matrix
-
-
-        # object_matrix = bpy.data.objects['Plane'].matrix_world # TODO change to empty object that is created in this function
 
         object_matrix = bpy.data.objects['Empty'].matrix_world
         cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': ABGlobals.atom_color_list, })
@@ -77,7 +79,7 @@ class ABManagement:
         shader.bind()
         shader.uniform_float('perspective_matrix', perspective_matrix)
         shader.uniform_float('object_matrix', object_matrix)
-        shader.uniform_float('point_size', 5.0)
+        shader.uniform_float('point_size', ABGlobals.point_size)
         shader.uniform_float('alpha_radius', 1.0)
         # shader.uniform_float('global_alpha', 0.0)
 
