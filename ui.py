@@ -28,7 +28,10 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         # reset color list
         ABGlobals.atom_color_list = []
 
+        print(ABGlobals.all_elements_by_name)
+        print(bpy.context.scene.color_settings)
         for elem_name in ABGlobals.all_elements_by_name:
+            print(elem_name)
             elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
@@ -103,7 +106,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
-        default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
+        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
     )
 
 

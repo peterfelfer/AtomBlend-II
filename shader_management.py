@@ -20,13 +20,13 @@ class ABManagement:
         # print('PRE FOR', ABGlobals.atom_color_list)
         ABGlobals.atom_color_list = []
         for elem_name in ABGlobals.all_elements_by_name:
-            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
 
+            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
             # print('elem amount vs len coordinates', elem_amount, len(ABGlobals.all_elements_by_name[elem_name]['coordinates']))
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            # print(col_struct, elem_name, elem_amount, col)
+            print(col_struct, elem_name, elem_amount, col)
             # col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
 
