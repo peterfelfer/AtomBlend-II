@@ -64,7 +64,8 @@ class AtomBlendAddon:
 
     # prepare for shader after loading rrng file, i.e. reset stuff done in e_pos_shader_prep()
     def rrng_shader_prep(self, context):
-        bpy.context.scene.color_settings.remove(0)
+        # bpy.context.scene.color_settings.remove(0)
+        pass
 
     # prepare for shader after loading (e)pos file when rrng file is not loaded
     def e_pos_shader_prep(self, context):
@@ -102,24 +103,91 @@ class AtomBlendAddon:
 
     def combine_rrng_and_e_pos_file_new_new(self, context):
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
+        all_elements = ABGlobals.all_elements
+
+        # atoms and elements are sorted by m/n, so we can loop through the list from the start element (the first by defalt)
+        # and increase the start index if the atom gets bigger than the current start element
+        start_index = 0
+        else_counter = 0
+
+        # reset num_of_atoms values
+        for elem in ABGlobals.all_elements_by_name:
+            ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = 0
 
         for atom in all_atoms:
-            m_n = atom[3]
-            element_found = False
+            added = 0
+            m_n = atom[3]  # m/n of current atom
+            this_elem = all_elements[start_index]
 
-            for elem in ABGlobals.all_elements:
-                if m_n >= elem['start_range'] and m_n <= elem['end_range']:
-                    name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
+            # check if charge of this atom is between start and end range of the current element
+            # if so, we have found the element of our atom
+            if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
+                # print('range of this element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
+                ABGlobals.all_elements_by_name[elem_name]['coordinates'].append((atom[0], atom[1], atom[2]))
+                added += 1
 
-                    # # if the current element is not already in all_elements, add it
-                    # if name_and_charge not in ABGlobals.all_elements:
-                    #     ABGlobals.all_elements[name_and_charge] = {}
-
-                    ABGlobals.all_elements_by_name[name_and_charge]['coordinates'].append((atom[0], atom[1], atom[2]))
-                    element_found = True
-
-            if not element_found:
+            # check if charge of this atom is smaller than start range of current element
+            # if so, the element is unknown
+            elif m_n < this_elem['start_range']:
+                # print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+                added += 1
+
+            # check if charge of this atom is greater than end of current element
+            # if so, we increase the start_index when searching in our element list
+            elif m_n > this_elem['end_range']:
+                # print('greater than this element -> increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                if start_index + 1 < len(all_elements):
+                    start_index += 1
+
+                # loop through the next atoms to check if the charge of this atom
+                # matches the range of one of the next elements
+                for i in range(start_index, len(all_elements)):
+                    this_elem = all_elements[i]
+
+                    # check if the charge of this atom matches the range of the current element in the loop
+                    # if so, we have found the element of the current atom
+                    if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
+                        # print('range of next element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
+                        ABGlobals.all_elements_by_name[elem_name]['coordinates'].append((atom[0], atom[1], atom[2]))
+                        added += 1
+                        break
+
+                    # check if the charge of this atom is smaller than the start range of the current element in the loop
+                    # if so, we can't match this atom to an element in our list, so the element is unknown
+                    if m_n < this_elem['start_range']:
+                        # print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+                        added += 1
+                        break
+
+                    # check if the charge of this atom is greater than the end range of the current element
+                    # if so, we increase the start_index when searching in our element list
+                    if m_n > this_elem['end_range']:
+                        else_counter += 1
+                        ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+                        added += 1
+                        # print('m_n greater than end range -> increasing start index if not last element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                        if start_index != len(all_elements)-1:
+                            start_index += 1
+                        break
+
+            # check if we really increased the element_count only one time
+            if added != 1:
+                print(added)
+                for i in range(0, len(all_elements)):
+                    elem = all_elements[i]
+                    print(i, elem['start_range'], elem['end_range'])
+                raise Exception('added not 1')
+
+        num_of_atoms_sum = 0
+        for elem in ABGlobals.all_elements_by_name:
+            num_of_atoms_sum += len(ABGlobals.all_elements_by_name[elem]['coordinates'])
+
+        if len(all_atoms) != num_of_atoms_sum:
+            raise Exception('#atoms != #num_of_atoms_sum', len(all_atoms), num_of_atoms_sum)
 
         # build coord list for shader
         coords = []
@@ -221,13 +289,13 @@ class AtomBlendAddon:
                     print(i, elem['start_range'], elem['end_range'])
                 raise Exception('added not 1')
 
+        if len(all_atoms) != sum(ABGlobals.element_count.values()):
+            raise Exception('#atoms != #element_count')
+
         print(ABGlobals.element_count)
         print('len:', len(all_atoms))
         print('sum:', sum(ABGlobals.element_count.values()))
         print('else:', else_counter)
-
-        if len(all_atoms) != sum(ABGlobals.element_count.values()):
-            raise Exception('#atoms != #element_count')
 
         print('end atom counting', time.perf_counter() - start)
 
@@ -469,10 +537,10 @@ class AtomBlendAddon:
         # ABGlobals.all_elements.append(unknown_element)
 
         # add property for unknown elements to property group
-        element_color_settings = bpy.context.scene.color_settings.add()
-        element_color_settings.name = 'Unknown_n/a'
-        element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
-        ABGlobals.element_count['Unknown_n/a'] = 0
+        # element_color_settings = bpy.context.scene.color_settings.add()
+        # element_color_settings.name = 'Unknown_n/a'
+        # element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
+        # ABGlobals.element_count['Unknown_n/a'] = 0
 
         # sort atoms by start range
         ABGlobals.all_elements.sort(key=lambda x: x.get('start_range'))
