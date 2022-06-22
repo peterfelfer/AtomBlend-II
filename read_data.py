@@ -64,8 +64,6 @@ class AtomBlendAddon:
 
     # prepare for shader after loading rrng file, i.e. reset stuff done in e_pos_shader_prep()
     def rrng_shader_prep(self, context):
-        ABGlobals.element_count = {}
-        # bpy.context.scene.color_settings.clear()
         bpy.context.scene.color_settings.remove(0)
 
     # prepare for shader after loading (e)pos file when rrng file is not loaded
@@ -74,7 +72,14 @@ class AtomBlendAddon:
         element_color_settings.name = 'Unknown_n/a'
         element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
 
-        ABGlobals.element_count['Unknown_n/a'] = len(ABGlobals.atom_coords)
+        # add unknown element to the list
+        unknown_element_dict = {}
+        unknown_element_dict['element_name'] = 'Unknown'
+        unknown_element_dict['charge'] = 'n/a'
+        unknown_element_dict['color'] = (0.4, 0.4, 0.4, 1.0)
+        unknown_element_dict['coordinates'] = []
+        unknown_element_dict['num_of_atoms'] = len(ABGlobals.atom_coords)
+        ABGlobals.all_elements_by_name['Unknown_n/a'] = unknown_element_dict
 
         ABManagement.init_shader()
 
@@ -95,6 +100,42 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].render.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
+    def combine_rrng_and_e_pos_file_new_new(self, context):
+        all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
+
+        for atom in all_atoms:
+            m_n = atom[3]
+            element_found = False
+
+            for elem in ABGlobals.all_elements:
+                if m_n >= elem['start_range'] and m_n <= elem['end_range']:
+                    name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
+
+                    # # if the current element is not already in all_elements, add it
+                    # if name_and_charge not in ABGlobals.all_elements:
+                    #     ABGlobals.all_elements[name_and_charge] = {}
+
+                    ABGlobals.all_elements_by_name[name_and_charge]['coordinates'].append((atom[0], atom[1], atom[2]))
+                    element_found = True
+
+            if not element_found:
+                ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+
+        # build coord list for shader
+        coords = []
+        for elem in ABGlobals.all_elements_by_name:
+            this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
+            ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
+            coords.append(this_elem_coords)
+
+        ABGlobals.atom_coords = coords
+        print('combine rrng and epos', len(coords))
+        for elem in ABGlobals.all_elements_by_name:
+            # print(ABGlobals.all_elements_by_name[elem], 'LEN', len(ABGlobals.all_elements_by_name[elem]['coordinates']))
+            print('LEN', ABGlobals.all_elements_by_name[elem]['element_name'], len(ABGlobals.all_elements_by_name[elem]['coordinates']))
+
+        ABManagement.init_shader()
+
     def combine_rrng_and_e_pos_file_new(self, context):
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
         all_elements = ABGlobals.all_elements
@@ -108,6 +149,10 @@ class AtomBlendAddon:
         # and increase the start index if the atom gets bigger than the current start element
         start_index = 0
         else_counter = 0
+
+        start = time.perf_counter()
+        print('start atom counting', start)
+
         for atom in all_atoms:
             added = 0
             m_n = atom[3]  # m/n of current atom
@@ -184,6 +229,7 @@ class AtomBlendAddon:
         if len(all_atoms) != sum(ABGlobals.element_count.values()):
             raise Exception('#atoms != #element_count')
 
+        print('end atom counting', time.perf_counter() - start)
 
         ABManagement.init_shader()
 
@@ -315,8 +361,6 @@ class AtomBlendAddon:
         # we can remove the atoms object as each element has its own object now
         bpy.data.objects.remove(bpy.data.objects['Atoms'], do_unlink=True)
 
-        # resetting colors of materials because the color gets reset when making property in ui
-        # for
 
     def make_mesh_from_vertices(self):
         ### visualize every vertex we have as mesh (currently: icosphere)
@@ -351,7 +395,6 @@ class AtomBlendAddon:
 
 
     def load_rrng_file(self, context):
-        print('LOADING .RRNG FILE')
         if(ABGlobals.path_rrng == None):
             print('No file loaded')
             return
@@ -404,6 +447,7 @@ class AtomBlendAddon:
                 rgb_color = (int(r_hex, 16), int(g_hex, 16), int(b_hex, 16), 1)
 
                 this_element['color'] = rgb_color
+
                 # print(this_element)
 
                 # add this element to element list
@@ -417,6 +461,13 @@ class AtomBlendAddon:
                     element_color_settings.color = this_element['color']
                     ABGlobals.element_count[elem_name] = 0
 
+        # # add unknown element to all_elements list
+        # unknown_element = []
+        # unknown_element['name'] = 'Unknown'
+        # unknown_element['charge'] = 'n/a'
+        # unknown_element['coordinates'] = []
+        # ABGlobals.all_elements.append(unknown_element)
+
         # add property for unknown elements to property group
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = 'Unknown_n/a'
@@ -426,13 +477,26 @@ class AtomBlendAddon:
         # sort atoms by start range
         ABGlobals.all_elements.sort(key=lambda x: x.get('start_range'))
 
+        # build all_elements_by_name dict
+        for elem in ABGlobals.all_elements:
+            name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
+
+            if name_and_charge not in ABGlobals.all_elements_by_name:
+                this_element_dict = {}
+                print('ELEM', elem)
+                this_element_dict['element_name'] = elem['element_name']
+                this_element_dict['charge'] = elem['charge']
+                this_element_dict['color'] = elem['color']
+                this_element_dict['coordinates'] = []
+                this_element_dict['num_of_atoms'] = 0
+                ABGlobals.all_elements_by_name[name_and_charge] = this_element_dict
+
         # if both rrng and (e)pos file are loaded, we combine these two files
         if(ABGlobals.FileLoaded_e_pos):
-            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self, context)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new_new(self, context)
 
 
     def load_epos_file(self, context):
-        print('LOADING .EPOS FILE')
         if (ABGlobals.path == None):
             print('No file loaded')
             return
@@ -596,7 +660,7 @@ class AtomBlendAddon:
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if(ABGlobals.FileLoadedRRNG):
-            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self, context)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new_new(self, context)
         else:
             AtomBlendAddon.e_pos_shader_prep(self, context)
 
@@ -604,7 +668,6 @@ class AtomBlendAddon:
 
 
     def load_pos_file(self, context):
-        print('LOADING .POS FILE')
         if (ABGlobals.path == None):
             print('No file loaded')
             return
@@ -674,6 +737,6 @@ class AtomBlendAddon:
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if (ABGlobals.FileLoadedRRNG):
-            AtomBlendAddon.combine_rrng_and_e_pos_file_new(self, context)
+            AtomBlendAddon.combine_rrng_and_e_pos_file_new_new(self, context)
         else:
             AtomBlendAddon.e_pos_shader_prep(self, context)
