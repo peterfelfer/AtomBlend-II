@@ -17,25 +17,33 @@ class ABManagement:
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
 
         # shader input
-        coords = ABGlobals.atom_coords
-        element_count = ABGlobals.element_count
+        # print('PRE FOR', ABGlobals.atom_color_list)
+        ABGlobals.atom_color_list = []
+        for elem_name in ABGlobals.all_elements_by_name:
+            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
 
-        print('LENGTH ELEMENT COUNT', len(element_count))
-        for elem_name in element_count:
-            elem_amount = element_count[elem_name]
+            # print('elem amount vs len coordinates', elem_amount, len(ABGlobals.all_elements_by_name[elem_name]['coordinates']))
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            # print(col_struct, elem_name, elem_amount, col)
             # col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
 
-        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        # print('ATOM COLOR LIST', elem_name, ABGlobals.atom_color_list)
+            # print('ATOM COORDS', ABGlobals.atom_coords)
+        # print('PRE', ABGlobals.atom_color_list)
         ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs] #https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+        # print('POST', ABGlobals.atom_color_list)
 
-        # print(ABGlobals.atom_color_list)
-        print('LENGTH', len(ABGlobals.atom_color_list), len(coords))
+        # if (e)pos file is loaded, we're currently loading rrng file, we have each element in its own list
+        # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if ABGlobals.FileLoaded_e_pos:
+            ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs] #https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-        batch = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': ABGlobals.atom_color_list, })
+        # print('atom color list vs atom coords', len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
+
+        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
         print('CLS', cls)
 
         # add draw handler that will be called every time this region in this space type will be drawn
@@ -72,6 +80,7 @@ class ABManagement:
         perspective_matrix = bpy.context.region_data.perspective_matrix
 
         object_matrix = bpy.data.objects['Empty'].matrix_world
+        print(len(coords), len(ABGlobals.atom_color_list))
         cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': ABGlobals.atom_color_list, })
 
         # uniforms

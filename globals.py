@@ -25,6 +25,7 @@ class ABGlobals:
 
     # atom data
     all_elements = []
+    all_elements_by_name = {}  # dict with all the elements, every element has a list with all its ranges
     all_data = []
     atomic_numbers = []
     element_count = {}  # counts the amount of each element to pass the correct amount of colors to the shader later

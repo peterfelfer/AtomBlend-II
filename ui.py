@@ -28,10 +28,8 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         # reset color list
         ABGlobals.atom_color_list = []
 
-        element_count = ABGlobals.element_count
-
-        for elem_name in element_count:
-            elem_amount = element_count[elem_name]
+        for elem_name in ABGlobals.all_elements_by_name:
+            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
@@ -40,22 +38,19 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-
     def alpha_update(self, context):
         # reset color list
         ABGlobals.atom_color_list = []
 
-        element_count = ABGlobals.element_count
+        for elem_name in ABGlobals.all_elements_by_name:
+            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
 
-        for elem_name in element_count:
-                elem_amount = element_count[elem_name]
-
-                col_struct = bpy.context.scene.color_settings[elem_name].color
-                if bpy.context.scene.color_settings[elem_name].display:
-                    col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-                else:
-                    col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
-                ABGlobals.atom_color_list.append([col] * elem_amount)
+            col_struct = bpy.context.scene.color_settings[elem_name].color
+            if bpy.context.scene.color_settings[elem_name].display:
+                col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            else:
+                col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
+            ABGlobals.atom_color_list.append([col] * elem_amount)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
@@ -108,7 +103,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
-        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
+        default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 
 
@@ -269,7 +264,7 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
                 name_col.label(text=elem_name)
                 charge_col.label(text=elem_charge)
                 color_col.prop(prop, 'color')
-                atom_amount = "{:,}".format(ABGlobals.element_count[prop.name])  # add comma after every thousand place
+                atom_amount = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
                 amount_col.label(text=str(atom_amount))
         else:
             col = layout.column(align=True)
@@ -393,11 +388,9 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        print('POLL')
         return True  # context.object is not None
 
     def execute(self, context):
-        print('EXECUTE')
         ABGlobals.path = self.filepath
         # ABGlobals.setup_scene()
 
@@ -424,7 +417,6 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        print('INVOKE')
         print(self)
         if context.scene.atom_blend_addon_settings.debug_automatic_file_loading:
             self.filepath = context.scene.atom_blend_addon_settings.debug_dataset_selection + '.epos'
