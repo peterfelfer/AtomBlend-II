@@ -18,7 +18,7 @@ class ABGlobals:
 
     # path: str = None
     FileLoaded_e_pos = False
-    FileLoadedRRNG = False
+    FileLoaded_rrng = False
 
     path: str = None
     path_rrng: str = None

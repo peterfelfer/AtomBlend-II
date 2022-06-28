@@ -20,8 +20,7 @@ class ABManagement:
         # print('PRE FOR', ABGlobals.atom_color_list)
         ABGlobals.atom_color_list = []
         for elem_name in ABGlobals.all_elements_by_name:
-
-            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
+            elem_amount = len(ABGlobals.all_elements_by_name[elem_name]['coordinates'])
             # print('elem amount vs len coordinates', elem_amount, len(ABGlobals.all_elements_by_name[elem_name]['coordinates']))
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
@@ -32,17 +31,23 @@ class ABManagement:
 
         # print('ATOM COLOR LIST', elem_name, ABGlobals.atom_color_list)
             # print('ATOM COORDS', ABGlobals.atom_coords)
-        # print('PRE', ABGlobals.atom_color_list)
-        ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs] #https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-        # print('POST', ABGlobals.atom_color_list)
 
-        # if (e)pos file is loaded, we're currently loading rrng file, we have each element in its own list
+        # check if we have a list for each element for the atom coords and atom color list
         # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if ABGlobals.FileLoaded_e_pos:
+        if isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs] #https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
+        print('PRE', ABGlobals.atom_color_list)
+        if isinstance(ABGlobals.atom_color_list[0], list):
+            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+        print('POST', ABGlobals.atom_color_list)
 
         # print('atom color list vs atom coords', len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
+        if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
+            print('ATOM COLOR LIST', ABGlobals.atom_color_list)
+            print('ATOM COORDS', ABGlobals.atom_coords)
+            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
         print('CLS', cls)
 
@@ -81,6 +86,7 @@ class ABManagement:
 
         object_matrix = bpy.data.objects['Empty'].matrix_world
         print(len(coords), len(ABGlobals.atom_color_list))
+        print(coords, ABGlobals.atom_color_list)
         cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': coords, 'color': ABGlobals.atom_color_list, })
 
         # uniforms
