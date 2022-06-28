@@ -82,7 +82,6 @@ def register():
 
     bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=MaterialSetting)
 
-
 def unregister():
     for c in classes:
         bpy.utils.unregister_class(c)

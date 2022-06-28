@@ -31,15 +31,19 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         print(ABGlobals.all_elements_by_name)
         print(bpy.context.scene.color_settings)
         for elem_name in ABGlobals.all_elements_by_name:
-            print(elem_name)
             elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
+            print(elem_name, elem_amount)
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+        if isinstance(ABGlobals.atom_color_list[0], list):
+            print('CU PRE', ABGlobals.atom_color_list)
+            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+            print('CU POST', ABGlobals.atom_color_list)
+
 
     def alpha_update(self, context):
         # reset color list
@@ -47,6 +51,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
 
         for elem_name in ABGlobals.all_elements_by_name:
             elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
+            print(elem_name, elem_amount)
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
             if bpy.context.scene.color_settings[elem_name].display:
@@ -56,7 +61,11 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             ABGlobals.atom_color_list.append([col] * elem_amount)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+        if isinstance(ABGlobals.atom_color_list[0], list):
+            print('AU PRE', ABGlobals.atom_color_list)
+            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+            print('AU POST', ABGlobals.atom_color_list)
+
 
     def update_point_size(self, context):
         ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
@@ -151,7 +160,7 @@ class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
         load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load .rrng file", icon="FILE_FOLDER")
 
         loaded_row = col.row()
-        if ABGlobals.FileLoadedRRNG:
+        if ABGlobals.FileLoaded_rrng:
             split_path = ABGlobals.path_rrng.split('\\')
             loaded_row.label(text='Loaded file: ' + split_path[-1])
         else:
@@ -238,7 +247,7 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        if ABGlobals.FileLoadedRRNG or ABGlobals.FileLoaded_e_pos:
+        if ABGlobals.FileLoaded_rrng or ABGlobals.FileLoaded_e_pos:
             # point size settings
             row = layout.row()
             point_size_col = row.column(align=True)
@@ -263,7 +272,10 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
                 elem_name_charge = prop.name
                 elem_name = elem_name_charge.split('_')[0]
                 elem_charge = elem_name_charge.split('_')[1]
-                display_col.prop(prop, 'display', icon='HIDE_OFF')
+                if prop.display:
+                    display_col.prop(prop, 'display', icon='HIDE_OFF')
+                else:
+                    display_col.prop(prop, 'display', icon='HIDE_ON')
                 name_col.label(text=elem_name)
                 charge_col.label(text=elem_charge)
                 color_col.prop(prop, 'color')
@@ -297,7 +309,7 @@ class ATOMBLEND_PT_color_settings(bpy.types.Panel):
         # box = layout.box()
         # element_row = box.row()
 
-        if ABGlobals.FileLoadedRRNG and ABGlobals.FileLoaded_e_pos:
+        if ABGlobals.FileLoaded_rrng and ABGlobals.FileLoaded_e_pos:
 
             # make one top row for labeling
             col = layout.column(align=True)
@@ -450,8 +462,8 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         if ABGlobals.path_rrng.lower().endswith('.rrng'):
             AtomBlendAddon.load_rrng_file(self, context)
 
-        ABGlobals.FileLoadedRRNG = True
-        print(f"Object Loaded: {ABGlobals.FileLoadedRRNG}")
+        ABGlobals.FileLoaded_rrng = True
+        print(f"Object Loaded: {ABGlobals.FileLoaded_rrng}")
 
         # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
         return {'FINISHED'}
