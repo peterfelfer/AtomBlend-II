@@ -24,7 +24,24 @@ sys.path.insert(0, ABGlobals.addon_path)
 # Preferences panel for this Addon in the Blender preferences
 class AtomBlendAddonSettings(bpy.types.PropertyGroup):
     # update functions
-    def color_update(self, context):
+
+    '''
+    def num_displayed(self, context):
+        # reset color list
+        ABGlobals.atom_color_list = []
+
+        for elem_name in ABGlobals.all_elements_by_name:
+            num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+
+            col_struct = bpy.context.scene.color_settings[elem_name].color
+
+            # if atoms are not displayed, they stay invisible if color is changed
+            if bpy.context.scene.color_settings[elem_name].display:
+                col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            else:
+                col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
+
+    def atom_display_update(self, context):
         # reset color list
         ABGlobals.atom_color_list = []
 
@@ -32,26 +49,79 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
 
             col_struct = bpy.context.scene.color_settings[elem_name].color
-            col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            ABGlobals.atom_color_list.append([col] * elem_amount)
 
-        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_color_list[0], list):
-            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
-    def alpha_update(self, context):
-        # reset color list
-        ABGlobals.atom_color_list = []
-
-        for elem_name in ABGlobals.all_elements_by_name:
-            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
-
-            col_struct = bpy.context.scene.color_settings[elem_name].color
+            # if atoms are not displayed, they stay invisible if color is changed
             if bpy.context.scene.color_settings[elem_name].display:
                 col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             else:
                 col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
             ABGlobals.atom_color_list.append([col] * elem_amount)
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if isinstance(ABGlobals.atom_color_list[0], list):
+            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+    '''
+
+    def atom_coords_update(self, context):
+        # reset coords list
+        ABGlobals.atom_coords = []
+        for elem_name in ABGlobals.all_elements_by_name:
+            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
+            perc_displayed = bpy.context.scene.color_settings[elem_name].perc_displayed
+
+            if not bpy.context.scene.color_settings[elem_name].display:
+                perc_displayed = 0.0
+
+            # if perc_displayed > 100 the input is not a percentage but an amount -> we calculate the percentage
+            # if perc_displayed > 100:
+            #
+            #     if perc_displayed > elem_amount:
+            #         perc_displayed = elem_amount
+            #     print('IF', perc_displayed, elem_amount, perc_displayed / elem_amount, bpy.context.scene.color_settings[elem_name].perc_displayed)
+            #
+            #     num_displayed = perc_displayed  # perc_displayed is actually the number of displayed atoms
+            #     perc_displayed = (perc_displayed / elem_amount) * 100  # calculate displayed percentage
+            #
+            #     # set ui slider to actutal percentage
+            #     bpy.context.scene.color_settings[elem_name].perc_displayed = perc_displayed
+            #
+            # else:
+
+
+            # if perc_displayed > 1.0 the input is not a percentage but an amount -> we calculate the percentage
+            if perc_displayed > 1.0:
+                num_displayed = int(perc_displayed)
+                if num_displayed > elem_amount:
+                    num_displayed = elem_amount
+                perc_displayed = num_displayed / elem_amount
+                bpy.context.scene.color_settings[elem_name].perc_displayed = perc_displayed
+                return
+            else:
+                num_displayed = int(math.ceil(elem_amount * perc_displayed))
+
+            ABGlobals.all_elements_by_name[elem_name]['num_displayed'] = num_displayed
+
+            # build coord list for shader according to the new shown percentage
+            this_elem_coords = ABGlobals.all_elements_by_name[elem_name]['coordinates'][:num_displayed]
+            ABGlobals.atom_coords.append(this_elem_coords)
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if isinstance(ABGlobals.atom_coords[0], list):
+            ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
+        # update color list
+        AtomBlendAddonSettings.atom_color_update(self, context)
+
+    def atom_color_update(self, context):
+        # reset color list
+        ABGlobals.atom_color_list = []
+
+        for elem_name in ABGlobals.all_elements_by_name:
+            num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+
+            col_struct = bpy.context.scene.color_settings[elem_name].color
+            col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            ABGlobals.atom_color_list.append([col] * num_displayed)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if isinstance(ABGlobals.atom_color_list[0], list):
@@ -180,8 +250,9 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
 class MaterialSetting(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.color_update)
-    display: bpy.props.BoolProperty(name="", default=True, update=AtomBlendAddonSettings.alpha_update)
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.atom_color_update)
+    display: bpy.props.BoolProperty(name="", default=True, update=AtomBlendAddonSettings.atom_coords_update)
+    perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, subtype='PERCENTAGE', update=AtomBlendAddonSettings.atom_coords_update)
 
 class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_shader_color_settings"  # unique identifier for buttons and menu items to reference.
@@ -210,14 +281,16 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
             name_col = row.column(align=True)
             charge_col = row.column(align=True)
             color_col = row.column(align=True)
+            displayed_col = row.column(align=True)
             amount_col = row.column(align=True)
 
             # label row
-            display_col.label(text='Display')
+            display_col.label(text='')
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
-            amount_col.label(text='Amount')
+            displayed_col.label(text='Displayed')
+            amount_col.label(text='Shown')
 
             for prop in bpy.context.scene.color_settings:
                 elem_name_charge = prop.name
@@ -230,8 +303,10 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
                 name_col.label(text=elem_name)
                 charge_col.label(text=elem_charge)
                 color_col.prop(prop, 'color')
-                atom_amount = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
-                amount_col.label(text=str(atom_amount))
+                displayed_col.prop(prop, 'perc_displayed')
+                atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
+                atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
+                amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
         else:
             col = layout.column(align=True)
             text_row = col.row()

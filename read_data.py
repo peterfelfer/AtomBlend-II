@@ -64,6 +64,7 @@ class AtomBlendAddon:
         unknown_element_dict['color'] = (0.4, 0.4, 0.4, 1.0)
         unknown_element_dict['coordinates'] = []
         unknown_element_dict['num_of_atoms'] = len(ABGlobals.atom_coords)
+        unknown_element_dict['num_displayed'] = len(ABGlobals.atom_coords)
         ABGlobals.all_elements_by_name['Unknown_n/a'] = unknown_element_dict
 
     def combine_rrng_and_e_pos_file(self, context):
@@ -160,6 +161,7 @@ class AtomBlendAddon:
         for elem in ABGlobals.all_elements_by_name:
             this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
             ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
+            ABGlobals.all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
             coords.append(this_elem_coords)
 
         ABGlobals.atom_coords = coords
@@ -173,6 +175,7 @@ class AtomBlendAddon:
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * elem_amount)
+            print(elem_name)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if isinstance(ABGlobals.atom_color_list[0], list):
@@ -261,6 +264,7 @@ class AtomBlendAddon:
                 this_element_dict['color'] = elem['color']
                 this_element_dict['coordinates'] = []
                 this_element_dict['num_of_atoms'] = 0
+                this_element_dict['num_displayed'] = 0
                 ABGlobals.all_elements_by_name[name_and_charge] = this_element_dict
 
         # if both rrng and (e)pos file are loaded, we combine these two files
@@ -278,24 +282,37 @@ class AtomBlendAddon:
 
         file_path = ABGlobals.path
 
+        start = time.perf_counter()
+        print('epos function entering', start)
+
         # reading the given binary file and store it into a numpy array
         # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
         data_in_bytes_float = np.fromfile(file_path, dtype='>f')
         data_in_bytes_int = np.fromfile(file_path, dtype='>i')
 
+        print('np.fromfile done', time.perf_counter() - start)
+
         # converting byte data to float and int
         data_as_float = data_in_bytes_float.view()
         data_as_int = data_in_bytes_int.view()
 
+        print('view() done', time.perf_counter() - start)
+
         # calculating how many atoms we have as input; dividing by 11 because there are 11 features to store
         num_of_atoms = int(data_as_float.shape[0] / 11)
+
+        print('num_of_atoms done', time.perf_counter() - start)
 
         # reshaping so one atom has one row in the numpy array
         reshaped_data_float = np.reshape(data_as_float, (num_of_atoms, 11))
         reshaped_data_int = np.reshape(data_as_int, (num_of_atoms, 11))
 
+        print('reshaping done', time.perf_counter() - start)
+
         # concatenate the first nine columns of float data and the last second columns from int data
         concat_data = np.concatenate((reshaped_data_float[:, :9], reshaped_data_int[:, 9:]), axis=1)
+
+        print('concat done', time.perf_counter() - start)
 
         # reducing the atom data by a certain percentage by only taking the first n elements
         atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage / 100
@@ -303,12 +320,16 @@ class AtomBlendAddon:
         # shuffling the data as they're kind of sorted by the z value
         concat_data = np.random.permutation(concat_data)
 
+        print('randomizing done', time.perf_counter() - start)
+
         num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
         concat_data_percentage = concat_data[:num_of_atoms_percentage]
 
         # sort atoms by ['m/n']
         sorted_by_mn = concat_data_percentage[concat_data_percentage[:, 3].argsort()]
         ABGlobals.all_data = sorted_by_mn
+
+        print('sorting done', time.perf_counter() - start)
 
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
 
