@@ -7,6 +7,7 @@ import AtomBlend.read_data
 from gpu_extras.batch import batch_for_shader
 from AtomBlend.globals import ABGlobals
 
+
 class ABManagement:
     cache = {}
 
@@ -16,15 +17,17 @@ class ABManagement:
         # init shader
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
 
-        # shader input
+        # # shader input
         ABGlobals.atom_color_list = []
         for elem_name in ABGlobals.all_elements_by_name:
-            print(elem_name, ABGlobals.all_elements_by_name[elem_name]['num_displayed'])
-            elem_amount = len(ABGlobals.all_elements_by_name[elem_name]['coordinates'])
-            col_struct = bpy.context.scene.color_settings[elem_name].color
-            col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            ABGlobals.atom_color_list.append([col] * elem_amount)
+            # print(elem_name, ABGlobals.all_elements_by_name[elem_name]['num_displayed'])
+            # elem_amount = len(ABGlobals.all_elements_by_name[elem_name]['coordinates'])
+            # col_struct = bpy.context.scene.color_settings[elem_name].color
+            # col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            # ABGlobals.atom_color_list.append([col] * elem_amount)
 
+            bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
+        '''
         # check if we have a list for each element for the atom coords and atom color list
         # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if isinstance(ABGlobals.atom_coords[0], list):
@@ -32,10 +35,10 @@ class ABManagement:
 
         if isinstance(ABGlobals.atom_color_list[0], list):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
+        '''
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
-            print('ATOM COLOR LIST', ABGlobals.atom_color_list)
-            print('ATOM COORDS', ABGlobals.atom_coords)
+            # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
+            # print('ATOM COORDS', ABGlobals.atom_coords)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
         print('CLS', cls)
@@ -76,7 +79,9 @@ class ABManagement:
 
         if len(ABGlobals.atom_coords) != len(ABGlobals.atom_color_list):
             print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list))
-            print(ABGlobals.atom_coords, ABGlobals.atom_color_list)
+            # print(ABGlobals.atom_coords, ABGlobals.atom_color_list)
+            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
+
 
         cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
 

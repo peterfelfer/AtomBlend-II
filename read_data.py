@@ -157,15 +157,14 @@ class AtomBlendAddon:
             raise Exception('#atoms != #num_of_atoms_sum', len(all_atoms), num_of_atoms_sum)
 
         # build coord list for shader
-        coords = []
         for elem in ABGlobals.all_elements_by_name:
             this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
             ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
             ABGlobals.all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
-            coords.append(this_elem_coords)
+            print('READ DATA', elem)
+            bpy.context.scene.color_settings[elem].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
 
-        ABGlobals.atom_coords = coords
-
+        '''
         # build atom color list
         ABGlobals.atom_color_list = []
 
@@ -180,7 +179,7 @@ class AtomBlendAddon:
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if isinstance(ABGlobals.atom_color_list[0], list):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
+        '''
         if isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
@@ -322,7 +321,7 @@ class AtomBlendAddon:
 
         print('randomizing done', time.perf_counter() - start)
 
-        num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
+        num_of_atoms_percentage = int(num_of_atoms) # * atoms_percentage)
         concat_data_percentage = concat_data[:num_of_atoms_percentage]
 
         # sort atoms by ['m/n']

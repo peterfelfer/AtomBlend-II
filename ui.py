@@ -62,7 +62,44 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
     '''
 
+    def total_atom_coords_update(self, context):
+        print('TOTAL ATOM COORDS UPDATE')
+        '''
+        ABGlobals.atom_coords = []
+        for elem_name in ABGlobals.all_elements_by_name:
+            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
+            total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
+
+            if not bpy.context.scene.color_settings[elem_name].display:
+                total_atoms_perc_displayed = 0.0
+
+            num_displayed = int(elem_amount * total_atoms_perc_displayed)
+            ABGlobals.all_elements_by_name[elem_name]['num_displayed'] = num_displayed
+
+            print(elem_name, num_displayed, elem_amount, total_atoms_perc_displayed)
+
+            # build coord list for shader according to the new shown percentage
+            this_elem_coords = ABGlobals.all_elements_by_name[elem_name]['coordinates'][:num_displayed]
+            ABGlobals.atom_coords.append(this_elem_coords)
+
+            bpy.context.scene.color_settings[elem_name].perc_displayed = total_atoms_perc_displayed
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if isinstance(ABGlobals.atom_coords[0], list):
+            ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
+        # update color list
+        AtomBlendAddonSettings.atom_color_update(self, context)
+        '''
+
+        total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
+
+        # update function atom_coords_update gets called as we're editing perc_displayed
+        for elem_name in ABGlobals.all_elements_by_name:
+            bpy.context.scene.color_settings[elem_name].perc_displayed = total_atoms_perc_displayed
+
     def atom_coords_update(self, context):
+        print('ATOM COORDS UPDATE')
         # reset coords list
         ABGlobals.atom_coords = []
         for elem_name in ABGlobals.all_elements_by_name:
@@ -71,22 +108,6 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
 
             if not bpy.context.scene.color_settings[elem_name].display:
                 perc_displayed = 0.0
-
-            # if perc_displayed > 100 the input is not a percentage but an amount -> we calculate the percentage
-            # if perc_displayed > 100:
-            #
-            #     if perc_displayed > elem_amount:
-            #         perc_displayed = elem_amount
-            #     print('IF', perc_displayed, elem_amount, perc_displayed / elem_amount, bpy.context.scene.color_settings[elem_name].perc_displayed)
-            #
-            #     num_displayed = perc_displayed  # perc_displayed is actually the number of displayed atoms
-            #     perc_displayed = (perc_displayed / elem_amount) * 100  # calculate displayed percentage
-            #
-            #     # set ui slider to actutal percentage
-            #     bpy.context.scene.color_settings[elem_name].perc_displayed = perc_displayed
-            #
-            # else:
-
 
             # if perc_displayed > 1.0 the input is not a percentage but an amount -> we calculate the percentage
             if perc_displayed > 1.0:
@@ -113,6 +134,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         AtomBlendAddonSettings.atom_color_update(self, context)
 
     def atom_color_update(self, context):
+        print('ATOM COLOR UPDATE')
         # reset color list
         ABGlobals.atom_color_list = []
 
@@ -122,6 +144,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * num_displayed)
+            print(elem_name, num_displayed)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if isinstance(ABGlobals.atom_color_list[0], list):
@@ -133,14 +156,14 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
     # properties
     vertex_percentage: bpy.props.FloatProperty(
         name="Atoms shown",
-        default=0.01,
-        min=0.0001,
-        max=100,
+        default=0.001,
+        min=0.000001,
+        max=1.0,
         soft_min=1,
         step=10,
         description="Percentage of atoms shown",
-        subtype='PERCENTAGE',
-        precision=3
+        precision=4,
+        update=total_atom_coords_update
     )
 
     point_size: bpy.props.FloatProperty(
@@ -165,6 +188,13 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         ],
         default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
     )
+
+class MaterialSetting(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.atom_color_update)
+    display: bpy.props.BoolProperty(name="", default=True, update=AtomBlendAddonSettings.atom_coords_update)
+    perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=AtomBlendAddonSettings.atom_coords_update)
+
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
@@ -226,33 +256,30 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
 
         # define a box of UI elements
         col = layout.column(align=True)
-        vertex_percentage_row = col.row()
-        vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
         load_file_row = col.row()
         load_file_row.operator('atom_blend_viewer.load_file', text="Load .pos/.epos file", icon="FILE_FOLDER")
 
         loaded_row = col.row()
-        atoms_shown = col.row()
+        # atoms_shown = col.row()
         if ABGlobals.FileLoaded_e_pos:
+            # if not ABGlobals.FileLoaded_rrng:
+            #     vertex_percentage_row = col.row()
+            #     vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
+
             split_path = ABGlobals.path.split('\\')
             loaded_row.label(text='Loaded file: ' + split_path[-1])
 
-            atom_amount = len(ABGlobals.all_data)
-            atom_amount = "{:,}".format(atom_amount)  # add comma after every thousand place
-
-            atoms_shown.label(text='Displayed: ' + atom_amount + ' atoms')
+            # atom_amount = len(ABGlobals.all_data)
+            # atom_amount = "{:,}".format(atom_amount)  # add comma after every thousand place
+            #
+            # atoms_shown.label(text='Displayed: ' + atom_amount + ' atoms')
         else:
             loaded_row.label(text='No file loaded yet...')
-            atoms_shown.label(text='Displayed: n/a')
+            # atoms_shown.label(text='Displayed: n/a')
 
         col.row(align=True)
 
-class MaterialSetting(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.atom_color_update)
-    display: bpy.props.BoolProperty(name="", default=True, update=AtomBlendAddonSettings.atom_coords_update)
-    perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, subtype='PERCENTAGE', update=AtomBlendAddonSettings.atom_coords_update)
 
 class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_shader_color_settings"  # unique identifier for buttons and menu items to reference.
@@ -274,6 +301,11 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
             row = layout.row()
             point_size_col = row.column(align=True)
             point_size_col.prop(context.scene.atom_blend_addon_settings, 'point_size')
+
+            # total atoms shown in percentage
+            vertex_percentage_row = layout.row()
+            vertex_percentage_col = vertex_percentage_row.column(align=True)
+            vertex_percentage_col.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
             # color settings
             row = layout.row()
