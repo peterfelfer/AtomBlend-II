@@ -63,36 +63,9 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
     '''
 
     def total_atom_coords_update(self, context):
-        print('TOTAL ATOM COORDS UPDATE')
-        '''
-        ABGlobals.atom_coords = []
-        for elem_name in ABGlobals.all_elements_by_name:
-            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
-            total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
-
-            if not bpy.context.scene.color_settings[elem_name].display:
-                total_atoms_perc_displayed = 0.0
-
-            num_displayed = int(elem_amount * total_atoms_perc_displayed)
-            ABGlobals.all_elements_by_name[elem_name]['num_displayed'] = num_displayed
-
-            print(elem_name, num_displayed, elem_amount, total_atoms_perc_displayed)
-
-            # build coord list for shader according to the new shown percentage
-            this_elem_coords = ABGlobals.all_elements_by_name[elem_name]['coordinates'][:num_displayed]
-            ABGlobals.atom_coords.append(this_elem_coords)
-
-            bpy.context.scene.color_settings[elem_name].perc_displayed = total_atoms_perc_displayed
-
-        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_coords[0], list):
-            ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
-        # update color list
-        AtomBlendAddonSettings.atom_color_update(self, context)
-        '''
-
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
+        total_atoms_perc_displayed = total_atoms_perc_displayed / ABGlobals.num_all_elements
+        print(total_atoms_perc_displayed, ABGlobals.num_all_elements, context.scene.atom_blend_addon_settings.vertex_percentage)
 
         # update function atom_coords_update gets called as we're editing perc_displayed
         for elem_name in ABGlobals.all_elements_by_name:
@@ -155,13 +128,13 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
 
     # properties
     vertex_percentage: bpy.props.FloatProperty(
-        name="Atoms shown",
+        name="Displayed",
         default=0.001,
         min=0.000001,
         max=1.0,
         soft_min=1,
         step=10,
-        description="Percentage of atoms shown",
+        description="Percentage of displayed atoms",
         precision=4,
         update=total_atom_coords_update
     )
@@ -281,9 +254,9 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.row(align=True)
 
 
-class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_shader_color_settings"  # unique identifier for buttons and menu items to reference.
-    bl_label = "Color settings"  # display name in the interface.
+class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_shader_display_settings"  # unique identifier for buttons and menu items to reference.
+    bl_label = "Display settings"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -308,30 +281,36 @@ class ATOMBLEND_PT_shader_color_settings(bpy.types.Panel):
             vertex_percentage_col.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
             # color settings
-            row = layout.row()
-            display_col = row.column(align=True)
-            name_col = row.column(align=True)
-            charge_col = row.column(align=True)
-            color_col = row.column(align=True)
-            displayed_col = row.column(align=True)
-            amount_col = row.column(align=True)
+            # col = layout.column()
+            # display_col = row.column()
+            split = layout.split(factor=0.1)
+            display_col = split.column()
+            split = split.split(factor=0.1 / 0.9)
+            name_col = split.column()
+            split = split.split(factor=0.1 / 0.8)
+            charge_col = split.column()
+            split = split.split(factor=0.1 / 0.7)
+            color_col = split.column()
+            split = split.split(factor=0.2 / 0.6)
+            displayed_col = split.column()
+            split = split.split(factor=0.4 / 0.4)
+            amount_col = split.column()
+            split = split.split(factor=0.0)
+
 
             # label row
             display_col.label(text='')
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
-            displayed_col.label(text='Displayed')
-            amount_col.label(text='Shown')
+            displayed_col.label(text='% Displayed')
+            amount_col.label(text='# Displayed')
 
             for prop in bpy.context.scene.color_settings:
                 elem_name_charge = prop.name
                 elem_name = elem_name_charge.split('_')[0]
                 elem_charge = elem_name_charge.split('_')[1]
-                if prop.display:
-                    display_col.prop(prop, 'display', icon='HIDE_OFF')
-                else:
-                    display_col.prop(prop, 'display', icon='HIDE_ON')
+                display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
                 name_col.label(text=elem_name)
                 charge_col.label(text=elem_charge)
                 color_col.prop(prop, 'color')

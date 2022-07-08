@@ -54,7 +54,7 @@ class AtomBlendAddon:
 
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
-        element_color_settings.name = 'Unknown_n/a'
+        element_color_settings.name = ABGlobals.unknown_label
         element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
 
         # add unknown element to the list
@@ -65,7 +65,7 @@ class AtomBlendAddon:
         unknown_element_dict['coordinates'] = []
         unknown_element_dict['num_of_atoms'] = len(ABGlobals.atom_coords)
         unknown_element_dict['num_displayed'] = len(ABGlobals.atom_coords)
-        ABGlobals.all_elements_by_name['Unknown_n/a'] = unknown_element_dict
+        ABGlobals.all_elements_by_name[ABGlobals.unknown_label] = unknown_element_dict
 
     def combine_rrng_and_e_pos_file(self, context):
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
@@ -98,7 +98,7 @@ class AtomBlendAddon:
             # if so, the element is unknown
             elif m_n < this_elem['start_range']:
                 # print('smaller than smallest element -> unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+                ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'].append((atom[0], atom[1], atom[2]))
                 added += 1
 
             # check if charge of this atom is greater than end of current element
@@ -126,7 +126,7 @@ class AtomBlendAddon:
                     # if so, we can't match this atom to an element in our list, so the element is unknown
                     if m_n < this_elem['start_range']:
                         # print('unknown', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                        ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+                        ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'].append((atom[0], atom[1], atom[2]))
                         added += 1
                         break
 
@@ -134,7 +134,7 @@ class AtomBlendAddon:
                     # if so, we increase the start_index when searching in our element list
                     if m_n > this_elem['end_range']:
                         else_counter += 1
-                        ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'].append((atom[0], atom[1], atom[2]))
+                        ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'].append((atom[0], atom[1], atom[2]))
                         added += 1
                         # print('m_n greater than end range -> increasing start index if not last element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                         if start_index != len(all_elements)-1:
@@ -333,8 +333,9 @@ class AtomBlendAddon:
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
 
         ABGlobals.atom_coords = coords
-        ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'] = ABGlobals.atom_coords
-        ABGlobals.all_elements_by_name['Unknown_n/a']['num_of_atoms'] = len(ABGlobals.atom_coords)
+        ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'] = ABGlobals.atom_coords
+        ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['num_of_atoms'] = len(ABGlobals.atom_coords)
+        ABGlobals.num_all_elements = len(coords)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         # AtomBlendAddon.e_pos_shader_prep(self, context)
@@ -376,8 +377,8 @@ class AtomBlendAddon:
 
         coords = [(atom[0], atom[1], atom[2]) for atom in reshaped_data_percentage]
         ABGlobals.atom_coords = coords
-        ABGlobals.all_elements_by_name['Unknown_n/a']['coordinates'] = ABGlobals.atom_coords
-        ABGlobals.all_elements_by_name['Unknown_n/a']['num_of_atoms'] = len(ABGlobals.atom_coords)
+        ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'] = ABGlobals.atom_coords
+        ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['num_of_atoms'] = len(ABGlobals.atom_coords)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         if (ABGlobals.FileLoaded_rrng):
