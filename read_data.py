@@ -13,12 +13,11 @@ import numpy as np
 from dataclasses import dataclass
 import time
 import os
-from AtomBlend.globals import ABGlobals
+from .globals import ABGlobals
 
 # ------------- Atom Data -------------
 # Class that contains all relevant information about atoms in range files
-import AtomBlend
-from AtomBlend.shader_management import ABManagement
+from .shader_management import ABManagement
 
 
 @dataclass

@@ -12,7 +12,7 @@ from bpy.types import PropertyGroup
 
 import numpy as np
 
-from AtomBlend.globals import ABGlobals
+from .globals import ABGlobals
 
 # append the add-on's path to Blender's python PATH
 sys.path.insert(0, ABGlobals.addon_path)
@@ -82,6 +82,12 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             if not bpy.context.scene.color_settings[elem_name].display:
                 perc_displayed = 0.0
 
+            if not bpy.context.scene.atom_blend_addon_settings.display_all_atoms:
+                perc_displayed = 0.0
+
+                print('SELF', self)
+                print('DEBUG', self[elem_name])
+
             # if perc_displayed > 1.0 the input is not a percentage but an amount -> we calculate the percentage
             if perc_displayed > 1.0:
                 num_displayed = int(perc_displayed)
@@ -146,6 +152,13 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         max=100.0,
         description='Point size of the atoms',
         update=update_point_size
+    )
+
+    display_all_atoms: bpy.props.BoolProperty(
+        name='',
+        default=True,
+        description='Display or hide all elements',
+        update=atom_coords_update
     )
 
     # for debug purposes
@@ -297,9 +310,9 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             amount_col = split.column()
             split = split.split(factor=0.0)
 
-
             # label row
-            display_col.label(text='')
+            prop = context.scene.atom_blend_addon_settings
+            display_col.prop(prop, 'display_all_atoms', icon_only=True, icon='HIDE_OFF' if prop.display_all_atoms else 'HIDE_ON')
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
@@ -307,6 +320,9 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             amount_col.label(text='# Displayed')
 
             for prop in bpy.context.scene.color_settings:
+                if prop.name == ABGlobals.unknown_label:  # add unknown atoms in the last row
+                    continue
+
                 elem_name_charge = prop.name
                 elem_name = elem_name_charge.split('_')[0]
                 elem_charge = elem_name_charge.split('_')[1]
@@ -318,10 +334,21 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
                 atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
                 atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
                 amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
-        else:
-            col = layout.column(align=True)
-            text_row = col.row()
-            text_row.label(text='Load .epos/.pos and .rrng file')
+
+            # display unknown atoms in last row
+            prop = bpy.context.scene.color_settings[ABGlobals.unknown_label]
+            elem_name_charge = prop.name
+            elem_name = elem_name_charge.split('_')[0]
+            elem_charge = elem_name_charge.split('_')[1]
+            display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
+            name_col.label(text=elem_name)
+            charge_col.label(text=elem_charge)
+            color_col.prop(prop, 'color')
+            displayed_col.prop(prop, 'perc_displayed')
+            atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
+            atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
+            amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
+
 
 class ATOMBLEND_PT_panel_debug(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_debug"  # unique identifier for buttons and menu items to reference.
@@ -338,8 +365,8 @@ class ATOMBLEND_PT_panel_debug(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
-        col.prop(context.scene.atom_blend_addon_settings, 'debug_dataset_selection')
-        col.prop(context.scene.atom_blend_addon_settings, 'debug_automatic_file_loading')
+        col.prop(bpy.context.scene.atom_blend_addon_settings, 'debug_dataset_selection')
+        col.prop(bpy.context.scene.atom_blend_addon_settings, 'debug_automatic_file_loading')
 
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):

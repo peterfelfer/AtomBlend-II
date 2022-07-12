@@ -26,11 +26,11 @@ import bpy
 from bpy.types import AddonPreferences
 from bpy.app.handlers import persistent
 
-from AtomBlend.read_data import *
-from AtomBlend.ui import *
-from AtomBlend.atomic_numbers import *
-from AtomBlend.shader_management import ABManagement
-from AtomBlend.globals import ABGlobals
+from .read_data import *
+from .ui import *
+from .atomic_numbers import *
+from .shader_management import ABManagement
+from .globals import ABGlobals
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
@@ -99,7 +99,7 @@ classes = (
     AtomBlendAddonSettings, MaterialSetting,
 
     ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_debug, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file,
-    ATOMBLEND_PT_shader_color_settings,
+    ATOMBLEND_PT_shader_display_settings,
 
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
 )
