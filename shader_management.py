@@ -1,11 +1,11 @@
 import bpy
 import gpu
 from gpu.types import GPUShader
-from AtomBlend.shaders import *
-# from AtomBlend.read_data import AtomBlendAddon
-import AtomBlend.read_data
+from .shaders import *
+# from .read_data import AtomBlendAddon
+from .read_data import *
 from gpu_extras.batch import batch_for_shader
-from AtomBlend.globals import ABGlobals
+from .globals import ABGlobals
 
 
 class ABManagement:
