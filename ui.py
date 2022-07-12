@@ -17,51 +17,8 @@ from .globals import ABGlobals
 # append the add-on's path to Blender's python PATH
 sys.path.insert(0, ABGlobals.addon_path)
 
-
-# ------------- Add-on UI -------------
-# Class that contains all functions relevant for the UI
-
-# Preferences panel for this Addon in the Blender preferences
-class AtomBlendAddonSettings(bpy.types.PropertyGroup):
-    # update functions
-
-    '''
-    def num_displayed(self, context):
-        # reset color list
-        ABGlobals.atom_color_list = []
-
-        for elem_name in ABGlobals.all_elements_by_name:
-            num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
-
-            col_struct = bpy.context.scene.color_settings[elem_name].color
-
-            # if atoms are not displayed, they stay invisible if color is changed
-            if bpy.context.scene.color_settings[elem_name].display:
-                col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            else:
-                col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
-
-    def atom_display_update(self, context):
-        # reset color list
-        ABGlobals.atom_color_list = []
-
-        for elem_name in ABGlobals.all_elements_by_name:
-            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
-
-            col_struct = bpy.context.scene.color_settings[elem_name].color
-
-            # if atoms are not displayed, they stay invisible if color is changed
-            if bpy.context.scene.color_settings[elem_name].display:
-                col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            else:
-                col = (col_struct[0], col_struct[1], col_struct[2], 0.0)
-            ABGlobals.atom_color_list.append([col] * elem_amount)
-
-        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_color_list[0], list):
-            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-    '''
-
+# properties for each element
+class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
         total_atoms_perc_displayed = total_atoms_perc_displayed / ABGlobals.num_all_elements
@@ -110,7 +67,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
         # update color list
-        AtomBlendAddonSettings.atom_color_update(self, context)
+        DisplaySettings.atom_color_update(self, context)
 
     def atom_color_update(self, context):
         print('ATOM COLOR UPDATE')
@@ -127,7 +84,17 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if isinstance(ABGlobals.atom_color_list[0], list):
-            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in
+                                         xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
+    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=atom_color_update)
+    display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
+    perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
+
+# Properties for all elements
+class AtomBlendAddonSettings(bpy.types.PropertyGroup):
+    # update functions
 
     def update_point_size(self, context):
         ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
@@ -142,7 +109,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         step=10,
         description="Percentage of displayed atoms",
         precision=4,
-        update=total_atom_coords_update
+        update=DisplaySettings.total_atom_coords_update
     )
 
     point_size: bpy.props.FloatProperty(
@@ -158,7 +125,7 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         name='',
         default=True,
         description='Display or hide all elements',
-        update=atom_coords_update
+        update=DisplaySettings.atom_coords_update
     )
 
     # for debug purposes
@@ -175,11 +142,6 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
     )
 
-class MaterialSetting(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=AtomBlendAddonSettings.atom_color_update)
-    display: bpy.props.BoolProperty(name="", default=True, update=AtomBlendAddonSettings.atom_coords_update)
-    perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=AtomBlendAddonSettings.atom_coords_update)
 
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
