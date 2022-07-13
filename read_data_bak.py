@@ -73,7 +73,7 @@ class AtomBlendAddon:
                 s.spaces[0].shading.type = 'RENDERED'
 
         # set render mode to cycles & GPU rendering
-        bpy.data.scenes["Scene"].render.engine = 'CYCLES'
+        bpy.data.scenes["Scene"].render_viewport.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
     def combine_rrng_and_e_pos_file(self):

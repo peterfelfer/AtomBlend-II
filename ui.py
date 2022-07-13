@@ -1,6 +1,7 @@
 import bpy
 
 from .read_data import *
+from .render import *
 
 # ------------------- EXTERNAL MODULES -------------------
 import sys
@@ -29,7 +30,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
             bpy.context.scene.color_settings[elem_name].perc_displayed = total_atoms_perc_displayed
 
     def atom_coords_update(self, context):
-        print('ATOM COORDS UPDATE')
         # reset coords list
         ABGlobals.atom_coords = []
         for elem_name in ABGlobals.all_elements_by_name:
@@ -63,14 +63,13 @@ class DisplaySettings(bpy.types.PropertyGroup):
             ABGlobals.atom_coords.append(this_elem_coords)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_coords[0], list):
+        if len(ABGlobals.atom_coords) > 0 and isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
         # update color list
         DisplaySettings.atom_color_update(self, context)
 
     def atom_color_update(self, context):
-        print('ATOM COLOR UPDATE')
         # reset color list
         ABGlobals.atom_color_list = []
 
@@ -83,9 +82,8 @@ class DisplaySettings(bpy.types.PropertyGroup):
             print(elem_name, num_displayed)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_color_list[0], list):
-            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in
-                                         xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+        if len(ABGlobals.atom_color_list) > 0 and isinstance(ABGlobals.atom_color_list[0], list):
+            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=atom_color_update)
@@ -141,8 +139,6 @@ class AtomBlendAddonSettings(bpy.types.PropertyGroup):
         ],
         default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
     )
-
-
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
@@ -330,6 +326,26 @@ class ATOMBLEND_PT_panel_debug(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'debug_dataset_selection')
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'debug_automatic_file_loading')
 
+class ATOMBLEND_PT_render_picture(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_render_picture"
+    bl_label = "Render picture"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_panel_general"
+
+    @classmethod
+    def poll(cls, context):
+        # the panel should always be drawn
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.label(text='RENDER!!')
+        row = layout.row()
+        row.operator('atom_blend.render_picture', icon='SCENE')
+
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
@@ -407,3 +423,23 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
 
+class ATOMBLEND_OT_render_picture(bpy.types.Operator):
+    bl_idname = "atom_blend.render_picture"
+    bl_label = "Render picture"
+    bl_description = "Render one frame of the scene"
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def execute(self, context):
+        print('OT pre render!')
+
+        render_path = 'Z:\qa43nawu\\AB_render\\render.png'
+        ABManagement.render()
+
+
+        print('OT post render!')
+
+
+        return {'FINISHED'}

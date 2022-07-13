@@ -49,10 +49,16 @@ class ABManagement:
         # create empty object for object matrix
         bpy.ops.object.empty_add(type='PLAIN_AXES')
 
+        # set camera if it doesn't exist yet
+        if bpy.context.scene.camera is None:
+            bpy.ops.object.camera_add(location=(0.0, 0.0, 8.0))
+            # TODO: disable for viewport
+
         # save in cache
         cache = ABManagement.cache
         cache['shader'] = shader
         cache['batch'] = batch
+        cache['camera'] = bpy.context.scene.camera
 
     @classmethod
     def handler(cls):
@@ -73,7 +79,7 @@ class ABManagement:
         gpu.state.depth_mask_set
 
         # uniform preparations
-        perspective_matrix = bpy.context.region_data.perspective_matrix
+        projection_matrix = bpy.context.region_data.perspective_matrix
 
         object_matrix = bpy.data.objects['Empty'].matrix_world
 
@@ -82,13 +88,27 @@ class ABManagement:
             # print(ABGlobals.atom_coords, ABGlobals.atom_color_list)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
-
         cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
 
+        # calculate matrices for rendering
+        camera = cache['camera']
+        render = bpy.context.scene.render
+        view_matrix = camera.matrix_world.inverted()
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        x = render.resolution_x
+        y = render.resolution_y
+        scale_x = render.pixel_aspect_x
+        scale_y = render.pixel_aspect_y
+        print('RENDER', x, y, scale_x, scale_y)
+        camera_matrix = camera.calc_matrix_camera(depsgraph, x=x, y=y, scale_x=scale_x, scale_y=scale_y)
+        projection_matrix = camera_matrix @ view_matrix  # matrix multiplication: camera_matrix * view_matrix
+        print('CAMERA',camera_matrix)
+        print('VIEW',view_matrix)
+        print('PROJ',projection_matrix)
         # uniforms
         shader = cache['shader']
         shader.bind()
-        shader.uniform_float('perspective_matrix', perspective_matrix)
+        shader.uniform_float('projection_matrix', projection_matrix)
         shader.uniform_float('object_matrix', object_matrix)
         shader.uniform_float('point_size', ABGlobals.point_size)
         shader.uniform_float('alpha_radius', 1.0)
