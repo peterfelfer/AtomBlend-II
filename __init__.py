@@ -80,7 +80,7 @@ def register():
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
     bpy.app.handlers.frame_change_post.append(ABManagement.handler)
 
-    bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=MaterialSetting)
+    bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=DisplaySettings)
 
 def unregister():
     for c in classes:
@@ -96,14 +96,14 @@ def unregister():
 
 
 classes = (
-    AtomBlendAddonSettings, MaterialSetting,
+    AtomBlendAddonSettings, DisplaySettings,
 
     ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_debug, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file,
-    ATOMBLEND_PT_shader_display_settings,
+    ATOMBLEND_PT_shader_display_settings, ATOMBLEND_PT_render_picture,
 
-    ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file,
+    ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file, ATOMBLEND_OT_render_picture,
 )
 
-# this should only be needed if we want to start the addon with the play button from within blender
-if __name__ == "__main__":
-    register()
+# # this should only be needed if we want to start the addon with the play button from within blender
+# if __name__ == "__main__":
+#     register()
