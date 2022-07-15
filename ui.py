@@ -435,8 +435,10 @@ class ATOMBLEND_OT_render_picture(bpy.types.Operator):
     def execute(self, context):
         print('OT pre render!')
 
-        render_path = 'Z:\qa43nawu\\AB_render\\render.png'
-        ABManagement.render()
+
+        # ABManagement.render(self, context)
+        ABManagement.save_image(self, context)
+
 
 
         print('OT post render!')
