@@ -13,6 +13,7 @@ class ABShaders:
                 gl_Position = projection_matrix * object_matrix * vec4(position, 1.0f);
                 gl_PointSize = point_size;
                 f_color = vec4(color[0], color[1], color[2], color[3]);
+                //f_color = vec4(color[0], color[1], color[2], 1.0);
                 f_alpha_radius = alpha_radius;
             }
         '''

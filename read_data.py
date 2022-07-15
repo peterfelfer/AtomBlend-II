@@ -54,13 +54,15 @@ class AtomBlendAddon:
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = ABGlobals.unknown_label
-        element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
+        # element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
+        element_color_settings.color = (1.0, 0.0, 0.0, 1.0)
 
         # add unknown element to the list
         unknown_element_dict = {}
         unknown_element_dict['element_name'] = 'Unknown'
         unknown_element_dict['charge'] = 'n/a'
-        unknown_element_dict['color'] = (0.4, 0.4, 0.4, 1.0)
+        # unknown_element_dict['color'] = (0.4, 0.4, 0.4, 1.0)
+        unknown_element_dict['color'] = (1.0, 0.0, 0.0, 1.0)
         unknown_element_dict['coordinates'] = []
         unknown_element_dict['num_of_atoms'] = len(ABGlobals.atom_coords)
         unknown_element_dict['num_displayed'] = len(ABGlobals.atom_coords)
@@ -341,7 +343,7 @@ class AtomBlendAddon:
         if(ABGlobals.FileLoaded_rrng):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
-        ABManagement.init_shader()
+        ABManagement.init_shader(self, context)
 
     def load_pos_file(self, context):
         if (ABGlobals.path == None):
@@ -383,4 +385,4 @@ class AtomBlendAddon:
         if (ABGlobals.FileLoaded_rrng):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
-        ABManagement.init_shader()
+        ABManagement.init_shader(self, context)
