@@ -80,7 +80,10 @@ class ABManagement:
             # print(ABGlobals.atom_coords, ABGlobals.atom_color_list)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
-        cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
+        # cache['batch'] = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
+        vertices = ((0,0,0.5), (1,0,0.5), (0,1,0.5), (1,1,0.5))
+        indices = ((0,1,2), (2,1,3))
+        cache['batch'] = batch_for_shader(shader, 'TRIS', {'position': vertices}, indices=indices)
 
         # uniform preparations
         proj_matrix = bpy.context.region_data.perspective_matrix
@@ -131,7 +134,7 @@ class ABManagement:
         height = int(render.resolution_y)
         # width = int(region.width)
         # height = int(region.height)
-        print('width height vs resolution x y', width, height, render.resolution_x, render.resolution_y)
+        # print('width height vs resolution x y', width, height, render.resolution_x, render.resolution_y)
 
         # create buffer
         # buffer = gpu.types.Buffer('UBYTE', 3)
@@ -141,11 +144,11 @@ class ABManagement:
         gpu.matrix.load_projection_matrix(Matrix.Identity(4))
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
-        gpu.state.depth_mask_set(True)
+        gpu.state.depth_mask_set(False)
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
-            fb.clear(color=(0.0, 0.0, 0.0, 0.0))
+            fb.clear(color=(1.0, 0.0, 0.0, 0.0))
 
             view_matrix = scene.camera.matrix_world.inverted()
             proj_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
@@ -153,7 +156,7 @@ class ABManagement:
 
             # draw shader
             shader = cache['shader']
-            batch = cache['batch']
+            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
             shader.uniform_float('object_matrix', object_matrix)
@@ -170,6 +173,33 @@ class ABManagement:
             buffer.dimensions = width * height * 4
 
         offscreen.free()
+        '''
+        import bgl
+        shader = cache['shader']
+        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
+
+        with offscreen.bind():
+            bgl.glClearColor(0.0, 0.0, 0.0, 1.0)
+            bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+
+            view_matrix = scene.camera.matrix_world.inverted()
+            proj_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
+            object_matrix = bpy.data.objects['Empty'].matrix_world
+
+            shader.bind()
+            shader.uniform_float('projection_matrix', proj_matrix)
+            shader.uniform_float('object_matrix', object_matrix)
+            shader.uniform_float('point_size', ABGlobals.point_size)
+            shader.uniform_float('alpha_radius', 1.0)
+            batch.draw(shader)
+
+            offscreen.draw_view3d(scene, view_layer, space, region, view_matrix, proj_matrix, do_color_management=True)
+
+            buffer = bgl.Buffer(bgl.GL_FLOAT, width * height * 4)
+            bgl.glReadBuffer(bgl.GL_BACK)
+            bgl.glReadPixels(0, 0, width, height, bgl.GL_RGBA, bgl.GL_FLOAT, buffer)
+        offscreen.free()
+        '''
 
         # create image
         render_name = 'render_output'

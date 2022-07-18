@@ -53,7 +53,7 @@ if bpy.app.version < bl_info['blender']:
 @persistent
 def atom_blend_addon_init_handler(dummy1, dummy2):
     # load the panel variables
-    bpy.types.Scene.atom_blend_addon_settings = bpy.props.PointerProperty(type=AtomBlendAddonSettings)
+    bpy.types.Scene.atom_blend_addon_settings = bpy.props.PointerProperty(type=AB_properties)
 
     # my_item = bpy.context.scene.my_settings.add()
     # my_item.name = "Spam"
@@ -96,7 +96,7 @@ def unregister():
 
 
 classes = (
-    AtomBlendAddonSettings, DisplaySettings,
+    AB_properties, DisplaySettings,
 
     ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_debug, ATOMBLEND_PT_panel_file, ATOMBLEND_PT_panel_rrng_file,
     ATOMBLEND_PT_shader_display_settings, ATOMBLEND_PT_render_picture,

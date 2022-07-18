@@ -91,46 +91,19 @@ class DisplaySettings(bpy.types.PropertyGroup):
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
 
 # Properties for all elements
-class AtomBlendAddonSettings(bpy.types.PropertyGroup):
+class AB_properties(bpy.types.PropertyGroup):
     # update functions
 
     def update_point_size(self, context):
         ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
 
     # properties
-    vertex_percentage: bpy.props.FloatProperty(
-        name="Displayed",
-        default=0.001,
-        min=0.000001,
-        max=1.0,
-        soft_min=1,
-        step=10,
-        description="Percentage of displayed atoms",
-        precision=4,
-        update=DisplaySettings.total_atom_coords_update
-    )
-
-    point_size: bpy.props.FloatProperty(
-        name='Point size',
-        default=5.0,
-        min=0.0,
-        max=100.0,
-        description='Point size of the atoms',
-        update=update_point_size
-    )
-
-    display_all_atoms: bpy.props.BoolProperty(
-        name='',
-        default=True,
-        description='Display or hide all elements',
-        update=DisplaySettings.atom_coords_update
-    )
+    vertex_percentage: bpy.props.FloatProperty(name="Displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=10, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
+    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, description='Point size of the atoms', update=update_point_size)
+    display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
 
     # for debug purposes
-    debug_automatic_file_loading: bpy.props.BoolProperty(
-        name='Automatic file loading',
-        default=True,
-    )
+    debug_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
 
     debug_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
