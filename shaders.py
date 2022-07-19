@@ -36,6 +36,9 @@ class ABShaders:
                 //     discard;
                 // }
                 //fragColor = f_color * a;
-                fragColor = vec4(f_color.rgb, f_color.a * a);
+                //fragColor = vec4(f_color.rgb, f_color.a * a);
+                gl_FragDepth = 0.0;
+                //fragColor = vec4(gl_FragCoord.z);
+                fragColor = vec4(gl_FragCoord.z,0,0,1);
             }
        '''
