@@ -42,9 +42,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
             if not bpy.context.scene.atom_blend_addon_settings.display_all_atoms:
                 perc_displayed = 0.0
 
-                print('SELF', self)
-                print('DEBUG', self[elem_name])
-
             # if perc_displayed > 1.0 the input is not a percentage but an amount -> we calculate the percentage
             if perc_displayed > 1.0:
                 num_displayed = int(perc_displayed)
@@ -86,7 +83,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
-    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(1.0, 0.0, 0.0, 1.0), update=atom_color_update)
+    color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
 
@@ -98,20 +95,21 @@ class AB_properties(bpy.types.PropertyGroup):
         ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
 
     # properties
-    vertex_percentage: bpy.props.FloatProperty(name="Displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=10, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
+    vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', default=(0.2, 0.2, 0.2, 1.0), subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4)
 
-    # for debug purposes
-    debug_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
-
-    debug_dataset_selection: bpy.props.EnumProperty(
+    # for developing purposes
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
+    dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
         default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
     )
+    dev_quick_file_loading: bpy.props.BoolProperty(name='Quick file loading', default=False)
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
@@ -243,7 +241,8 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
 
             # label row
             prop = context.scene.atom_blend_addon_settings
-            display_col.prop(prop, 'display_all_atoms', icon_only=True, icon='HIDE_OFF' if prop.display_all_atoms else 'HIDE_ON')
+            # display_col.prop(prop, 'display_all_atoms', icon_only=True, icon='HIDE_OFF' if prop.display_all_atoms else 'HIDE_ON')
+            display_col.label(text='')
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
@@ -281,9 +280,9 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
 
 
-class ATOMBLEND_PT_panel_debug(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_panel_debug"  # unique identifier for buttons and menu items to reference.
-    bl_label = "DEBUG"  # display name in the interface.
+class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_panel_dev"  # unique identifier for buttons and menu items to reference.
+    bl_label = "Development Extras"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -296,8 +295,11 @@ class ATOMBLEND_PT_panel_debug(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
-        col.prop(bpy.context.scene.atom_blend_addon_settings, 'debug_dataset_selection')
-        col.prop(bpy.context.scene.atom_blend_addon_settings, 'debug_automatic_file_loading')
+        col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_dataset_selection')
+        col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_automatic_file_loading')
+        row = col.row()
+        row.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_quick_file_loading')
+        row.prop(bpy.context.scene.atom_blend_addon_settings, 'vertex_percentage')
 
 class ATOMBLEND_PT_render_picture(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_render_picture"
@@ -314,8 +316,12 @@ class ATOMBLEND_PT_render_picture(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        row = layout.row()
-        row.label(text='RENDER!!')
+
+        # background color
+        background_color = layout.row()
+        background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
+
+        # render
         row = layout.row()
         row.operator('atom_blend.render_picture', icon='SCENE')
 
@@ -354,8 +360,8 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        if context.scene.atom_blend_addon_settings.debug_automatic_file_loading:
-            self.filepath = context.scene.atom_blend_addon_settings.debug_dataset_selection + '.epos'
+        if context.scene.atom_blend_addon_settings.dev_automatic_file_loading:
+            self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
@@ -389,8 +395,8 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        if context.scene.atom_blend_addon_settings.debug_automatic_file_loading:
-            self.filepath = context.scene.atom_blend_addon_settings.debug_dataset_selection + '.rrng'
+        if context.scene.atom_blend_addon_settings.dev_automatic_file_loading:
+            self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.rrng'
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
