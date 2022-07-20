@@ -51,6 +51,10 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].render.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
+        # change resolution to upright image
+        bpy.data.scenes["Scene"].render.resolution_x = 1080
+        bpy.data.scenes["Scene"].render.resolution_y = 1920
+
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = ABGlobals.unknown_label

@@ -90,15 +90,20 @@ class DisplaySettings(bpy.types.PropertyGroup):
 # Properties for all elements
 class AB_properties(bpy.types.PropertyGroup):
     # update functions
-
     def update_point_size(self, context):
         ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
+
+    def update_camera_location(self, context):
+        new_loc = context.scene.atom_blend_addon_settings.camera_location
+        bpy.context.scene.camera.location = new_loc
+
 
     # properties
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
-    background_color: bpy.props.FloatVectorProperty(name='Background color', default=(0.2, 0.2, 0.2, 1.0), subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4)
+    camera_location: bpy.props.FloatVectorProperty(name='Camera location', description='Camera location', size=4, update=update_camera_location)
 
     # for developing purposes
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
@@ -317,13 +322,74 @@ class ATOMBLEND_PT_render_picture(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
+
+
+class ATOMBLEND_PT_render_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_render_settings"
+    bl_label = "Render settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_render_picture"
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+
         # background color
         background_color = layout.row()
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
+class ATOMBLEND_PT_camera_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_camera_settings"
+    bl_label = "Camera settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_render_picture"
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def draw(self, context):
+        layout = self.layout
+
+        camera = bpy.context.scene.camera
+
+        row = layout.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'camera_location')
+
+
+
+class ATOMBLEND_PT_rendering(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_rendering"
+    bl_label = "Rendering"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = "ATOMBLEND_PT_render_picture"
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+
+    def draw(self, context):
+        layout = self.layout
         # render
         row = layout.row()
         row.operator('atom_blend.render_picture', icon='SCENE')
+
+        if not ABGlobals.FileLoaded_e_pos:
+            row.enabled = False
+        else:
+            row.enabeld = True
+
+
 
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
