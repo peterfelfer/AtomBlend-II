@@ -4,7 +4,6 @@ class ABShaders:
             in vec4 color;
             uniform mat4 projection_matrix;
             uniform mat4 object_matrix;
-            uniform mat4 view_matrix;
             uniform float point_size;
             uniform float alpha_radius;
             out vec4 f_color;
@@ -36,9 +35,6 @@ class ABShaders:
                 //     discard;
                 // }
                 //fragColor = f_color * a;
-                //fragColor = vec4(f_color.rgb, f_color.a * a);
-                gl_FragDepth = 0.0;
-                //fragColor = vec4(gl_FragCoord.z);
-                fragColor = vec4(gl_FragCoord.z,0,0,1);
+                fragColor = vec4(f_color.rgb, f_color.a * a);
             }
        '''
