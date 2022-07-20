@@ -54,8 +54,8 @@ class AtomBlendAddon:
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = ABGlobals.unknown_label
-        # element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
-        element_color_settings.color = (1.0, 0.0, 0.0, 1.0)
+        element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
+        # element_color_settings.color = (1.0, 0.0, 0.0, 1.0)
 
         # add unknown element to the list
         unknown_element_dict = {}
@@ -315,15 +315,20 @@ class AtomBlendAddon:
         print('concat done', time.perf_counter() - start)
 
         # reducing the atom data by a certain percentage by only taking the first n elements
-        atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage / 100
+        atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage
 
         # shuffling the data as they're kind of sorted by the z value
         concat_data = np.random.permutation(concat_data)
 
         print('randomizing done', time.perf_counter() - start)
 
-        num_of_atoms_percentage = int(num_of_atoms) # * atoms_percentage)
+        if bpy.context.scene.atom_blend_addon_settings.dev_quick_file_loading:
+            num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
+        else:
+            num_of_atoms_percentage = int(num_of_atoms)
         concat_data_percentage = concat_data[:num_of_atoms_percentage]
+
+        print(atoms_percentage, num_of_atoms, len(concat_data_percentage))
 
         # sort atoms by ['m/n']
         sorted_by_mn = concat_data_percentage[concat_data_percentage[:, 3].argsort()]
