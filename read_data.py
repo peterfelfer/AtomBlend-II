@@ -55,6 +55,12 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].render.resolution_x = 1080
         bpy.data.scenes["Scene"].render.resolution_y = 1920
 
+        # set camera location
+        bpy.context.scene.atom_blend_addon_settings.camera_location_x = 240.0
+        bpy.context.scene.atom_blend_addon_settings.camera_location_y = 0.0
+        bpy.context.scene.atom_blend_addon_settings.camera_location_z = 43.0
+
+
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = ABGlobals.unknown_label
