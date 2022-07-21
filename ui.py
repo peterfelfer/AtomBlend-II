@@ -108,8 +108,9 @@ class AB_properties(bpy.types.PropertyGroup):
         print(bpy.context.scene.camera.location[2], new_loc_z)
         bpy.context.scene.camera.location[2] = new_loc_z
 
-
     # properties
+    e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
+    rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
@@ -139,40 +140,10 @@ class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-class ATOMBLEND_PT_panel_rrng_file(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_panel_rrng_file"  # unique identifier for buttons and menu items to reference.
-    bl_label = "Load .rrng file"  # display name in the interface.
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_panel_general"
-
-    # define own poll method to be able to hide / show the panel on demand
-    @classmethod
-    def poll(cls, context):
-        # the panel should always be drawn
-        return True
-
-    def draw(self, context):
-        layout = self.layout
-
-        # define a box of UI elements
-        col = layout.column(align=True)
-        load_file_row = col.row(align=True)
-        load_file_row.operator('atom_blend_viewer.load_rrng_file', text="Load .rrng file", icon="FILE_FOLDER")
-
-        loaded_row = col.row()
-        if ABGlobals.FileLoaded_rrng:
-            split_path = ABGlobals.path_rrng.split('\\')
-            loaded_row.label(text='Loaded file: ' + split_path[-1])
-        else:
-            loaded_row.label(text='No file loaded yet...')
-
-        col.row(align=True)
 
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_file"  # unique identifier for buttons and menu items to reference.
-    bl_label = "Load .pos/.epos file"  # display name in the interface.
+    bl_label = "File loading"  # display name in the interface.
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -187,31 +158,26 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        # define a box of UI elements
-        col = layout.column(align=True)
+        # .pos/.epos file
+        load_e_pos_file_row = layout.row(align=True)
+        col = load_e_pos_file_row.split(factor=0.3)
+        col.label(text='.pos/.epos file:')
+        col = col.split(factor=1.0)
+        col.prop(bpy.context.scene.atom_blend_addon_settings, 'e_pos_filepath')
+        col.enabled = False
+        col = load_e_pos_file_row.column(align=True)
+        col.operator('atom_blend_viewer.load_file', icon='FILE_FOLDER')
 
-        load_file_row = col.row()
-        load_file_row.operator('atom_blend_viewer.load_file', text="Load .pos/.epos file", icon="FILE_FOLDER")
+        # .rrng file
+        load_rrng_file_row = layout.row(align=True)
+        col = load_rrng_file_row.split(factor=0.3)
+        col.label(text='.rrng file:')
+        col = col.split(factor=1.0)
+        col.prop(bpy.context.scene.atom_blend_addon_settings, 'rrng_filepath')
+        col.enabled = False
+        col = load_rrng_file_row.column(align=True)
+        col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER")
 
-        loaded_row = col.row()
-        # atoms_shown = col.row()
-        if ABGlobals.FileLoaded_e_pos:
-            # if not ABGlobals.FileLoaded_rrng:
-            #     vertex_percentage_row = col.row()
-            #     vertex_percentage_row.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
-
-            split_path = ABGlobals.path.split('\\')
-            loaded_row.label(text='Loaded file: ' + split_path[-1])
-
-            # atom_amount = len(ABGlobals.all_data)
-            # atom_amount = "{:,}".format(atom_amount)  # add comma after every thousand place
-            #
-            # atoms_shown.label(text='Displayed: ' + atom_amount + ' atoms')
-        else:
-            loaded_row.label(text='No file loaded yet...')
-            # atoms_shown.label(text='Displayed: n/a')
-
-        col.row(align=True)
 
 
 class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
@@ -362,7 +328,7 @@ class ATOMBLEND_PT_render_picture(bpy.types.Panel):
 # Operators used for buttons
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
-    bl_label = "Open file"
+    bl_label = ""
     bl_description = "Load a file of the following types:\n.epos, .pos"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -391,6 +357,9 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         ABGlobals.FileLoaded_e_pos = True
         print(f"Object Loaded: {ABGlobals.FileLoaded_e_pos}")
 
+        # set filepath to property
+        bpy.context.scene.atom_blend_addon_settings.e_pos_filepath = self.filepath
+
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -403,7 +372,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
 class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_rrng_file"
-    bl_label = "Open file"
+    bl_label = ""
     bl_description = "Load a file of the following types:\n.rrng"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -425,6 +394,9 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         ABGlobals.FileLoaded_rrng = True
         print(f"Object Loaded: {ABGlobals.FileLoaded_rrng}")
 
+        # set filepath to property
+        bpy.context.scene.atom_blend_addon_settings.rrng_filepath = self.filepath
+
         # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
         return {'FINISHED'}
 
@@ -436,9 +408,9 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
 
-class ATOMBLEND_OT_render_picture(bpy.types.Operator):
+class ATOMBLEND_OT_rendering(bpy.types.Operator):
     bl_idname = "atom_blend.render_picture"
-    bl_label = "Render picture"
+    bl_label = "Rendering"
     bl_description = "Render one frame of the scene"
 
     @classmethod
