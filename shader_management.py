@@ -113,6 +113,7 @@ class ABManagement:
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
             background_color = context.scene.atom_blend_addon_settings.background_color
+            print(background_color)
             fb.clear(color=background_color, depth=1.0)
 
             view_matrix = scene.camera.matrix_world.inverted()

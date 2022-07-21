@@ -93,9 +93,20 @@ class AB_properties(bpy.types.PropertyGroup):
     def update_point_size(self, context):
         ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
 
-    def update_camera_location(self, context):
-        new_loc = context.scene.atom_blend_addon_settings.camera_location
-        bpy.context.scene.camera.location = new_loc
+    def update_camera_location_x(self, context):
+        new_loc_x = context.scene.atom_blend_addon_settings.camera_location_x
+        print(bpy.context.scene.camera.location[0], new_loc_x)
+        bpy.context.scene.camera.location[0] = new_loc_x
+
+    def update_camera_location_y(self, context):
+        new_loc_y = context.scene.atom_blend_addon_settings.camera_location_y
+        print(bpy.context.scene.camera.location[1], new_loc_y)
+        bpy.context.scene.camera.location[1] = new_loc_y
+
+    def update_camera_location_z(self, context):
+        new_loc_z = context.scene.atom_blend_addon_settings.camera_location_z
+        print(bpy.context.scene.camera.location[2], new_loc_z)
+        bpy.context.scene.camera.location[2] = new_loc_z
 
 
     # properties
@@ -103,10 +114,12 @@ class AB_properties(bpy.types.PropertyGroup):
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
     background_color: bpy.props.FloatVectorProperty(name='Background color', default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4)
-    camera_location: bpy.props.FloatVectorProperty(name='Camera location', description='Camera location', size=4, update=update_camera_location)
+    camera_location_x: bpy.props.FloatProperty(name='X', description='Changes the x coordinate of the camera location', update=update_camera_location_x)
+    camera_location_y: bpy.props.FloatProperty(name='Y', description='Changes the y coordinate of the camera location', update=update_camera_location_y)
+    camera_location_z: bpy.props.FloatProperty(name='Z', description='Changes the z coordinate of the camera location', update=update_camera_location_z)
 
     # for developing purposes
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
@@ -209,6 +222,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_category = "AtomBlend-II"
     bl_parent_id = "ATOMBLEND_PT_panel_general"
 
+
     @classmethod
     def poll(cls, context):
         return True  # context.object is not None
@@ -292,6 +306,7 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
     bl_parent_id = "ATOMBLEND_PT_panel_general"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
@@ -322,64 +337,17 @@ class ATOMBLEND_PT_render_picture(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-
-
-class ATOMBLEND_PT_render_settings(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_render_settings"
-    bl_label = "Render settings"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_render_picture"
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def draw(self, context):
-        layout = self.layout
+        # camera settings
+        col = layout.column(align=True)
+        col.label(text='Camera location:')
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_location_x')
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_location_y')
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_location_z')
 
         # background color
         background_color = layout.row()
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
-class ATOMBLEND_PT_camera_settings(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_camera_settings"
-    bl_label = "Camera settings"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_render_picture"
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def draw(self, context):
-        layout = self.layout
-
-        camera = bpy.context.scene.camera
-
-        row = layout.row()
-        row.prop(context.scene.atom_blend_addon_settings, 'camera_location')
-
-
-
-class ATOMBLEND_PT_rendering(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_rendering"
-    bl_label = "Rendering"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_render_picture"
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-
-    def draw(self, context):
-        layout = self.layout
         # render
         row = layout.row()
         row.operator('atom_blend.render_picture', icon='SCENE')
@@ -480,11 +448,8 @@ class ATOMBLEND_OT_render_picture(bpy.types.Operator):
     def execute(self, context):
         print('OT pre render!')
 
-
         # ABManagement.render(self, context)
         ABManagement.save_image(self, context)
-
-
 
         print('OT post render!')
 
