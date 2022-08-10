@@ -22,12 +22,16 @@ sys.path.insert(0, ABGlobals.addon_path)
 class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
-        total_atoms_perc_displayed = total_atoms_perc_displayed / ABGlobals.num_all_elements
-        print(total_atoms_perc_displayed, ABGlobals.num_all_elements, context.scene.atom_blend_addon_settings.vertex_percentage)
+        total_atoms_perc_displayed = total_atoms_perc_displayed / len(ABGlobals.all_data)
+        print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
 
         # update function atom_coords_update gets called as we're editing perc_displayed
         for elem_name in ABGlobals.all_elements_by_name:
             bpy.context.scene.color_settings[elem_name].perc_displayed = total_atoms_perc_displayed
+
+        # update other lists
+        DisplaySettings.atom_color_update(self, context)
+        DisplaySettings.update_point_size(self, context)
 
     def atom_coords_update(self, context):
         # reset coords list
@@ -63,8 +67,9 @@ class DisplaySettings(bpy.types.PropertyGroup):
         if len(ABGlobals.atom_coords) > 0 and isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-        # update color list
+        # update other lists
         DisplaySettings.atom_color_update(self, context)
+        DisplaySettings.update_point_size(self, context)
 
     def atom_color_update(self, context):
         # reset color list
@@ -76,22 +81,42 @@ class DisplaySettings(bpy.types.PropertyGroup):
             col_struct = bpy.context.scene.color_settings[elem_name].color
             col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             ABGlobals.atom_color_list.append([col] * num_displayed)
-            print(elem_name, num_displayed)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if len(ABGlobals.atom_color_list) > 0 and isinstance(ABGlobals.atom_color_list[0], list):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
+    def update_point_size(self, context):
+        ABGlobals.point_size_list = []
+        print('UPDATE POINT SIZE DISPLAY SETTINGS')
+
+        for elem_name in ABGlobals.all_elements_by_name:
+            num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+            point_size = bpy.context.scene.color_settings[elem_name].point_size
+            ABGlobals.point_size_list.append([point_size] * num_displayed)
+            print(elem_name, point_size, num_displayed, len(ABGlobals.point_size_list))
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
+            ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
+    point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
+
 
 # Properties for all elements
 class AB_properties(bpy.types.PropertyGroup):
     # update functions
     def update_point_size(self, context):
-        ABGlobals.point_size = context.scene.atom_blend_addon_settings.point_size
+        print('UPDATE POINT SIZE AB PROP')
+        general_point_size = context.scene.atom_blend_addon_settings.point_size
+
+        for elem_name in ABGlobals.all_elements_by_name:
+            bpy.context.scene.color_settings[elem_name].point_size = general_point_size
+
 
     def update_camera_location_x(self, context):
         new_loc_x = context.scene.atom_blend_addon_settings.camera_location_x
@@ -112,9 +137,9 @@ class AB_properties(bpy.types.PropertyGroup):
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
     rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
-    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, description='Point size of the atoms', update=update_point_size)
+    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
-    background_color: bpy.props.FloatVectorProperty(name='Background color', default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, default=[1.0, 1.0, 1.0])
     camera_location_x: bpy.props.FloatProperty(name='X', description='Changes the x coordinate of the camera location', update=update_camera_location_x)
     camera_location_y: bpy.props.FloatProperty(name='Y', description='Changes the y coordinate of the camera location', update=update_camera_location_y)
     camera_location_z: bpy.props.FloatProperty(name='Z', description='Changes the z coordinate of the camera location', update=update_camera_location_z)
@@ -179,7 +204,6 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER")
 
 
-
 class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_shader_display_settings"  # unique identifier for buttons and menu items to reference.
     bl_label = "Display settings"  # display name in the interface.
@@ -212,15 +236,17 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             # display_col = row.column()
             split = layout.split(factor=0.1)
             display_col = split.column()
-            split = split.split(factor=0.1 / 0.9)
+            split = split.split(factor=0.05 / 0.9)
             name_col = split.column()
-            split = split.split(factor=0.1 / 0.8)
+            split = split.split(factor=0.05 / 0.85)
             charge_col = split.column()
-            split = split.split(factor=0.1 / 0.7)
+            split = split.split(factor=0.1 / 0.8)
             color_col = split.column()
             split = split.split(factor=0.2 / 0.6)
+            point_size_col = split.column()
+            split = split.split(factor=0.2 / 0.4)
             displayed_col = split.column()
-            split = split.split(factor=0.4 / 0.4)
+            split = split.split(factor=0.2 / 0.2)
             amount_col = split.column()
             split = split.split(factor=0.0)
 
@@ -231,6 +257,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
+            point_size_col.label(text='Point size')
             displayed_col.label(text='% Displayed')
             amount_col.label(text='# Displayed')
 
@@ -245,6 +272,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
                 name_col.label(text=elem_name)
                 charge_col.label(text=elem_charge)
                 color_col.prop(prop, 'color')
+                point_size_col.prop(prop, 'point_size')
                 displayed_col.prop(prop, 'perc_displayed')
                 atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
                 atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
@@ -259,6 +287,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             name_col.label(text=elem_name)
             charge_col.label(text=elem_charge)
             color_col.prop(prop, 'color')
+            point_size_col.prop(prop, 'point_size')
             displayed_col.prop(prop, 'perc_displayed')
             atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
             atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
@@ -274,21 +303,23 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
     bl_parent_id = "ATOMBLEND_PT_panel_general"
     bl_options = {'DEFAULT_CLOSED'}
 
-    @classmethod
-    def poll(cls, context):
-        return True  # context.object is not None
+    # @classmethod
+    # def poll(cls, context):
+    #     return True  # context.object is not None
 
     def draw(self, context):
         layout = self.layout
         col = layout.column(align=True)
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_dataset_selection')
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_automatic_file_loading')
-        row = col.row()
-        row.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_quick_file_loading')
-        row.prop(bpy.context.scene.atom_blend_addon_settings, 'vertex_percentage')
 
-class ATOMBLEND_PT_render_picture(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_render_picture"
+        # quick file loading
+        # row = col.row()
+        # row.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_quick_file_loading')
+        # row.prop(bpy.context.scene.atom_blend_addon_settings, 'vertex_percentage')
+
+class ATOMBLEND_PT_rendering(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_rendering"
     bl_label = "Render picture"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -311,17 +342,17 @@ class ATOMBLEND_PT_render_picture(bpy.types.Panel):
         col.prop(context.scene.atom_blend_addon_settings, 'camera_location_z')
 
         # background color
-        background_color = layout.row()
+        background_color = layout.row(align=True)
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
         # render
         row = layout.row()
-        row.operator('atom_blend.render_picture', icon='SCENE')
+        row.operator('atom_blend.rendering', icon='SCENE')
 
         if not ABGlobals.FileLoaded_e_pos:
             row.enabled = False
         else:
-            row.enabeld = True
+            row.enabled = True
 
 
 
@@ -409,7 +440,7 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
             return {'RUNNING_MODAL'}
 
 class ATOMBLEND_OT_rendering(bpy.types.Operator):
-    bl_idname = "atom_blend.render_picture"
+    bl_idname = "atom_blend.rendering"
     bl_label = "Rendering"
     bl_description = "Render one frame of the scene"
 

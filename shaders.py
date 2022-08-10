@@ -2,16 +2,17 @@ class ABShaders:
     vertex_shader_simple = '''
             in vec3 position;
             in vec4 color;
+            in float ps;
             uniform mat4 projection_matrix;
             uniform mat4 object_matrix;
-            uniform float point_size;
+            //uniform float point_size;
             uniform float alpha_radius;
             out vec4 f_color;
             out float f_alpha_radius;
             void main()
             {
                 gl_Position = projection_matrix * object_matrix * vec4(position, 1.0f);
-                gl_PointSize = point_size;
+                gl_PointSize = ps;
                 f_color = vec4(color[0], color[1], color[2], color[3]);
                 //f_color = vec4(1.0, 1.0, 1.0, 1.0);
                 f_alpha_radius = alpha_radius;
