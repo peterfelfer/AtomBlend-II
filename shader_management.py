@@ -55,10 +55,20 @@ class ABManagement:
         # create empty object for object matrix
         bpy.ops.object.empty_add(type='PLAIN_AXES')
 
+        # rotate 180 degrees around x axis
+        bpy.data.objects["Empty"].rotation_euler[0] = math.pi
+
         # set camera if it doesn't exist yet
         if bpy.context.scene.camera is None:
-            bpy.ops.object.camera_add(location=(0.0, 0.0, 8.0))
+            bpy.ops.object.camera_add(location=(-6.0, 300.0, -32))
+            bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
+
             # TODO: disable for viewport
+
+        # init point sizes
+        num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+        point_size = bpy.context.scene.color_settings[elem_name].point_size
+        ABGlobals.point_size_list = [point_size] * num_displayed
 
         # save in cache
         cache = ABManagement.cache
@@ -82,7 +92,8 @@ class ABManagement:
             # print('ATOM COORDS', ABGlobals.atom_coords)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
-        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
+        print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
+        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
         # uniform preparations
         proj_matrix = bpy.context.region_data.perspective_matrix
@@ -92,7 +103,7 @@ class ABManagement:
         shader.bind()
         shader.uniform_float('projection_matrix', proj_matrix)
         shader.uniform_float('object_matrix', object_matrix)
-        shader.uniform_float('point_size', ABGlobals.point_size)
+        # shader.uniform_float('point_size', ABGlobals.point_size)
         shader.uniform_float('alpha_radius', 1.0)
         batch.draw(shader)
 
@@ -113,7 +124,7 @@ class ABManagement:
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
             background_color = context.scene.atom_blend_addon_settings.background_color
-            print(background_color)
+
             fb.clear(color=background_color, depth=1.0)
 
             view_matrix = scene.camera.matrix_world.inverted()
@@ -124,12 +135,12 @@ class ABManagement:
             # draw shader
             shader = cache['shader']
 
-            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
+            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
             shader.uniform_float('object_matrix', object_matrix)
-            shader.uniform_float('point_size', ABGlobals.point_size)
+            # shader.uniform_float('point_size', ABGlobals.point_size)
             shader.uniform_float('alpha_radius', 1.0)
             batch.draw(shader)
 

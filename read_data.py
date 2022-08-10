@@ -191,6 +191,10 @@ class AtomBlendAddon:
         if isinstance(ABGlobals.atom_color_list[0], list):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
         '''
+
+        # # update point size list
+        # DisplaySettings.atom_color_update(self, context)
+
         if isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
@@ -252,12 +256,17 @@ class AtomBlendAddon:
                 # add this element to element list
                 ABGlobals.all_elements.append(this_element)
 
+                # set the current general point size to all the element point sizes
+                general_point_size = context.scene.atom_blend_addon_settings.point_size
+
                 # add this element to element property group to create a color picker in the color settings tab
                 elem_name = this_element['element_name'] + '_' + str(this_element['charge'])
                 if elem_name not in bpy.context.scene.color_settings:
                     element_color_settings = bpy.context.scene.color_settings.add()
                     element_color_settings.name = elem_name
+                    element_color_settings.point_size = general_point_size
                     element_color_settings.color = this_element['color']
+                    # element_color_settings.point_size = 5.0
                     ABGlobals.element_count[elem_name] = 0
 
         # sort atoms by start range
@@ -351,7 +360,6 @@ class AtomBlendAddon:
         ABGlobals.atom_coords = coords
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'] = ABGlobals.atom_coords
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['num_of_atoms'] = len(ABGlobals.atom_coords)
-        ABGlobals.num_all_elements = len(coords)
 
         # if both rrng and (e)pos file are loaded, we combine these two files
         # AtomBlendAddon.e_pos_shader_prep(self, context)

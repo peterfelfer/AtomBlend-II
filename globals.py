@@ -30,9 +30,9 @@ class ABGlobals:
     atomic_numbers = []
     element_count = {}  # counts the amount of each element to pass the correct amount of colors to the shader later
     atom_coords = []
-    num_all_elements = 0
     unknown_label = 'n/a_n/a'
 
     # atom appearance
     atom_color_list = []
+    point_size_list = []
     point_size = 5.0
