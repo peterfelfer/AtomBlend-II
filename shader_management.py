@@ -52,17 +52,20 @@ class ABManagement:
         # add draw handler that will be called every time this region in this space type will be drawn
         ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
 
-        # create empty object for object matrix
-        bpy.ops.object.empty_add(type='PLAIN_AXES')
+        # create empty representing the approximate center of the atom tip
+        center_z = (ABGlobals.max_z_value + ABGlobals.min_z_value) / 2
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0.0,0.0, center_z))
+        bpy.data.objects['Empty'].name = 'Center'
 
         # rotate 180 degrees around x axis
-        bpy.data.objects["Empty"].rotation_euler[0] = math.pi
+        bpy.data.objects['Center'].rotation_euler[0] = math.pi
 
         # set camera if it doesn't exist yet
         if bpy.context.scene.camera is None:
-            bpy.ops.object.camera_add(location=(-6.0, 300.0, -32))
-            bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
+            # calculate camera position
 
+            bpy.ops.object.camera_add(location=(0,300,0))
+            bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
             # TODO: disable for viewport
 
         # init point sizes
@@ -76,7 +79,13 @@ class ABManagement:
         cache['camera'] = bpy.context.scene.camera
 
     def handler(self, context):
-        # print('HANDLER')
+        # update camera position in addon (if the camera is moved via viewport)
+        cam_loc = bpy.data.objects["Camera"].location
+        context.scene.atom_blend_addon_settings.camera_location_x = cam_loc[0]
+        context.scene.atom_blend_addon_settings.camera_location_y = cam_loc[1]
+        context.scene.atom_blend_addon_settings.camera_location_z = cam_loc[2]
+
+        # render frame
         ABManagement.render(self, context)
 
     def render(self, context):
@@ -92,12 +101,12 @@ class ABManagement:
             # print('ATOM COORDS', ABGlobals.atom_coords)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
-        print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
+        # print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
         # uniform preparations
         proj_matrix = bpy.context.region_data.perspective_matrix
-        object_matrix = bpy.data.objects['Empty'].matrix_world
+        object_matrix = bpy.data.objects['Center'].matrix_world
 
         # pass uniforms to shader
         shader.bind()
@@ -130,7 +139,7 @@ class ABManagement:
             view_matrix = scene.camera.matrix_world.inverted()
             camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
             proj_matrix = camera_matrix @ view_matrix
-            object_matrix = bpy.data.objects['Empty'].matrix_world
+            object_matrix = bpy.data.objects['Center'].matrix_world
 
             # draw shader
             shader = cache['shader']
@@ -140,7 +149,6 @@ class ABManagement:
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
             shader.uniform_float('object_matrix', object_matrix)
-            # shader.uniform_float('point_size', ABGlobals.point_size)
             shader.uniform_float('alpha_radius', 1.0)
             batch.draw(shader)
 

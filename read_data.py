@@ -336,21 +336,22 @@ class AtomBlendAddon:
         # reducing the atom data by a certain percentage by only taking the first n elements
         atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage
 
+        # save the min and max z positions for camera settings later on
+        ABGlobals.min_z_value = float(concat_data[0, 2])
+        ABGlobals.max_z_value = float(concat_data[-1, 2])
+
         # shuffling the data as they're kind of sorted by the z value
         concat_data = np.random.permutation(concat_data)
 
         print('randomizing done', time.perf_counter() - start)
 
-        if bpy.context.scene.atom_blend_addon_settings.dev_quick_file_loading:
-            num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
-        else:
-            num_of_atoms_percentage = int(num_of_atoms)
-        concat_data_percentage = concat_data[:num_of_atoms_percentage]
+        num_of_atoms = int(num_of_atoms)
+        concat_data = concat_data[:num_of_atoms]
 
-        print(atoms_percentage, num_of_atoms, len(concat_data_percentage))
+        print(atoms_percentage, num_of_atoms, len(concat_data))
 
         # sort atoms by ['m/n']
-        sorted_by_mn = concat_data_percentage[concat_data_percentage[:, 3].argsort()]
+        sorted_by_mn = concat_data[concat_data[:, 3].argsort()]
         ABGlobals.all_data = sorted_by_mn
 
         print('sorting done', time.perf_counter() - start)
