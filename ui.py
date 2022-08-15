@@ -118,20 +118,24 @@ class AB_properties(bpy.types.PropertyGroup):
             bpy.context.scene.color_settings[elem_name].point_size = general_point_size
 
     def update_camera_location_x(self, context):
-        new_loc_x = context.scene.atom_blend_addon_settings.camera_location_x
-        bpy.context.scene.camera.location[0] = new_loc_x
+        if ABGlobals.FileLoaded_e_pos:
+            new_loc_x = context.scene.atom_blend_addon_settings.camera_location_x
+            bpy.context.scene.camera.location[0] = new_loc_x
 
     def update_camera_location_y(self, context):
-        new_loc_y = context.scene.atom_blend_addon_settings.camera_location_y
-        bpy.context.scene.camera.location[1] = new_loc_y
+        if ABGlobals.FileLoaded_e_pos:
+            new_loc_y = context.scene.atom_blend_addon_settings.camera_location_y
+            bpy.context.scene.camera.location[1] = new_loc_y
 
     def update_camera_location_z(self, context):
-        new_loc_z = context.scene.atom_blend_addon_settings.camera_location_z
-        bpy.context.scene.camera.location[2] = new_loc_z
+        if ABGlobals.FileLoaded_e_pos:
+            new_loc_z = context.scene.atom_blend_addon_settings.camera_location_z
+            bpy.context.scene.camera.location[2] = new_loc_z
 
     def update_background_color(self, context):
-        bc = context.scene.atom_blend_addon_settings.background_color
-        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (bc[0], bc[1], bc[2], 1.0)
+        pass
+        # bc = context.scene.atom_blend_addon_settings.background_color
+        # bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (bc[0], bc[1], bc[2], 1.0)
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -139,7 +143,7 @@ class AB_properties(bpy.types.PropertyGroup):
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
-    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, default=[1.0, 1.0, 1.0], update=update_background_color)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
     camera_location_x: bpy.props.FloatProperty(name='X', description='Changes the x coordinate of the camera location', update=update_camera_location_x)
     camera_location_y: bpy.props.FloatProperty(name='Y', description='Changes the y coordinate of the camera location', update=update_camera_location_y)
     camera_location_z: bpy.props.FloatProperty(name='Z', description='Changes the z coordinate of the camera location', update=update_camera_location_z)
@@ -357,7 +361,6 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
                 pass
             elif context.space_data.region_3d.view_perspective == 'CAMERA':
                 pass
-
             # if not ABGlobals.FileLoaded_e_pos:
             #     row.enabled = False
             # else:
@@ -475,7 +478,11 @@ class ATOMBLEND_OT_preview(bpy.types.Operator):
             # if area.type == 'VIEW_3D':
         if context.space_data.region_3d.view_perspective == 'PERSP':
             context.space_data.region_3d.view_perspective = 'CAMERA'
+            background_color = bpy.context.scene.atom_blend_addon_settings.background_color
+            bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
+
         elif context.space_data.region_3d.view_perspective == 'CAMERA':
             context.space_data.region_3d.view_perspective = 'PERSP'
+            bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
 
         return {'FINISHED'}
