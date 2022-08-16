@@ -43,5 +43,6 @@ class ABGlobals:
     point_size_list = []
     point_size = 5.0
 
-    # render mode
+    # booleans for operators
     render_frame = True  # if True, we render a picture, if False, we render a video
+    animation_playing = False
