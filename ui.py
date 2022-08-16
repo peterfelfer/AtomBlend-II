@@ -18,7 +18,8 @@ from .globals import ABGlobals
 # append the add-on's path to Blender's python PATH
 sys.path.insert(0, ABGlobals.addon_path)
 
-# properties for each element
+# --- properties that each element has ---
+# e.g. each element has its own name, charge, point size, ...
 class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
@@ -106,8 +107,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
 
-
-# Properties for all elements
+# --- properties used for all elements ---
 class AB_properties(bpy.types.PropertyGroup):
     # update functions
     def update_point_size(self, context):
@@ -117,25 +117,29 @@ class AB_properties(bpy.types.PropertyGroup):
         for elem_name in ABGlobals.all_elements_by_name:
             bpy.context.scene.color_settings[elem_name].point_size = general_point_size
 
-    def update_camera_location_x(self, context):
-        if ABGlobals.FileLoaded_e_pos:
-            new_loc_x = context.scene.atom_blend_addon_settings.camera_location_x
-            bpy.context.scene.camera.location[0] = new_loc_x
+    def update_camera_distance(self, context):
+        dist = self.camera_distance
+        bpy.data.objects['Camera path'].scale = (dist, dist, dist)
 
-    def update_camera_location_y(self, context):
-        if ABGlobals.FileLoaded_e_pos:
-            new_loc_y = context.scene.atom_blend_addon_settings.camera_location_y
-            bpy.context.scene.camera.location[1] = new_loc_y
+    def update_camera_tilt(self, context):
+        angle = self.camera_tilt
+        bpy.data.objects['Camera path'].location[2] = angle
 
-    def update_camera_location_z(self, context):
-        if ABGlobals.FileLoaded_e_pos:
-            new_loc_z = context.scene.atom_blend_addon_settings.camera_location_z
-            bpy.context.scene.camera.location[2] = new_loc_z
+    def update_camera_rotation(self, context):
+        offset = self.camera_rotation
+        bpy.data.objects["Camera"].constraints["Follow Path"].offset = offset
 
-    def update_background_color(self, context):
-        pass
-        # bc = context.scene.atom_blend_addon_settings.background_color
-        # bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (bc[0], bc[1], bc[2], 1.0)
+    def update_frame_amount(self, context):
+        # set frame amount in path settings
+        bpy.context.view_layer.objects.active = bpy.data.objects['Camera path']
+        bpy.data.curves['BezierCircle'].path_duration = self.frame_amount
+
+        # animate path
+        bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+        bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
+
+        # set total amount of frames
+        bpy.data.scenes["Scene"].frame_end = self.frame_amount
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -143,10 +147,12 @@ class AB_properties(bpy.types.PropertyGroup):
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Point size of the atoms', update=update_point_size)
     display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
-    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
-    camera_location_x: bpy.props.FloatProperty(name='X', description='Changes the x coordinate of the camera location', update=update_camera_location_x)
-    camera_location_y: bpy.props.FloatProperty(name='Y', description='Changes the y coordinate of the camera location', update=update_camera_location_y)
-    camera_location_z: bpy.props.FloatProperty(name='Z', description='Changes the z coordinate of the camera location', update=update_camera_location_z)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0])
+    camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=1.0, description='Edit the camera distance to the tip', update=update_camera_distance)
+    camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
+    camera_tilt: bpy.props.FloatProperty(name='Camera tilt', default=0.0, description='Edit the camera tilt', update=update_camera_tilt)
+    frame_amount: bpy.props.IntProperty(name='Frames', default=250, description='Amount of frames', update=update_frame_amount)
+
 
     # for developing purposes
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
@@ -169,7 +175,7 @@ class ATOMBLEND_PT_panel_general(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-
+# --- file loading ---
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_file"  # unique identifier for buttons and menu items to reference.
     bl_label = "File loading"  # display name in the interface.
@@ -207,7 +213,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col = load_rrng_file_row.column(align=True)
         col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER")
 
-
+# --- display settings ---
 class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_shader_display_settings"  # unique identifier for buttons and menu items to reference.
     bl_label = "Display settings"  # display name in the interface.
@@ -219,7 +225,8 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
 
     @classmethod
     def poll(cls, context):
-        return True  # context.object is not None
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
 
     def draw(self, context):
         layout = self.layout
@@ -239,19 +246,19 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             # col = layout.column()
             # display_col = row.column()
             split = layout.split(factor=0.1)
-            display_col = split.column()
+            display_col = split.column(align=True)
             split = split.split(factor=0.05 / 0.9)
-            name_col = split.column()
+            name_col = split.column(align=True)
             split = split.split(factor=0.05 / 0.85)
-            charge_col = split.column()
+            charge_col = split.column(align=True)
             split = split.split(factor=0.1 / 0.8)
-            color_col = split.column()
+            color_col = split.column(align=True)
             split = split.split(factor=0.2 / 0.6)
-            point_size_col = split.column()
+            point_size_col = split.column(align=True)
             split = split.split(factor=0.2 / 0.4)
-            displayed_col = split.column()
+            displayed_col = split.column(align=True)
             split = split.split(factor=0.2 / 0.2)
-            amount_col = split.column()
+            amount_col = split.column(align=True)
             split = split.split(factor=0.0)
 
             # label row
@@ -297,7 +304,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
             amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
 
-
+# --- development extras ---
 class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_dev"  # unique identifier for buttons and menu items to reference.
     bl_label = "Development Extras"  # display name in the interface.
@@ -322,18 +329,20 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
         # row.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_quick_file_loading')
         # row.prop(bpy.context.scene.atom_blend_addon_settings, 'vertex_percentage')
 
+# --- render settings ---
 class ATOMBLEND_PT_rendering(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_rendering"
-    bl_label = "Render picture"
+    bl_label = "Rendering"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
     bl_parent_id = "ATOMBLEND_PT_panel_general"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
-        # the panel should always be drawn
-        return True
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
 
     def draw(self, context):
         layout = self.layout
@@ -341,33 +350,38 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         if ABGlobals.FileLoaded_e_pos:
             # camera settings
             col = layout.column(align=True)
-            col.label(text='Camera location:')
-            col.prop(context.scene.atom_blend_addon_settings, 'camera_location_x')
-            col.prop(context.scene.atom_blend_addon_settings, 'camera_location_y')
-            col.prop(context.scene.atom_blend_addon_settings, 'camera_location_z')
+            render_mode_row = col.row(align=True)
+            render_mode_row.operator('atom_blend.render_frame', depress=ABGlobals.render_frame)
+            render_mode_row.operator('atom_blend.render_video', depress=not ABGlobals.render_frame)
+
+            # camera location
+            col.label(text='Camera settings:')
+            col.prop(context.scene.atom_blend_addon_settings, 'camera_distance')
+            col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
+            col.prop(context.scene.atom_blend_addon_settings, 'camera_tilt')
 
             # background color
             background_color = layout.row(align=True)
             background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
+            if not ABGlobals.render_frame:
+                # frame amount
+                frame_amount = layout.row(align=True)
+                frame_amount.prop(context.scene.atom_blend_addon_settings, 'frame_amount')
+
             # render
             row = layout.row()
             preview_col = row.column(align=True)
             render_col = row.column(align=True)
-            preview_col.operator('atom_blend.preview', icon='SEQ_PREVIEW')
-            render_col.operator('atom_blend.rendering', icon='RENDER_STILL')
+            if context.space_data.region_3d.view_perspective == 'PERSP':  # view mode
+                preview_col.operator('atom_blend.preview', icon='SEQ_PREVIEW')
+            elif context.space_data.region_3d.view_perspective == 'CAMERA':  # preview
+                preview_col.operator('atom_blend.preview', icon='SEQ_PREVIEW', depress=True)
 
-            if context.space_data.region_3d.view_perspective == 'PERSP':
-                pass
-            elif context.space_data.region_3d.view_perspective == 'CAMERA':
-                pass
-            # if not ABGlobals.FileLoaded_e_pos:
-            #     row.enabled = False
-            # else:
-            #     row.enabled = True
+            render_col.operator('atom_blend.render', icon='RENDER_STILL')
 
 
-# Operators used for buttons
+# --- file loading ---
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
     bl_label = ""
@@ -388,7 +402,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
         # if there's already an object loaded we want to delete it so we can load another object
         if ABGlobals.FileLoaded_e_pos:
-            obj_to_delete = bpy.data.objects['Center']
+            obj_to_delete = bpy.data.objects['Top']
             bpy.data.objects.remove(obj_to_delete, do_unlink=True)
 
         if ABGlobals.path.lower().endswith('.epos'):
@@ -405,7 +419,8 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        if context.scene.atom_blend_addon_settings.dev_automatic_file_loading:
+        path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+        if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
             self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
             return self.execute(context)
         else:
@@ -443,17 +458,50 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        if context.scene.atom_blend_addon_settings.dev_automatic_file_loading:
+        path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+        if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
             self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.rrng'
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
 
-class ATOMBLEND_OT_rendering(bpy.types.Operator):
-    bl_idname = "atom_blend.rendering"
-    bl_label = "Rendering"
-    bl_description = "Render one frame of the scene"
+
+# --- buttons for switching between rendering a picture and video ---
+# (maybe there is a better solution for this...)
+class ATOMBLEND_OT_render_frame(bpy.types.Operator):
+    bl_idname = "atom_blend.render_frame"
+    bl_label = "Render picture"
+    bl_description = "Render a picture"
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def execute(self, context):
+        ABGlobals.render_frame = True
+        return {'FINISHED'}
+
+class ATOMBLEND_OT_render_video(bpy.types.Operator):
+    bl_idname = "atom_blend.render_video"
+    bl_label = "Render video"
+    bl_description = "Render a video"
+
+    @classmethod
+    def poll(cls, context):
+        return ABGlobals.FileLoaded_e_pos
+        # return True  # context.object is not None
+
+    def execute(self, context):
+        ABGlobals.render_frame = False
+        return {'FINISHED'}
+
+
+# --- render button ---
+class ATOMBLEND_OT_render(bpy.types.Operator):
+    bl_idname = "atom_blend.render"
+    bl_label = "Render"
+    bl_description = "Render the scene"
 
     @classmethod
     def poll(cls, context):
@@ -463,6 +511,7 @@ class ATOMBLEND_OT_rendering(bpy.types.Operator):
         ABManagement.save_image(self, context)
         return {'FINISHED'}
 
+# --- preview the render ---
 class ATOMBLEND_OT_preview(bpy.types.Operator):
     bl_idname = "atom_blend.preview"
     bl_label = "Render preview"

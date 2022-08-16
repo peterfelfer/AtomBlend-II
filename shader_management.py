@@ -52,21 +52,44 @@ class ABManagement:
         # add draw handler that will be called every time this region in this space type will be drawn
         ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
 
+        # create empty to move the atom tip to the center (0,0,0)
+        top_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
+        top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
+        top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
+
+        print(top_x, top_y, top_z)
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, top_z))
+        bpy.data.objects['Empty'].name = 'Top'
+
         # create empty representing the approximate center of the atom tip
-        center_z = (ABGlobals.max_z_value + ABGlobals.min_z_value) / 2
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0.0,0.0, center_z))
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(top_x, top_y, 0))
         bpy.data.objects['Empty'].name = 'Center'
 
-        # rotate 180 degrees around x axis
-        bpy.data.objects['Center'].rotation_euler[0] = math.pi
+        # create empty representing the origin (0,0,0)
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+        bpy.data.objects['Empty'].name = 'Origin'
+
+        # rotate tip 180 degrees around x axis
+        bpy.data.objects['Top'].rotation_euler[0] = math.pi
 
         # set camera if it doesn't exist yet
         if bpy.context.scene.camera is None:
             # calculate camera position
-
-            bpy.ops.object.camera_add(location=(0,300,0))
+            bpy.ops.object.camera_add(location=(0,0,0))
             bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
             # TODO: disable for viewport
+
+        # preparations for video rendering
+        bpy.ops.curve.primitive_bezier_circle_add(radius=100, location=bpy.data.objects['Center'].location)
+        bpy.data.objects['BezierCircle'].name = 'Camera path'
+        # constraint = bpy.data.objects['Camera'].constraints.new('COPY_LOCATION')
+        # constraint.target = bpy.data.objects['Origin']
+        constraint = bpy.data.objects['Camera'].constraints.new('FOLLOW_PATH')
+        constraint.target = bpy.data.objects['Camera path']
+        bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+        bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
+        constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
+        constraint.target = bpy.data.objects['Center']
 
         # init point sizes
         num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
@@ -81,9 +104,9 @@ class ABManagement:
     def handler(self, context):
         # update camera position in addon (if the camera is moved via viewport)
         cam_loc = bpy.data.objects["Camera"].location
-        context.scene.atom_blend_addon_settings.camera_location_x = cam_loc[0]
-        context.scene.atom_blend_addon_settings.camera_location_y = cam_loc[1]
-        context.scene.atom_blend_addon_settings.camera_location_z = cam_loc[2]
+        context.scene.atom_blend_addon_settings.camera_location_x_frame = cam_loc[0]
+        context.scene.atom_blend_addon_settings.camera_location_y_frame = cam_loc[1]
+        context.scene.atom_blend_addon_settings.camera_location_z_frame = cam_loc[2]
 
         # render frame
         ABManagement.render(self, context)
@@ -106,7 +129,7 @@ class ABManagement:
 
         # uniform preparations
         proj_matrix = bpy.context.region_data.perspective_matrix
-        object_matrix = bpy.data.objects['Center'].matrix_world
+        object_matrix = bpy.data.objects['Top'].matrix_world
 
         # pass uniforms to shader
         shader.bind()
@@ -139,7 +162,7 @@ class ABManagement:
             view_matrix = scene.camera.matrix_world.inverted()
             camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
             proj_matrix = camera_matrix @ view_matrix
-            object_matrix = bpy.data.objects['Center'].matrix_world
+            object_matrix = bpy.data.objects['Top'].matrix_world
 
             # draw shader
             shader = cache['shader']
