@@ -56,9 +56,9 @@ class AtomBlendAddon:
         bpy.data.scenes["Scene"].render.resolution_y = 1920
 
         # set camera location
-        bpy.context.scene.atom_blend_addon_settings.camera_location_x = 240.0
-        bpy.context.scene.atom_blend_addon_settings.camera_location_y = 0.0
-        bpy.context.scene.atom_blend_addon_settings.camera_location_z = 43.0
+        bpy.context.scene.atom_blend_addon_settings.camera_location_x_frame = 240.0
+        bpy.context.scene.atom_blend_addon_settings.camera_location_y_frame = 0.0
+        bpy.context.scene.atom_blend_addon_settings.camera_location_z_frame = 43.0
 
 
         # add the unknown element to color structures
@@ -336,9 +336,18 @@ class AtomBlendAddon:
         # reducing the atom data by a certain percentage by only taking the first n elements
         atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage
 
-        # save the min and max z positions for camera settings later on
-        ABGlobals.min_z_value = float(concat_data[0, 2])
-        ABGlobals.max_z_value = float(concat_data[-1, 2])
+        # save the min and max x, y, z positions for camera settings later on
+        # ABGlobals.min_z_value = float(concat_data[0, 2])
+        # ABGlobals.max_z_value = float(concat_data[-1, 2])
+        ABGlobals.max_x = concat_data[:, 0].max()
+        ABGlobals.min_x = concat_data[:, 0].min()
+        ABGlobals.max_y = concat_data[:, 1].max()
+        ABGlobals.min_y = concat_data[:, 1].min()
+        ABGlobals.max_z = concat_data[:, 2].max()
+        ABGlobals.min_z = concat_data[:, 2].min()
+
+        print(ABGlobals.max_x, ABGlobals.min_x, ABGlobals.max_y, ABGlobals.min_y, ABGlobals.max_z, ABGlobals.min_z)
+
 
         # shuffling the data as they're kind of sorted by the z value
         concat_data = np.random.permutation(concat_data)

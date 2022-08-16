@@ -31,10 +31,17 @@ class ABGlobals:
     element_count = {}  # counts the amount of each element to pass the correct amount of colors to the shader later
     atom_coords = []
     unknown_label = 'n/a_n/a'
-    max_z_value = 0
-    min_z_value = 0
+    max_x = 0
+    min_x = 0
+    max_y = 0
+    min_y = 0
+    max_z = 0
+    min_z = 0
 
     # atom appearance
     atom_color_list = []
     point_size_list = []
     point_size = 5.0
+
+    # render mode
+    render_frame = True  # if True, we render a picture, if False, we render a video
