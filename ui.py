@@ -135,8 +135,8 @@ class AB_properties(bpy.types.PropertyGroup):
         bpy.data.curves['BezierCircle'].path_duration = self.frame_amount
 
         # animate path
-        bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
-        bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
+        # bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
+        # bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
 
         # set total amount of frames
         bpy.data.scenes["Scene"].frame_end = self.frame_amount
@@ -259,7 +259,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             displayed_col = split.column(align=True)
             split = split.split(factor=0.2 / 0.2)
             amount_col = split.column(align=True)
-            split = split.split(factor=0.0)
+            # split = split.split(factor=0.0)
 
             # label row
             # prop = context.scene.atom_blend_addon_settings
@@ -371,13 +371,28 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
 
             # render
             row = layout.row()
-            preview_col = row.column(align=True)
-            render_col = row.column(align=True)
+            # preview_col = row.column(align=True)
+            # render_col = row.column(align=True)
+
+            # prev_split = preview_col.split(factor=0.8)
+            # preview_button_col = prev_split.column(align=True)
+            #
+            # preview_split = prev_split.split(factor=1.0)
+            # start_stop_col = preview_split.column(align=True)
+
+            preview_col = row.split()
+            preview_col = preview_col.split(align=True, factor=1.0 if ABGlobals.render_frame else 0.9)
+
             if context.space_data.region_3d.view_perspective == 'PERSP':  # view mode
                 preview_col.operator('atom_blend.preview', icon='SEQ_PREVIEW')
             elif context.space_data.region_3d.view_perspective == 'CAMERA':  # preview
                 preview_col.operator('atom_blend.preview', icon='SEQ_PREVIEW', depress=True)
 
+            if not ABGlobals.render_frame:
+                start_stop_col = preview_col.split(align=True)
+                start_stop_col.operator('atom_blend.start_stop', icon='PAUSE' if ABGlobals.animation_playing else 'PLAY')
+
+            render_col = row.split()
             render_col.operator('atom_blend.render', icon='RENDER_STILL')
 
 
@@ -533,5 +548,19 @@ class ATOMBLEND_OT_preview(bpy.types.Operator):
         elif context.space_data.region_3d.view_perspective == 'CAMERA':
             context.space_data.region_3d.view_perspective = 'PERSP'
             bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
+        return {'FINISHED'}
 
+# --- preview start/stop button ---
+class ATOMBLEND_OT_start_stop(bpy.types.Operator):
+    bl_idname = "atom_blend.start_stop"
+    bl_label = ""
+    bl_description = "Start or stop the preview of the animation"
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def execute(self, context):
+        bpy.ops.screen.animation_play()
+        ABGlobals.animation_playing = not ABGlobals.animation_playing
         return {'FINISHED'}
