@@ -194,7 +194,8 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         layout = self.layout
 
         # .pos/.epos file
-        load_e_pos_file_row = layout.row(align=True)
+        col = layout.column(align=True)
+        load_e_pos_file_row = col.row(align=True)
         col = load_e_pos_file_row.split(factor=0.3)
         col.label(text='.pos/.epos file:')
         col = col.split(factor=1.0)
@@ -495,7 +496,11 @@ class ATOMBLEND_OT_render_frame(bpy.types.Operator):
 
     def execute(self, context):
         ABGlobals.render_frame = True
+        if ABGlobals.animation_playing:  # if going to frame render mode and animation is still playing, stop it
+            bpy.ops.screen.animation_play()
+            ABGlobals.animation_playing = not ABGlobals.animation_playing
         return {'FINISHED'}
+
 
 class ATOMBLEND_OT_render_video(bpy.types.Operator):
     bl_idname = "atom_blend.render_video"
@@ -526,6 +531,7 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
         ABManagement.save_image(self, context)
         return {'FINISHED'}
 
+
 # --- preview the render ---
 class ATOMBLEND_OT_preview(bpy.types.Operator):
     bl_idname = "atom_blend.preview"
@@ -548,13 +554,18 @@ class ATOMBLEND_OT_preview(bpy.types.Operator):
         elif context.space_data.region_3d.view_perspective == 'CAMERA':
             context.space_data.region_3d.view_perspective = 'PERSP'
             bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
+            if ABGlobals.animation_playing and not ABGlobals.render_frame:  # if leaving preview mode and animation is still playing, stop it
+                bpy.ops.screen.animation_play()
+                ABGlobals.animation_playing = not ABGlobals.animation_playing
+
         return {'FINISHED'}
+
 
 # --- preview start/stop button ---
 class ATOMBLEND_OT_start_stop(bpy.types.Operator):
     bl_idname = "atom_blend.start_stop"
     bl_label = ""
-    bl_description = "Start or stop the preview of the animation"
+    bl_description = "Start or stop the animation"
 
     @classmethod
     def poll(cls, context):

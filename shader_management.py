@@ -102,6 +102,7 @@ class ABManagement:
         cache['camera'] = bpy.context.scene.camera
 
     def handler(self, context):
+        print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
         cam_loc = bpy.data.objects["Camera"].location
         context.scene.atom_blend_addon_settings.camera_location_x_frame = cam_loc[0]
@@ -135,7 +136,6 @@ class ABManagement:
         shader.bind()
         shader.uniform_float('projection_matrix', proj_matrix)
         shader.uniform_float('object_matrix', object_matrix)
-        # shader.uniform_float('point_size', ABGlobals.point_size)
         shader.uniform_float('alpha_radius', 1.0)
         batch.draw(shader)
 
