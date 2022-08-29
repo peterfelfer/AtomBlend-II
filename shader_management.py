@@ -90,6 +90,7 @@ class ABManagement:
         bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
         constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
         constraint.target = bpy.data.objects['Center']
+        bpy.data.curves['BezierCircle'].path_duration = 250
 
         # init point sizes
         num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
@@ -102,7 +103,7 @@ class ABManagement:
         cache['camera'] = bpy.context.scene.camera
 
     def handler(self, context):
-        print('handler!')
+        # print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
         cam_loc = bpy.data.objects["Camera"].location
         context.scene.atom_blend_addon_settings.camera_location_x_frame = cam_loc[0]
@@ -167,7 +168,10 @@ class ABManagement:
             # draw shader
             shader = cache['shader']
 
-            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
+            # adapting the point size when writing image because the points are much smaller than in viewport when rendering for some reason
+            adapted_point_size = [i * 2.5 for i in ABGlobals.point_size_list]
+
+            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
