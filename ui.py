@@ -44,9 +44,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
             if not bpy.context.scene.color_settings[elem_name].display:
                 perc_displayed = 0.0
 
-            if not bpy.context.scene.atom_blend_addon_settings.display_all_atoms:
-                perc_displayed = 0.0
-
             # if perc_displayed > 1.0 the input is not a percentage but an amount -> we calculate the percentage
             if perc_displayed > 1.0:
                 num_displayed = int(perc_displayed)
@@ -71,6 +68,15 @@ class DisplaySettings(bpy.types.PropertyGroup):
         # update other lists
         DisplaySettings.atom_color_update(self, context)
         DisplaySettings.update_point_size(self, context)
+
+    def update_display_all_elements(self, context):
+        for elem_name in ABGlobals.all_elements_by_name:
+            if bpy.context.scene.atom_blend_addon_settings.display_all_elements:
+                bpy.context.scene.color_settings[elem_name].display = True
+            else:
+                bpy.context.scene.color_settings[elem_name].display = False
+                # perc_displayed = 0.0
+
 
     def atom_color_update(self, context):
         # reset color list
@@ -141,18 +147,47 @@ class AB_properties(bpy.types.PropertyGroup):
         # set total amount of frames
         bpy.data.scenes["Scene"].frame_end = self.frame_amount
 
+    def update_animation_mode(self, context):
+        if self.animation_mode == 'Circle around tip':
+            # clear the keyframes in the first and last frame
+            cam_path = bpy.data.objects['Camera path']
+            cam_path.keyframe_delete(data_path='location', index=2, frame=1)
+            cam_path.keyframe_delete(data_path='location', index=2, frame=self.frame_amount)
+
+        elif self.animation_mode == 'Spiral around tip':
+            cam_path = bpy.data.objects['Camera path']
+            # set keyframe for frame 1
+            cam_path.location[2] = 50
+            cam_path.keyframe_insert(data_path="location", index=2, frame=1)
+
+            # set keyframe for last frame
+            frame_amount = self.frame_amount
+            cam_path.location[2] = -50
+            cam_path.keyframe_insert(data_path="location", index=2, frame=frame_amount)
+
+    def update_background_color(self, context):
+        if context.space_data.region_3d.view_perspective == 'CAMERA':
+            bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = self.background_color
+
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
     rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Point size of the atoms', update=update_point_size)
-    display_all_atoms: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.atom_coords_update)
-    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0])
+    display_all_elements: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.update_display_all_elements)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=1.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
     camera_tilt: bpy.props.FloatProperty(name='Camera tilt', default=0.0, description='Edit the camera tilt', update=update_camera_tilt)
     frame_amount: bpy.props.IntProperty(name='Frames', default=250, description='Amount of frames', update=update_frame_amount)
-
+    animation_mode: bpy.props.EnumProperty(
+        name='Animation mode',
+        items=[('Circle around tip', 'Circle around tip', 'Circle around tip'),
+               ('Spiral around tip', 'Spiral around tip', 'Spiral around tip')
+               ],
+        default='Circle around tip',
+        update=update_animation_mode
+    )
 
     # for developing purposes
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
@@ -263,15 +298,17 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             # split = split.split(factor=0.0)
 
             # label row
-            # prop = context.scene.atom_blend_addon_settings
-            # display_col.prop(prop, 'display_all_atoms', icon_only=True, icon='HIDE_OFF' if prop.display_all_atoms else 'HIDE_ON')
-            display_col.label(text='')
+            prop = context.scene.atom_blend_addon_settings
+            display_col.prop(prop, 'display_all_elements', icon_only=True, icon='HIDE_OFF' if prop.display_all_elements else 'HIDE_ON')
+            # display_col.label(text='')
             name_col.label(text='Name')
             charge_col.label(text='Charge')
             color_col.label(text='Color')
             point_size_col.label(text='Point size')
             displayed_col.label(text='% Displayed')
             amount_col.label(text='# Displayed')
+
+            display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
 
             for prop in bpy.context.scene.color_settings:
                 if prop.name == ABGlobals.unknown_label:  # add unknown atoms in the last row
@@ -366,6 +403,10 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
             if not ABGlobals.render_frame:
+                # animation mode
+                anim_mode = layout.row(align=True)
+                anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
+
                 # frame amount
                 frame_amount = layout.row(align=True)
                 frame_amount.prop(context.scene.atom_blend_addon_settings, 'frame_amount')
@@ -544,8 +585,7 @@ class ATOMBLEND_OT_preview(bpy.types.Operator):
 
     def execute(self, context):
         # toggle (normal) perspective view and camera view
-        # for area in bpy.context.screen.areas:
-            # if area.type == 'VIEW_3D':
+        # todo?: doesnt work when pressing numpad+0
         if context.space_data.region_3d.view_perspective == 'PERSP':
             context.space_data.region_3d.view_perspective = 'CAMERA'
             background_color = bpy.context.scene.atom_blend_addon_settings.background_color
