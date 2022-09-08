@@ -23,7 +23,7 @@ sys.path.insert(0, ABGlobals.addon_path)
 class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
-        total_atoms_perc_displayed = total_atoms_perc_displayed / len(ABGlobals.all_data)
+        total_atoms_perc_displayed = total_atoms_perc_displayed #/ len(ABGlobals.all_data)
         print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
 
         # update function atom_coords_update gets called as we're editing perc_displayed
@@ -569,7 +569,14 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        ABManagement.save_image(self, context)
+        if ABGlobals.render_frame:
+            ABManagement.save_image(self, context)
+        else:
+            print('render animation', context.scene.atom_blend_addon_settings.frame_amount)
+            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
+                print(i)
+                bpy.context.scene.frame_set(i)
+                ABManagement.save_image(self, context, cur_frame=i)
         return {'FINISHED'}
 
 
