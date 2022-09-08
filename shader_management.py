@@ -140,7 +140,7 @@ class ABManagement:
         shader.uniform_float('alpha_radius', 1.0)
         batch.draw(shader)
 
-    def save_image(self, context):
+    def save_image(self, context, cur_frame=''):
         cache = ABManagement.cache
         scene = context.scene
 
@@ -193,10 +193,8 @@ class ABManagement:
 
         image.pixels = [v / 255 for v in buffer]
 
-        print(max(image.pixels), min(image.pixels))
-
         # actually save image
-        render_path = 'Z:\qa43nawu\\AB_render\\render.png'
+        render_path = 'Z:\qa43nawu\\AB_render\\render_' + str(cur_frame) + '.png'
         image.file_format = 'PNG'
         image.filepath_raw = render_path
         image.save()
