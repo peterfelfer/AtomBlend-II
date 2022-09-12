@@ -90,7 +90,8 @@ class ABManagement:
         bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
         constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
         constraint.target = bpy.data.objects['Center']
-        bpy.data.curves['BezierCircle'].path_duration = 250
+        bpy.data.curves['BezierCircle'].path_duration = context.scene.atom_blend_addon_settings.frame_amount
+        bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frame_amount
 
         # init point sizes
         num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
@@ -194,7 +195,8 @@ class ABManagement:
         image.pixels = [v / 255 for v in buffer]
 
         # actually save image
-        render_path = 'Z:\qa43nawu\\AB_render\\render_' + str(cur_frame) + '.png'
+
+        render_path = os.path.dirname(bpy.data.scenes["Scene"].render.filepath) + '\\render_' + str(cur_frame) + '.png'
         image.file_format = 'PNG'
         image.filepath_raw = render_path
         image.save()

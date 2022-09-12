@@ -179,7 +179,7 @@ class AB_properties(bpy.types.PropertyGroup):
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=1.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
     camera_tilt: bpy.props.FloatProperty(name='Camera tilt', default=0.0, description='Edit the camera tilt', update=update_camera_tilt)
-    frame_amount: bpy.props.IntProperty(name='Frames', default=250, description='Amount of frames', update=update_frame_amount)
+    frame_amount: bpy.props.IntProperty(name='Frames', default=5, description='Amount of frames', update=update_frame_amount)
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
         items=[('Circle around tip', 'Circle around tip', 'Circle around tip'),
@@ -411,6 +411,10 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
                 frame_amount = layout.row(align=True)
                 frame_amount.prop(context.scene.atom_blend_addon_settings, 'frame_amount')
 
+            # file path selection
+            file_path_row = layout.row(align=True)
+            file_path_row.prop(bpy.data.scenes["Scene"].render, 'filepath')
+
             # render
             row = layout.row()
             # preview_col = row.column(align=True)
@@ -572,11 +576,27 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
         if ABGlobals.render_frame:
             ABManagement.save_image(self, context)
         else:
+            out_path = os.path.dirname(bpy.data.scenes['Scene'].render.filepath)
+
+            # todo: clear all frames in video edit
+
             print('render animation', context.scene.atom_blend_addon_settings.frame_amount)
             for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
                 print(i)
                 bpy.context.scene.frame_set(i)
                 ABManagement.save_image(self, context, cur_frame=i)
+
+                # add frame to video editor
+                img_name = 'frame_' + str(i)
+                img_path = out_path + '\\render_' + str(i) + '.png'
+                print(i, img_name, img_path)
+                bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
+
+            # render and save video
+            bpy.data.scenes["Scene"].render.image_settings.file_format = 'AVI_JPEG'
+            bpy.context.scene.render.filepath = out_path + '\\animation.avi'
+            bpy.ops.render.render(animation=True)
+
         return {'FINISHED'}
 
 
