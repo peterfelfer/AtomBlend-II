@@ -48,8 +48,8 @@ class AtomBlendAddon:
                 s.spaces[0].shading.type = 'RENDERED'
 
         # set render mode to cycles & GPU rendering
-        bpy.data.scenes["Scene"].render.engine = 'CYCLES'
-        bpy.data.scenes["Scene"].cycles.device = 'GPU'
+        # bpy.data.scenes["Scene"].render.engine = 'CYCLES'
+        # bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
         # change resolution to upright image
         bpy.data.scenes["Scene"].render.resolution_x = 1080
@@ -59,7 +59,6 @@ class AtomBlendAddon:
         bpy.context.scene.atom_blend_addon_settings.camera_location_x_frame = 240.0
         bpy.context.scene.atom_blend_addon_settings.camera_location_y_frame = 0.0
         bpy.context.scene.atom_blend_addon_settings.camera_location_z_frame = 43.0
-
 
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
@@ -77,6 +76,7 @@ class AtomBlendAddon:
         unknown_element_dict['num_of_atoms'] = len(ABGlobals.atom_coords)
         unknown_element_dict['num_displayed'] = len(ABGlobals.atom_coords)
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label] = unknown_element_dict
+
 
     def combine_rrng_and_e_pos_file(self, context):
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
@@ -295,6 +295,10 @@ class AtomBlendAddon:
             print('No file loaded')
             return
 
+        # set dataset name
+        filename = ABGlobals.path.split(sep='\\')[-1]
+        ABGlobals.dataset_name = filename.split(sep='.')[0]
+
         # if epos file is loaded first, init the unknown element into color structures
         if not ABGlobals.FileLoaded_rrng:
             AtomBlendAddon.setup(self, context)
@@ -376,7 +380,7 @@ class AtomBlendAddon:
         if(ABGlobals.FileLoaded_rrng):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
-        ABManagement.init_shader(self, context)
+        ABManagement.init(self, context)
 
     def load_pos_file(self, context):
         if (ABGlobals.path == None):
@@ -418,4 +422,4 @@ class AtomBlendAddon:
         if (ABGlobals.FileLoaded_rrng):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
-        ABManagement.init_shader(self, context)
+        ABManagement.init(self, context)

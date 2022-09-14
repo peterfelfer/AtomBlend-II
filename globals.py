@@ -22,6 +22,7 @@ class ABGlobals:
 
     path: str = None
     path_rrng: str = None
+    dataset_name = None
 
     # atom data
     all_elements = []
