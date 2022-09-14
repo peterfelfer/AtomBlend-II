@@ -12,7 +12,7 @@ import numpy as np
 class ABManagement:
     cache = {}
 
-    def init_shader(self, context):
+    def init(self, context):
         # print('INIT')
         # init shader
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
@@ -103,6 +103,12 @@ class ABManagement:
         cache['shader'] = shader
         cache['camera'] = bpy.context.scene.camera
 
+        # set background color
+        bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = [1.0, 1.0, 1.0, 1.0]
+
+        # init camera distance (-> camera path scale)
+        bpy.data.objects['Camera path'].scale = (3.0, 3.0, 3.0)
+
     def handler(self, context):
         # print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
@@ -127,6 +133,13 @@ class ABManagement:
             # print('ATOM COORDS', ABGlobals.atom_coords)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
+        # set background color
+        # if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
+        #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
+        #
+        # elif context.space_data.region_3d.view_perspective == 'CAMERA':
+        #     background_color = bpy.context.scene.atom_blend_addon_settings.background_color
+        #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
         # print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
@@ -196,7 +209,9 @@ class ABManagement:
 
         # actually save image
 
-        render_path = os.path.dirname(bpy.data.scenes["Scene"].render.filepath) + '\\render_' + str(cur_frame) + '.png'
+        base_path = os.path.dirname(bpy.data.scenes["Scene"].render.filepath) + '\\'
+        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png'
+        render_path = base_path + filename
         image.file_format = 'PNG'
         image.filepath_raw = render_path
         image.save()
