@@ -1,3 +1,5 @@
+import math
+
 import bpy
 
 from .read_data import *
@@ -107,11 +109,37 @@ class DisplaySettings(bpy.types.PropertyGroup):
         if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
             ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
+    def export_update(self, context):
+        print('export update', self, context, self.name)
+
+        elem_coords = ABGlobals.all_elements_by_name[self.name]['coordinates']
+
+        # create mesh
+        elem_mesh = bpy.data.meshes.new(self.name)
+        elem_mesh.from_pydata(elem_coords, [], [])
+        elem_mesh.update()
+
+        # create object
+        elem_object = bpy.data.objects.new(self.name, elem_mesh)
+        bpy.context.collection.objects.link(elem_object)
+
+        # transform object to point cloud
+        bpy.data.objects[self.name].select_set(True)
+        bpy.ops.object.convert(target='POINTCLOUD')
+
+        # transform point cloud to the rest of the atom tip
+        bpy.data.objects['C_2'].rotation_euler[0] = math.pi
+        bpy.data.objects['C_2'].location[2] = bpy.data.objecst['Top'].location[2]
+
+
+
+
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
+    export: bpy.props.BoolProperty(name='', default=False, update=export_update)
 
 # --- properties used for all elements ---
 class AB_properties(bpy.types.PropertyGroup):
@@ -259,7 +287,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_category = "AtomBlend-II"
     bl_parent_id = "ATOMBLEND_PT_panel_general"
 
-
     @classmethod
     def poll(cls, context):
         # draw panel as soon as e_pos file is loaded
@@ -289,13 +316,15 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         charge_col = split.column(align=True)
         split = split.split(factor=0.1 / 0.8)
         color_col = split.column(align=True)
-        split = split.split(factor=0.2 / 0.6)
+        split = split.split(factor=0.1 / 0.6)
         point_size_col = split.column(align=True)
-        split = split.split(factor=0.2 / 0.4)
+        split = split.split(factor=0.15 / 0.5)
         displayed_col = split.column(align=True)
-        split = split.split(factor=0.2 / 0.2)
+        split = split.split(factor=0.25 / 0.35)
         amount_col = split.column(align=True)
-        # split = split.split(factor=0.0)
+        split = split.split(factor=0.1 / 0.1)
+        export_col = split.column(align=True)
+        split = split.split(factor=0.0)
 
         # label row
         prop = context.scene.atom_blend_addon_settings
@@ -307,6 +336,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         point_size_col.label(text='Point size')
         displayed_col.label(text='% Displayed')
         amount_col.label(text='# Displayed')
+        export_col.label(text='Export')
 
         display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
 
@@ -326,6 +356,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
             atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
             amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
+            export_col.prop(prop, 'export', icon='EXPORT')
 
         # display unknown atoms in last row
         prop = bpy.context.scene.color_settings[ABGlobals.unknown_label]
@@ -341,6 +372,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         atom_amount_shown = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_displayed'])  # add comma after every thousand place
         atom_amount_available = "{:,}".format(ABGlobals.all_elements_by_name[prop.name]['num_of_atoms'])  # add comma after every thousand place
         amount_col.label(text=str(atom_amount_shown) + '/' + str(atom_amount_available))
+        export_col.prop(prop, 'export', icon='EXPORT')
 
 # --- development extras ---
 class ATOMBLEND_PT_panel_dev(bpy.types.Panel):

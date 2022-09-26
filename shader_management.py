@@ -13,11 +13,10 @@ class ABManagement:
     cache = {}
 
     def init(self, context):
-        # print('INIT')
-        # init shader
+        # --- init shader ---
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
 
-        # # shader input
+        # shader input
         ABGlobals.atom_color_list = []
         for elem_name in ABGlobals.all_elements_by_name:
             # print(elem_name, ABGlobals.all_elements_by_name[elem_name]['num_displayed'])
@@ -52,6 +51,7 @@ class ABManagement:
         # add draw handler that will be called every time this region in this space type will be drawn
         ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
 
+        # --- init other things needed for shader drawing ---
         # create empty to move the atom tip to the center (0,0,0)
         top_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
         top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
@@ -208,9 +208,13 @@ class ABManagement:
         image.pixels = [v / 255 for v in buffer]
 
         # actually save image
-
         base_path = os.path.dirname(bpy.data.scenes["Scene"].render.filepath) + '\\'
-        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png'
+        print(base_path)
+
+        if cur_frame == '':
+            filename = ABGlobals.dataset_name + '.png'
+        else:
+            filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png'
         render_path = base_path + filename
         image.file_format = 'PNG'
         image.filepath_raw = render_path
