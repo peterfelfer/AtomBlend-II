@@ -185,6 +185,8 @@ class ABManagement:
             # adapting the point size when writing image because the points are much smaller than in viewport when rendering for some reason
             adapted_point_size = [i * 2.5 for i in ABGlobals.point_size_list]
 
+            offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
+
             batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
             shader.bind()

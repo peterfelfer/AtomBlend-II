@@ -79,7 +79,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
                 bpy.context.scene.color_settings[elem_name].display = False
                 # perc_displayed = 0.0
 
-
     def atom_color_update(self, context):
         # reset color list
         ABGlobals.atom_color_list = []
@@ -111,7 +110,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
 
     def export_update(self, context):
         print('export update', self, context, self.name)
-
         elem_coords = ABGlobals.all_elements_by_name[self.name]['coordinates']
 
         # create mesh
@@ -123,13 +121,46 @@ class DisplaySettings(bpy.types.PropertyGroup):
         elem_object = bpy.data.objects.new(self.name, elem_mesh)
         bpy.context.collection.objects.link(elem_object)
 
+        # transform point cloud to the rest of the atom tip
+        bpy.data.objects[self.name].rotation_euler[0] = math.pi
+        bpy.data.objects[self.name].location[2] = bpy.data.objects['Top'].location[2]
+
         # transform object to point cloud
-        bpy.data.objects[self.name].select_set(True)
+        bpy.ops.object.select_all(action='DESELECT')
+        bpy.context.view_layer.objects.active = bpy.context.scene.objects[self.name]
+        obj = bpy.data.objects[self.name]
+        obj.select_set(True)
         bpy.ops.object.convert(target='POINTCLOUD')
 
-        # transform point cloud to the rest of the atom tip
-        bpy.data.objects['C_2'].rotation_euler[0] = math.pi
-        bpy.data.objects['C_2'].location[2] = bpy.data.objecst['Top'].location[2]
+        # add material to the point cloud
+        mat = bpy.data.materials.new(name=self.name)
+        mat.use_nodes = True
+        mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = bpy.context.scene.color_settings[self.name].color
+        obj.data.materials.append(mat)
+
+        # --- add geometry node stuff ---
+        modifier = obj.modifiers.new(self.name, 'NODES')
+        node_group = bpy.data.node_groups.new(type='GeometryNodeTree', name=self.name)
+        modifier.node_group = node_group
+
+        # input node
+        group_inputs = node_group.nodes.new('NodeGroupInput')
+
+        # set point radius node
+        set_point_radius = node_group.nodes.new('GeometryNodeSetPointRadius')
+        set_point_radius.location = (400, 0)
+        set_point_radius.inputs[2].default_value = bpy.context.scene.color_settings[self.name].point_size / 16
+
+        # output node
+        group_outputs = node_group.nodes.new('NodeGroupOutput')
+        group_outputs.location = (800, 0)
+
+        # link nodes
+        node_group.links.new(group_inputs.outputs[0], set_point_radius.inputs[0])
+        node_group.links.new(set_point_radius.outputs[0], group_outputs.inputs[0])
+
+        # deselect object
+        bpy.data.objects[self.name].select_set(False)
 
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
