@@ -131,9 +131,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
         bpy.data.objects['C_2'].rotation_euler[0] = math.pi
         bpy.data.objects['C_2'].location[2] = bpy.data.objecst['Top'].location[2]
 
-
-
-
     name: bpy.props.StringProperty(name="Test Property", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)

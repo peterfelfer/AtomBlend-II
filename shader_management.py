@@ -208,14 +208,16 @@ class ABManagement:
         image.pixels = [v / 255 for v in buffer]
 
         # actually save image
-        base_path = os.path.dirname(bpy.data.scenes["Scene"].render.filepath) + '\\'
-        print(base_path)
-
-        if cur_frame == '':
-            filename = ABGlobals.dataset_name + '.png'
+        path = bpy.data.scenes["Scene"].render.filepath
+        file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
+        filename = ABGlobals.dataset_name + '_frame' + str(cur_frame) + '.' + file_format.lower()
+        print(filename)
+        if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
+            render_path = path
         else:
-            filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png'
-        render_path = base_path + filename
-        image.file_format = 'PNG'
+            render_path = path + '//' + filename
+
+        image.file_format = render_path.split('.')[-1].upper() #'PNG'
         image.filepath_raw = render_path
+
         image.save()
