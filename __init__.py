@@ -4,12 +4,13 @@ bl_info = {
     "author": "Juliane Reithmeier",
     "version": (1, 0, 0),
     "blender": (3, 0, 1),
-    #"location": "",
-    "description": "AtomBlend-II",
+    "description": "Display and edit data from atom tips and render images or videos of your science",
     "category": "View",
     "warning": "",
     "doc_url": "",
-    "tracker_url": "https://github.com/peterfelfer/AtomBlend-II/issues"
+    "location": "View3D > Sidebar > AtomBlend-II",
+    "tracker_url": "https://github.com/peterfelfer/AtomBlend-II/issues",
+    "wiki_url": "https://github.com/peterfelfer/AtomBlend-II",
 }
 
 ########################################################
@@ -79,7 +80,7 @@ def register():
         bpy.utils.register_class(c)
 
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
-    bpy.app.handlers.frame_change_pre.append(ABManagement.frame_change_handler)
+    #bpy.app.handlers.frame_change_pre.append(ABManagement.frame_change_handler)
     bpy.app.handlers.render_pre.append(ABManagement.handler)
 
     bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=DisplaySettings)

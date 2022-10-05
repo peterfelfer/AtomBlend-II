@@ -127,8 +127,8 @@ class ABManagement:
         # render frame
         ABManagement.render(self, context)
 
-    def frame_change_handler(self, context):
-        pass
+    #def frame_change_handler(self, context):
+    #    pass
 
     def render(self, context):
         cache = ABManagement.cache
@@ -166,7 +166,7 @@ class ABManagement:
 
     def save_image(self, context, cur_frame=''):
         start = time.perf_counter()
-        print('RENDERING START', time.perf_counter() - start)
+        #print('RENDERING START', time.perf_counter() - start)
         cache = ABManagement.cache
         scene = context.scene
 
@@ -224,7 +224,7 @@ class ABManagement:
         # actually save image
         path = bpy.data.scenes["Scene"].render.filepath
         file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
-        filename = ABGlobals.dataset_name + '_frame' + str(cur_frame) + '.' + file_format.lower()
+        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.' + file_format.lower()
         print(filename)
         if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
             render_path = path
@@ -232,8 +232,9 @@ class ABManagement:
             render_path = path + '//' + filename
 
         image.file_format = render_path.split('.')[-1].upper() #'PNG'
+        render_path = r'%s' % render_path
         image.filepath_raw = render_path
 
         image.save()
 
-        print('RENDERING DONE', time.perf_counter() - start)
+        #print('RENDERING DONE', time.perf_counter() - start)

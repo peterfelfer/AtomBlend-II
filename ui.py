@@ -255,8 +255,8 @@ class AB_properties(bpy.types.PropertyGroup):
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
-        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
-        # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
+        # default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
+        default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
@@ -665,6 +665,7 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
                 # add frame to video editor
                 img_name = ABGlobals.dataset_name + '_frame_' + str(i)
                 img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
+                img_path = r'%s' %img_path
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
                 print('Rendered frame ' + str(i) + ' / ' + str(context.scene.atom_blend_addon_settings.frame_amount))
 
@@ -676,7 +677,10 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
 
             # delete all the written frames
             for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
-                os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png')
+                del_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
+                del_path = r'%s' % del_path
+                print('DEL PATH', del_path)
+                os.remove(path=del_path)
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
