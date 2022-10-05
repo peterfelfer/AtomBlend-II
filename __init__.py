@@ -9,6 +9,7 @@ bl_info = {
     "category": "View",
     "warning": "",
     "doc_url": "",
+    "tracker_url": "https://github.com/peterfelfer/AtomBlend-II/issues"
 }
 
 ########################################################
@@ -78,7 +79,7 @@ def register():
         bpy.utils.register_class(c)
 
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
-    #bpy.app.handlers.frame_change_pre.append(ABManagement.handler)
+    bpy.app.handlers.frame_change_pre.append(ABManagement.frame_change_handler)
     bpy.app.handlers.render_pre.append(ABManagement.handler)
 
     bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=DisplaySettings)
@@ -100,7 +101,7 @@ def unregister():
 classes = (
     AB_properties, DisplaySettings,
 
-    ATOMBLEND_PT_panel_general, ATOMBLEND_PT_panel_dev,
+    ATOMBLEND_PT_panel_general, #ATOMBLEND_PT_panel_dev,
     ATOMBLEND_PT_panel_file, ATOMBLEND_PT_shader_display_settings, ATOMBLEND_PT_rendering, ATOMBLEND_OT_preview,
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file, ATOMBLEND_OT_render, ATOMBLEND_OT_render_frame,
     ATOMBLEND_OT_render_video, ATOMBLEND_OT_start_stop,
