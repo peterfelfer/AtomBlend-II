@@ -109,6 +109,13 @@ class ABManagement:
         # init camera distance (-> camera path scale)
         bpy.data.objects['Camera path'].scale = (3.0, 3.0, 3.0)
 
+        # hide objects in viewport
+        bpy.data.objects['Camera'].hide_viewport = True
+        bpy.data.objects['Camera path'].hide_viewport = True
+        bpy.data.objects['Center'].hide_viewport = True
+        bpy.data.objects['Top'].hide_viewport = True
+        bpy.data.objects['Origin'].hide_viewport = True
+
     def handler(self, context):
         # print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
@@ -119,6 +126,9 @@ class ABManagement:
 
         # render frame
         ABManagement.render(self, context)
+
+    def frame_change_handler(self, context):
+        pass
 
     def render(self, context):
         cache = ABManagement.cache
@@ -155,6 +165,8 @@ class ABManagement:
         batch.draw(shader)
 
     def save_image(self, context, cur_frame=''):
+        start = time.perf_counter()
+        print('RENDERING START', time.perf_counter() - start)
         cache = ABManagement.cache
         scene = context.scene
 
@@ -185,7 +197,7 @@ class ABManagement:
             # adapting the point size when writing image because the points are much smaller than in viewport when rendering for some reason
             adapted_point_size = [i * 2.5 for i in ABGlobals.point_size_list]
 
-            offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
+            #offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
 
             batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
@@ -223,3 +235,5 @@ class ABManagement:
         image.filepath_raw = render_path
 
         image.save()
+
+        print('RENDERING DONE', time.perf_counter() - start)

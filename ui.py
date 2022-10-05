@@ -37,6 +37,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
         DisplaySettings.update_point_size(self, context)
 
     def atom_coords_update(self, context):
+        print('atom coords update')
         # reset coords list
         ABGlobals.atom_coords = []
         for elem_name in ABGlobals.all_elements_by_name:
@@ -255,6 +256,7 @@ class AB_properties(bpy.types.PropertyGroup):
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
         default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
+        # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
@@ -336,22 +338,34 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         # color settings
         # col = layout.column()
         # display_col = row.column()
-        split = layout.split(factor=0.1)
+        # displayed, name, charge, color, point size, % displayed, # displayed, export
+        f = [0.07, 0.1, 0.1, 0.1, 0.15, 0.15, 0.23, 0.1]
+        perc_left = 1.0
+        split = layout.split(factor=f[0] / perc_left)
         display_col = split.column(align=True)
-        split = split.split(factor=0.05 / 0.9)
+        perc_left -= f[0]
+        split = split.split(factor=f[1] / perc_left)
         name_col = split.column(align=True)
-        split = split.split(factor=0.05 / 0.85)
+        perc_left -= f[1]
+        split = split.split(factor=f[2] / perc_left)
         charge_col = split.column(align=True)
-        split = split.split(factor=0.1 / 0.8)
+        perc_left -= f[2]
+        split = split.split(factor=f[3] / perc_left)
         color_col = split.column(align=True)
-        split = split.split(factor=0.1 / 0.6)
+        perc_left -= f[3]
+        split = split.split(factor=f[4] / perc_left)
         point_size_col = split.column(align=True)
-        split = split.split(factor=0.15 / 0.5)
+        perc_left -= f[4]
+        split = split.split(factor=f[5] / perc_left)
         displayed_col = split.column(align=True)
-        split = split.split(factor=0.25 / 0.35)
+        perc_left -= f[5]
+        split = split.split(factor=f[6] / perc_left)
         amount_col = split.column(align=True)
-        split = split.split(factor=0.1 / 0.1)
+        perc_left -= f[6]
+        split = split.split(factor=f[7] / perc_left)
         export_col = split.column(align=True)
+        perc_left -= f[7]
+        print(perc_left)
         split = split.split(factor=0.0)
 
         # label row
