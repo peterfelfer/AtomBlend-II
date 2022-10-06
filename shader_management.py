@@ -184,7 +184,7 @@ class ABManagement:
             fb = gpu.state.active_framebuffer_get()
             background_color = context.scene.atom_blend_addon_settings.background_color
 
-            fb.clear(color=background_color, depth=1.0)
+            fb.clear(color=background_color)#, depth=1.0)
 
             view_matrix = scene.camera.matrix_world.inverted()
             camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
@@ -228,10 +228,14 @@ class ABManagement:
         print(filename)
         if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
             render_path = path
+            image.file_format = render_path.split('.')[-1].upper()  # 'PNG'
+        elif path.lower().endswith('.avi'):
+            render_path = path
+            image.file_format = 'AVI_JPEG'
         else:
             render_path = path + '//' + filename
+            image.file_format = render_path.split('.')[-1].upper()  # 'PNG'
 
-        image.file_format = render_path.split('.')[-1].upper() #'PNG'
         render_path = r'%s' % render_path
         image.filepath_raw = render_path
 
