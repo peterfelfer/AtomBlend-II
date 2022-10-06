@@ -2,8 +2,8 @@
 **Display and edit data from atom tips and render images or videos of your science.**
 
 <p float="left">
-  <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/eisenkorngrenze.gif" width="15%" height="15%"/>
-  <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/iso-surface.gif" width="15%" height="15%"/>
+  <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/eisenkorngrenze.gif" width="25%" height="25%"/>
+  <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/iso-surface.gif" width="25%" height="25%"/>
 </p>
 
 ## Installation of the addon
