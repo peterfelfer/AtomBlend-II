@@ -33,7 +33,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Point size` - The point size of this element<br/>
 `% Displayed` - The displayed percentage of this element<br/>
 `# Displayed` - The amount of displayed atoms of this element (can not be changed)<br/>
-`Export` - Exports this element as separate object in Blender (<b>As we are using point clouds to keep the frame time in the viewport fast, this feature can only be used in the [Blender alpha version (currently 3.4.0 Alpha)](https://builder.blender.org/download/daily/)</b>)<br/>
+`Export` - Exports this element as separate object in Blender (<b>As we are using point clouds to keep the frame time in the viewport fast, this feature can only be used in the [Blender alpha version (currently 3.4.0 Alpha)](https://builder.blender.org/download/daily/)</b>). Currently it is not possible to change the color or point size of the exportet object. <br/>
 
 ### Rendering
 `Picture / Video` - Select if you want to render a picture or video<br/>
@@ -60,8 +60,12 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Number of rotations` - Change the number of rotations in your video<br/>
 `Animation mode` - Change the animation of your video. You can select between:
   - Circle around tip: Camera moves around the tip but stays at the same height<br/>
-  - Spiral around tip: Camera moves spirally around the tip<br/>
+  - Spiral around tip: Camera moves spirally around the tip from top to bottom<br/>
 
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
-`Render` - Render a video of your tip<br/>
+`Render` - Render a video of your tip. <b>Depending on your hardware and frame time, rendering may take a while! Try not to click anywhere while rendering as Blender may crash in that case.</b><br/>
+
+When rendering a video, it can be helpful to open the terminal to see the progress of your render.
+This works different on Windows, macOS and Linux. Refer to [the Blender website](https://docs.blender.org/manual/en/3.0/advanced/command_line/launch/index.html) and follow the instructions for your platform.
+
