@@ -676,11 +676,11 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.render.render(animation=True)
 
             # delete all the written frames
-            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
-                del_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
-                del_path = r'%s' % del_path
-                print('DEL PATH', del_path)
-                os.remove(path=del_path)
+            # for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
+            #     del_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
+            #     del_path = r'%s' % del_path
+            #     print('DEL PATH', del_path)
+            #     os.remove(path=del_path)
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
