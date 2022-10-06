@@ -230,8 +230,8 @@ class AB_properties(bpy.types.PropertyGroup):
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
     rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
-    vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
-    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Point size of the atoms', update=update_point_size)
+    vertex_percentage: bpy.props.FloatProperty(name="Total displayed (%)", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
+    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Changes the point size of all the atoms', update=update_point_size)
     display_all_elements: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.update_display_all_elements)
     background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
@@ -249,7 +249,7 @@ class AB_properties(bpy.types.PropertyGroup):
     )
 
     # for developing purposes
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
