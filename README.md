@@ -40,6 +40,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 
 #### Picture
 <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-picture_rendering.PNG" width="50%" height="50%"/>
+
 `Camera distance` - Change the distance of the camera to the tip<br/>
 `Camera rotation` - Change the rotation of the tip<br/>
 `Camera elevation` - Change the elevation of the camera<br/>
@@ -50,6 +51,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 
 #### Video
 <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-video_rendering.PNG" width="50%" height="50%"/>
+
 `Camera distance` - Change the distance of the camera to the tip<br/>
 `Camera rotation` - Change the start of the rotation of the tip<br/>
 `Camera elevation` - Change the elevation of the camera<br/>
