@@ -60,7 +60,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Number of rotations` - Change the number of rotations in your video<br/>
 `Animation mode` - Change the animation of your video. You can select between:
   - Circle around tip: Camera moves around the tip but stays at the same height<br/>
-  - Spiral around tip: Camera moves spirally around the tip<br/>
+  - Spiral around tip: Camera moves spirally around the tip from top to bottom<br/>
 
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
