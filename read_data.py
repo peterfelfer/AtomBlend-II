@@ -406,6 +406,10 @@ class AtomBlendAddon:
             print('No file loaded')
             return
 
+        # set dataset name
+        filename = ABGlobals.path.split(sep='\\')[-1]
+        ABGlobals.dataset_name = filename.split(sep='.')[0]
+
         # if pos file is loaded first, init the unknown element into color structures
         if not ABGlobals.FileLoaded_rrng:
             AtomBlendAddon.setup(self, context)
