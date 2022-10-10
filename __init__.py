@@ -30,7 +30,7 @@ from bpy.app.handlers import persistent
 
 from .read_data import *
 from .ui import *
-from .atomic_numbers import *
+#from .atomic_numbers import *
 from .shader_management import ABManagement
 from .globals import ABGlobals
 
@@ -42,7 +42,7 @@ sys.path.insert(0, ABGlobals.addon_path)
 ABGlobals.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
 
 # set atomic number dict
-ABGlobals.atomic_numbers = atomic_numbers.atomic_numbers_dict
+#ABGlobals.atomic_numbers = atomic_numbers.atomic_numbers_dict
 
 # Check Blender Version
 # +++++++++++++++++++++++++++++++++++++++++++++
