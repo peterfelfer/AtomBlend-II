@@ -236,8 +236,8 @@ class AB_properties(bpy.types.PropertyGroup):
     background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
-    camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, description='Edit the camera elevation', update=update_camera_elevation)
-    frame_amount: bpy.props.IntProperty(name='Frames', default=5, description='Amount of frames', update=update_frame_rot_amount)
+    camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, step=50, description='Edit the camera elevation', update=update_camera_elevation)
+    frame_amount: bpy.props.IntProperty(name='Frames', default=300, description='Amount of frames', update=update_frame_rot_amount)
     rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, description='Number of rotations', update=update_frame_rot_amount)
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',

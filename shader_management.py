@@ -224,6 +224,7 @@ class ABManagement:
         # actually save image
         path = bpy.data.scenes["Scene"].render.filepath
         file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
+        print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
         filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.' + file_format.lower()
         print(filename)
         if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
