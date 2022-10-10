@@ -40,6 +40,7 @@ class AtomBlendAddon:
         for s in space.areas:
             if s.type == 'VIEW_3D':
                 s.spaces[0].shading.type = 'RENDERED'
+                s.spaces[0].clip_end = 5000
 
         # set material mode in geometry nodes screen
         space = bpy.data.screens["Geometry Nodes"]
@@ -69,7 +70,7 @@ class AtomBlendAddon:
         # add unknown element to the list
         unknown_element_dict = {}
         unknown_element_dict['element_name'] = 'Unknown'
-        unknown_element_dict['charge'] = 'n/a'
+        #unknown_element_dict['charge'] = 'n/a'
         # unknown_element_dict['color'] = (0.4, 0.4, 0.4, 1.0)
         unknown_element_dict['color'] = (1.0, 0.0, 0.0, 1.0)
         unknown_element_dict['coordinates'] = []
@@ -79,6 +80,9 @@ class AtomBlendAddon:
 
 
     def combine_rrng_and_e_pos_file(self, context):
+        start = time.perf_counter()
+        print('start combine rrng and (e)pos', time.perf_counter() - start)
+
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
         all_elements = ABGlobals.all_elements
 
@@ -101,7 +105,7 @@ class AtomBlendAddon:
             # if so, we have found the element of our atom
             if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
                 # print('range of this element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
+                elem_name = this_elem['element_name'] #+ '_' + str(this_elem['charge'])
                 ABGlobals.all_elements_by_name[elem_name]['coordinates'].append((atom[0], atom[1], atom[2]))
                 added += 1
 
@@ -118,6 +122,7 @@ class AtomBlendAddon:
                 # print('greater than this element -> increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 if start_index + 1 < len(all_elements):
                     start_index += 1
+                    print('increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
 
                 # loop through the next atoms to check if the charge of this atom
                 # matches the range of one of the next elements
@@ -128,7 +133,7 @@ class AtomBlendAddon:
                     # if so, we have found the element of the current atom
                     if m_n >= this_elem['start_range'] and m_n <= this_elem['end_range']:
                         # print('range of next element', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
-                        elem_name = this_elem['element_name'] + '_' + str(this_elem['charge'])
+                        elem_name = this_elem['element_name'] #+ '_' + str(this_elem['charge'])
                         ABGlobals.all_elements_by_name[elem_name]['coordinates'].append((atom[0], atom[1], atom[2]))
                         added += 1
                         break
@@ -198,6 +203,9 @@ class AtomBlendAddon:
         if isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
+        print('combine rrng and (e)pos done', time.perf_counter() - start)
+
+
     def load_rrng_file(self, context):
         if(ABGlobals.path_rrng == None):
             print('No file loaded')
@@ -234,15 +242,24 @@ class AtomBlendAddon:
                 this_element['vol'] = float(vol)
 
                 # setting element name and charge
-                elem = splitted_line[3].split(':')
-                this_element['element_name'] = elem[0]
-                this_element['charge'] = int(elem[1])
+                amount_index = 3
+                this_element['element_name'] = ''
+                while splitted_line[amount_index].split(':')[0] != 'Color':
+                    elem = splitted_line[amount_index].split(':')
+                    if elem[1] != '1':
+                        this_element['element_name'] += elem[0] + elem[1]
+                    else:
+                        this_element['element_name'] += elem[0]
+                    amount_index += 1
+                    print(elem[0], elem[1])
+                    #this_element['amount'] = int(elem[1])
 
                 # setting atomic number
-                this_element['atomic_number'] = ABGlobals.atomic_numbers[this_element['element_name']]
+                #this_element['atomic_number'] = ABGlobals.atomic_numbers[this_element['element_name']]
 
                 # setting the color
-                hex_col = splitted_line[4].split(':')
+                color_index = amount_index
+                hex_col = splitted_line[color_index].split(':')
                 hex_col = hex_col[1].replace('\n', '')
 
                 # convert hex to rgb color
@@ -260,7 +277,7 @@ class AtomBlendAddon:
                 general_point_size = context.scene.atom_blend_addon_settings.point_size
 
                 # add this element to element property group to create a color picker in the color settings tab
-                elem_name = this_element['element_name'] + '_' + str(this_element['charge'])
+                elem_name = this_element['element_name'] #+ '_' + str(this_element['charge'])
                 if elem_name not in bpy.context.scene.color_settings:
                     element_color_settings = bpy.context.scene.color_settings.add()
                     element_color_settings.name = elem_name
@@ -274,12 +291,12 @@ class AtomBlendAddon:
 
         # build all_elements_by_name dict
         for elem in ABGlobals.all_elements:
-            name_and_charge = elem['element_name'] + '_' + str(elem['charge'])
+            name_and_charge = elem['element_name'] #+ '_' + str(elem['charge'])
 
             if name_and_charge not in ABGlobals.all_elements_by_name:
                 this_element_dict = {}
                 this_element_dict['element_name'] = elem['element_name']
-                this_element_dict['charge'] = elem['charge']
+                #this_element_dict['charge'] = elem['charge']
                 this_element_dict['color'] = elem['color']
                 this_element_dict['coordinates'] = []
                 this_element_dict['num_of_atoms'] = 0
@@ -350,7 +367,7 @@ class AtomBlendAddon:
         ABGlobals.max_z = concat_data[:, 2].max()
         ABGlobals.min_z = concat_data[:, 2].min()
 
-        print(ABGlobals.max_x, ABGlobals.min_x, ABGlobals.max_y, ABGlobals.min_y, ABGlobals.max_z, ABGlobals.min_z)
+        #print(ABGlobals.max_x, ABGlobals.min_x, ABGlobals.max_y, ABGlobals.min_y, ABGlobals.max_z, ABGlobals.min_z)
 
 
         # shuffling the data as they're kind of sorted by the z value
@@ -383,6 +400,8 @@ class AtomBlendAddon:
         ABManagement.init(self, context)
 
     def load_pos_file(self, context):
+        start = time.perf_counter()
+        print('start loading pos file', time.perf_counter() - start)
         if (ABGlobals.path == None):
             print('No file loaded')
             return
@@ -400,20 +419,29 @@ class AtomBlendAddon:
         reshaped_data = np.reshape(data_as_float, (num_of_atoms, 4))
 
         # reducing the atom data by a certain percentage by only taking the first n elements
-        atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage / 100
+        #atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage / 100
+
+        # save the min and max x, y, z positions for camera settings later on
+        ABGlobals.max_x = reshaped_data[:, 0].max()
+        ABGlobals.min_x = reshaped_data[:, 0].min()
+        ABGlobals.max_y = reshaped_data[:, 1].max()
+        ABGlobals.min_y = reshaped_data[:, 1].min()
+        ABGlobals.max_z = reshaped_data[:, 2].max()
+        ABGlobals.min_z = reshaped_data[:, 2].min()
 
         # shuffling the data as they're kind of sorted by the z value
         reshaped_data = np.random.permutation(reshaped_data)
 
-        num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
-        reshaped_data_percentage = reshaped_data[:num_of_atoms_percentage]
+        #num_of_atoms_percentage = int(num_of_atoms * atoms_percentage)
+        #reshaped_data_percentage = reshaped_data[:num_of_atoms_percentage]
 
         # sort atoms by ['m/n']
-        sorted_by_mn = reshaped_data_percentage[reshaped_data_percentage[:, 3].argsort()]
+        sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
 
         ABGlobals.all_data = sorted_by_mn
+        print(sorted_by_mn[:,3])
 
-        coords = [(atom[0], atom[1], atom[2]) for atom in reshaped_data_percentage]
+        coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
         ABGlobals.atom_coords = coords
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'] = ABGlobals.atom_coords
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['num_of_atoms'] = len(ABGlobals.atom_coords)
@@ -423,3 +451,4 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
         ABManagement.init(self, context)
+        print('loading pos file done', time.perf_counter() - start)

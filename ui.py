@@ -97,13 +97,13 @@ class DisplaySettings(bpy.types.PropertyGroup):
 
     def update_point_size(self, context):
         ABGlobals.point_size_list = []
-        print('UPDATE POINT SIZE DISPLAY SETTINGS')
+        # print('UPDATE POINT SIZE DISPLAY SETTINGS')
 
         for elem_name in ABGlobals.all_elements_by_name:
             num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
             point_size = bpy.context.scene.color_settings[elem_name].point_size
             ABGlobals.point_size_list.append([point_size] * num_displayed)
-            print(elem_name, point_size, num_displayed, len(ABGlobals.point_size_list))
+            # print(elem_name, point_size, num_displayed, len(ABGlobals.point_size_list))
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
@@ -339,7 +339,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         # col = layout.column()
         # display_col = row.column()
         # displayed, name, charge, color, point size, % displayed, # displayed, export
-        f = [0.07, 0.1, 0.1, 0.1, 0.15, 0.15, 0.23, 0.1]
+        f = [0.07, 0.1, 0.1, 0.2, 0.2, 0.23, 0.1]
         perc_left = 1.0
         split = layout.split(factor=f[0] / perc_left)
         display_col = split.column(align=True)
@@ -347,24 +347,24 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         split = split.split(factor=f[1] / perc_left)
         name_col = split.column(align=True)
         perc_left -= f[1]
+        # split = split.split(factor=f[2] / perc_left)
+        # charge_col = split.column(align=True)
+        # perc_left -= f[2]
         split = split.split(factor=f[2] / perc_left)
-        charge_col = split.column(align=True)
+        color_col = split.column(align=True)
         perc_left -= f[2]
         split = split.split(factor=f[3] / perc_left)
-        color_col = split.column(align=True)
+        point_size_col = split.column(align=True)
         perc_left -= f[3]
         split = split.split(factor=f[4] / perc_left)
-        point_size_col = split.column(align=True)
+        displayed_col = split.column(align=True)
         perc_left -= f[4]
         split = split.split(factor=f[5] / perc_left)
-        displayed_col = split.column(align=True)
+        amount_col = split.column(align=True)
         perc_left -= f[5]
         split = split.split(factor=f[6] / perc_left)
-        amount_col = split.column(align=True)
-        perc_left -= f[6]
-        split = split.split(factor=f[7] / perc_left)
         export_col = split.column(align=True)
-        perc_left -= f[7]
+        perc_left -= f[6]
         print(perc_left)
         split = split.split(factor=0.0)
 
@@ -373,7 +373,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         display_col.prop(prop, 'display_all_elements', icon_only=True, icon='HIDE_OFF' if prop.display_all_elements else 'HIDE_ON')
         # display_col.label(text='')
         name_col.label(text='Name')
-        charge_col.label(text='Charge')
         color_col.label(text='Color')
         point_size_col.label(text='Point size')
         displayed_col.label(text='% Displayed')
@@ -388,10 +387,8 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
 
             elem_name_charge = prop.name
             elem_name = elem_name_charge.split('_')[0]
-            elem_charge = elem_name_charge.split('_')[1]
             display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
             name_col.label(text=elem_name)
-            charge_col.label(text=elem_charge)
             color_col.prop(prop, 'color')
             point_size_col.prop(prop, 'point_size')
             displayed_col.prop(prop, 'perc_displayed')
@@ -404,10 +401,8 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         prop = bpy.context.scene.color_settings[ABGlobals.unknown_label]
         elem_name_charge = prop.name
         elem_name = elem_name_charge.split('_')[0]
-        elem_charge = elem_name_charge.split('_')[1]
         display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
         name_col.label(text=elem_name)
-        charge_col.label(text=elem_charge)
         color_col.prop(prop, 'color')
         point_size_col.prop(prop, 'point_size')
         displayed_col.prop(prop, 'perc_displayed')
