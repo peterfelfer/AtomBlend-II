@@ -194,22 +194,23 @@ class AB_properties(bpy.types.PropertyGroup):
 
     def update_frame_rot_amount(self, context):
         # set frame amount in path settings
+        ABGlobals.frame_amount = int(self.video_duration * 24)
         bpy.context.view_layer.objects.active = bpy.data.objects['Camera path']
-        bpy.data.curves['BezierCircle'].path_duration = int(self.frame_amount / self.rotation_amount)
+        bpy.data.curves['BezierCircle'].path_duration = int(ABGlobals.frame_amount / self.rotation_amount)
 
         # animate path
         # bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
         # bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
 
         # set total amount of frames
-        bpy.data.scenes["Scene"].frame_end = self.frame_amount
+        bpy.data.scenes["Scene"].frame_end = ABGlobals.frame_amount
 
     def update_animation_mode(self, context):
         if self.animation_mode == 'Circle around tip':
             # clear the keyframes in the first and last frame
             cam_path = bpy.data.objects['Camera path']
             cam_path.keyframe_delete(data_path='location', index=2, frame=1)
-            cam_path.keyframe_delete(data_path='location', index=2, frame=self.frame_amount)
+            cam_path.keyframe_delete(data_path='location', index=2, frame=ABGlobals.frame_amount)
 
         elif self.animation_mode == 'Spiral around tip':
             cam_path = bpy.data.objects['Camera path']
@@ -218,9 +219,8 @@ class AB_properties(bpy.types.PropertyGroup):
             cam_path.keyframe_insert(data_path="location", index=2, frame=1)
 
             # set keyframe for last frame
-            frame_amount = self.frame_amount
             cam_path.location[2] = -50
-            cam_path.keyframe_insert(data_path="location", index=2, frame=frame_amount)
+            cam_path.keyframe_insert(data_path="location", index=2, frame=ABGlobals.frame_amount)
 
     def update_background_color(self, context):
         # if context.space_data.region_3d.view_perspective == 'CAMERA':
@@ -237,7 +237,7 @@ class AB_properties(bpy.types.PropertyGroup):
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
     camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, step=50, description='Edit the camera elevation', update=update_camera_elevation)
-    frame_amount: bpy.props.IntProperty(name='Frames', default=300, description='Amount of frames', update=update_frame_rot_amount)
+    video_duration: bpy.props.FloatProperty(name='Duration', default=10.0, description='Duration of video', update=update_frame_rot_amount, precision=1, step=0.5)
     rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, description='Number of rotations', update=update_frame_rot_amount)
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -296,7 +296,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'e_pos_filepath')
         col.enabled = False
         col = load_e_pos_file_row.column(align=True)
-        col.operator('atom_blend_viewer.load_file', icon='FILE_FOLDER')
+        col.operator('atom_blend_viewer.load_file', icon='FILE_FOLDER', text='')
 
         # .rrng file
         load_rrng_file_row = layout.row(align=True)
@@ -306,7 +306,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'rrng_filepath')
         col.enabled = False
         col = load_rrng_file_row.column(align=True)
-        col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER")
+        col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER", text='')
 
 # --- display settings ---
 class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
@@ -469,9 +469,8 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         if not ABGlobals.render_frame:
             col = layout.column(align=True)
             # frame amount
-            frame_amount = col.row(align=True)
-            seconds = str('%.1f' % (context.scene.atom_blend_addon_settings.frame_amount / 24))
-            frame_amount.prop(context.scene.atom_blend_addon_settings, 'frame_amount', text='Frames (approx.' + str(seconds) + ' seconds)')
+            video_duration = col.row(align=True)
+            video_duration.prop(context.scene.atom_blend_addon_settings, 'video_duration', text='Duration (' + str(ABGlobals.frame_amount) + ' frames)')
 
             # rotation amount
             rot_amount = col.row(align=True)
@@ -515,7 +514,7 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
 # --- file loading ---
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
-    bl_label = ""
+    bl_label = "Load .pos/.epos file"
     bl_description = "Load a file of the following types:\n.epos, .pos"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -560,7 +559,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
 class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_rrng_file"
-    bl_label = ""
+    bl_label = "Load .rrng file"
     bl_description = "Load a file of the following types:\n.rrng"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -651,8 +650,8 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.sequencer.select_all(action='SELECT')
             bpy.ops.sequencer.delete()
 
-            print('Starting animation rendering...', context.scene.atom_blend_addon_settings.frame_amount)
-            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
+            print('Starting animation rendering...', ABGlobals.frame_amount)
+            for i in range(1, ABGlobals.frame_amount+1):
                 bpy.context.scene.frame_set(i)
                 # write file
                 ABManagement.save_image(self, context, cur_frame=i)
@@ -662,7 +661,7 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
                 img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
                 img_path = r'%s' %img_path
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
-                print('Rendered frame ' + str(i) + ' / ' + str(context.scene.atom_blend_addon_settings.frame_amount))
+                print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
 
             print('Wrote all frames. Creating the video now...')
             # render and save video
