@@ -90,8 +90,8 @@ class ABManagement:
         bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
         constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
         constraint.target = bpy.data.objects['Center']
-        bpy.data.curves['BezierCircle'].path_duration = context.scene.atom_blend_addon_settings.frame_amount
-        bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frame_amount
+        bpy.data.curves['BezierCircle'].path_duration = ABGlobals.frame_amount
+        bpy.data.scenes["Scene"].frame_end = ABGlobals.frame_amount
 
         # init point sizes
         num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
