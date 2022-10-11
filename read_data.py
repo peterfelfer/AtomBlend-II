@@ -81,7 +81,6 @@ class AtomBlendAddon:
 
     def combine_rrng_and_e_pos_file(self, context):
         start = time.perf_counter()
-        print('start combine rrng and (e)pos', time.perf_counter() - start)
 
         all_atoms = ABGlobals.all_data  # all atoms sorted by m/n
         all_elements = ABGlobals.all_elements
@@ -122,7 +121,7 @@ class AtomBlendAddon:
                 # print('greater than this element -> increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
                 if start_index + 1 < len(all_elements):
                     start_index += 1
-                    print('increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
+                    #print('increase start index', m_n, this_elem['start_range'], this_elem['end_range'], start_index)
 
                 # loop through the next atoms to check if the charge of this atom
                 # matches the range of one of the next elements
@@ -176,12 +175,12 @@ class AtomBlendAddon:
         # build coord list for shader
         for elem in ABGlobals.all_elements_by_name:
             # shuffle every element
-            ABGlobals.all_elements_by_name[elem]['coordinates'] = np.random.permutation(ABGlobals.all_elements_by_name[elem]['coordinates'])
-            ABGlobals.all_elements_by_name[elem]['coordinates'] = [tuple(i) for i in ABGlobals.all_elements_by_name[elem]['coordinates']]
+            # ABGlobals.all_elements_by_name[elem]['coordinates'] = np.random.permutation(ABGlobals.all_elements_by_name[elem]['coordinates'])
+            # ABGlobals.all_elements_by_name[elem]['coordinates'] = [tuple(i) for i in ABGlobals.all_elements_by_name[elem]['coordinates']]
             this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
             ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
             ABGlobals.all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
-            print('READ DATA', elem)
+            # print('READ DATA', elem)
             bpy.context.scene.color_settings[elem].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
 
 
@@ -208,8 +207,6 @@ class AtomBlendAddon:
 
         if isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
-        print('combine rrng and (e)pos done', time.perf_counter() - start)
 
 
         # f = open(r'\tmp/unknown_coords.txt', 'w')
@@ -267,7 +264,6 @@ class AtomBlendAddon:
                     else:
                         this_element['element_name'] += elem[0]
                     amount_index += 1
-                    print(elem[0], elem[1])
                     #this_element['amount'] = int(elem[1])
 
                 # setting atomic number
@@ -339,36 +335,25 @@ class AtomBlendAddon:
         file_path = ABGlobals.path
 
         start = time.perf_counter()
-        print('epos function entering', start)
 
         # reading the given binary file and store it into a numpy array
         # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
         data_in_bytes_float = np.fromfile(file_path, dtype='>f')
         data_in_bytes_int = np.fromfile(file_path, dtype='>i')
 
-        print('np.fromfile done', time.perf_counter() - start)
-
         # converting byte data to float and int
         data_as_float = data_in_bytes_float.view()
         data_as_int = data_in_bytes_int.view()
 
-        print('view() done', time.perf_counter() - start)
-
         # calculating how many atoms we have as input; dividing by 11 because there are 11 features to store
         num_of_atoms = int(data_as_float.shape[0] / 11)
-
-        print('num_of_atoms done', time.perf_counter() - start)
 
         # reshaping so one atom has one row in the numpy array
         reshaped_data_float = np.reshape(data_as_float, (num_of_atoms, 11))
         reshaped_data_int = np.reshape(data_as_int, (num_of_atoms, 11))
 
-        print('reshaping done', time.perf_counter() - start)
-
         # concatenate the first nine columns of float data and the last second columns from int data
         concat_data = np.concatenate((reshaped_data_float[:, :9], reshaped_data_int[:, 9:]), axis=1)
-
-        print('concat done', time.perf_counter() - start)
 
         # reducing the atom data by a certain percentage by only taking the first n elements
         atoms_percentage = context.scene.atom_blend_addon_settings.vertex_percentage
@@ -389,18 +374,12 @@ class AtomBlendAddon:
         # shuffling the data as they're kind of sorted by the z value
         concat_data = np.random.permutation(concat_data)
 
-        print('randomizing done', time.perf_counter() - start)
-
         num_of_atoms = int(num_of_atoms)
         concat_data = concat_data[:num_of_atoms]
-
-        print(atoms_percentage, num_of_atoms, len(concat_data))
 
         # sort atoms by ['m/n']
         sorted_by_mn = concat_data[concat_data[:, 3].argsort()]
         ABGlobals.all_data = sorted_by_mn
-
-        print('sorting done', time.perf_counter() - start)
 
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
 
@@ -417,7 +396,6 @@ class AtomBlendAddon:
 
     def load_pos_file(self, context):
         start = time.perf_counter()
-        print('start loading pos file', time.perf_counter() - start)
         if (ABGlobals.path == None):
             print('No file loaded')
             return
@@ -459,8 +437,6 @@ class AtomBlendAddon:
         sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
 
         ABGlobals.all_data = sorted_by_mn
-        print(sorted_by_mn[:,3])
-
         coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
         ABGlobals.atom_coords = coords
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates'] = ABGlobals.atom_coords
@@ -471,4 +447,3 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
         ABManagement.init(self, context)
-        print('loading pos file done', time.perf_counter() - start)
