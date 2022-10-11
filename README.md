@@ -47,7 +47,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Background color` - Change the background color of the rendering<br/>
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
-`Render` - Render a picture of your tip<br/>
+`Render` - Render a picture of your tip. Currently only PNG files are supported.<br/>
 
 #### Video
 <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-video_rendering.PNG" width="50%" height="50%"/>
@@ -64,7 +64,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
-`Render` - Render a video of your tip. <b>Depending on your hardware and frame time, rendering may take a while! Try not to click anywhere while rendering as Blender may crash in that case.</b><br/>
+`Render` - Render a video of your tip. Currently only AVI files are supported. <b>Depending on your hardware and frame time, rendering may take a while! Try not to click anywhere while rendering as Blender may crash in that case.</b><br/>
 
 When rendering a video, it can be helpful to open the terminal to see the progress of your render.
 This works different on Windows, macOS and Linux. Refer to [the Blender website](https://docs.blender.org/manual/en/3.0/advanced/command_line/launch/index.html) and follow the instructions for your platform.
