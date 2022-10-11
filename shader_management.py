@@ -255,7 +255,7 @@ class ABManagement:
 
         # if os.path.isfile(image.filepath_raw):
         #     os.remove(image.filepath_raw)
-        
+
         image.save()
         print('RETURN', image.filepath_raw, os.path.isfile(image.filepath_raw))
         return image.filepath_raw
