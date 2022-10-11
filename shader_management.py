@@ -116,6 +116,9 @@ class ABManagement:
         bpy.data.objects['Top'].hide_viewport = True
         bpy.data.objects['Origin'].hide_viewport = True
 
+        # set default path
+        bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
+
     def handler(self, context):
         # print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
@@ -223,23 +226,37 @@ class ABManagement:
 
         # actually save image
         path = bpy.data.scenes["Scene"].render.filepath
-        file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
-        print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
-        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.' + file_format.lower()
-        print(filename)
-        if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
+        #file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
+        #print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
+        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png' #file_format.lower()
+        # if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
+        #     render_path = path
+        #     image.file_format = file_format.upper() #render_path.split('.')[-1].upper()  # 'PNG'
+        # elif path.lower().endswith('.avi'):
+        #     render_path = path
+        #     image.file_format = 'PNG' #file_format.upper()
+        # else:
+        #     render_path = path + '//' + filename
+        #     image.file_format = file_format.upper() # render_path.split('.')[-1].upper()  # 'PNG'
+
+        if not ABGlobals.render_frame:
+            path = os.path.split(path)[0]
+            path = path + '//' + filename
+
+        if path.lower().endswith(('.png')):
             render_path = path
-            image.file_format = render_path.split('.')[-1].upper()  # 'PNG'
-        elif path.lower().endswith('.avi'):
-            render_path = path
-            image.file_format = 'AVI_JPEG'
         else:
-            render_path = path + '//' + filename
-            image.file_format = render_path.split('.')[-1].upper()  # 'PNG'
+            render_path = path + '.png'
+
+        image.file_format = 'PNG'
 
         render_path = r'%s' % render_path
         image.filepath_raw = render_path
 
+        # if os.path.isfile(image.filepath_raw):
+        #     os.remove(image.filepath_raw)
+        
         image.save()
-
+        print('RETURN', image.filepath_raw, os.path.isfile(image.filepath_raw))
+        return image.filepath_raw
         #print('RENDERING DONE', time.perf_counter() - start)
