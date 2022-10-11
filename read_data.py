@@ -175,8 +175,8 @@ class AtomBlendAddon:
         # build coord list for shader
         for elem in ABGlobals.all_elements_by_name:
             # shuffle every element
-            # ABGlobals.all_elements_by_name[elem]['coordinates'] = np.random.permutation(ABGlobals.all_elements_by_name[elem]['coordinates'])
-            # ABGlobals.all_elements_by_name[elem]['coordinates'] = [tuple(i) for i in ABGlobals.all_elements_by_name[elem]['coordinates']]
+            ABGlobals.all_elements_by_name[elem]['coordinates'] = np.random.permutation(ABGlobals.all_elements_by_name[elem]['coordinates'])
+            ABGlobals.all_elements_by_name[elem]['coordinates'] = [tuple(i) for i in ABGlobals.all_elements_by_name[elem]['coordinates']]
             this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
             ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
             ABGlobals.all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
