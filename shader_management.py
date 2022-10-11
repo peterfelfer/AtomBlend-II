@@ -57,7 +57,7 @@ class ABManagement:
         top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
         top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
 
-        print(top_x, top_y, top_z)
+        #print(top_x, top_y, top_z)
         bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, top_z))
         bpy.data.objects['Empty'].name = 'Top'
 
@@ -257,6 +257,6 @@ class ABManagement:
         #     os.remove(image.filepath_raw)
 
         image.save()
-        print('RETURN', image.filepath_raw, os.path.isfile(image.filepath_raw))
+        #print('RETURN', image.filepath_raw, os.path.isfile(image.filepath_raw))
         return image.filepath_raw
         #print('RENDERING DONE', time.perf_counter() - start)

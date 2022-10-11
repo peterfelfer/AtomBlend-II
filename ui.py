@@ -26,7 +26,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
         total_atoms_perc_displayed = total_atoms_perc_displayed #/ len(ABGlobals.all_data)
-        print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
+        #print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
 
         # update function atom_coords_update gets called as we're editing perc_displayed
         for elem_name in ABGlobals.all_elements_by_name:
@@ -37,7 +37,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
         DisplaySettings.update_point_size(self, context)
 
     def atom_coords_update(self, context):
-        print('atom coords update')
+        #print('atom coords update')
         # reset coords list
         ABGlobals.atom_coords = []
         for elem_name in ABGlobals.all_elements_by_name:
@@ -110,7 +110,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
             ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
     def export_update(self, context):
-        print('export update', self, context, self.name)
         elem_coords = ABGlobals.all_elements_by_name[self.name]['coordinates']
 
         # create mesh
@@ -174,7 +173,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
 class AB_properties(bpy.types.PropertyGroup):
     # update functions
     def update_point_size(self, context):
-        print('UPDATE POINT SIZE AB PROP')
         general_point_size = context.scene.atom_blend_addon_settings.point_size
 
         for elem_name in ABGlobals.all_elements_by_name:
@@ -365,7 +363,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         split = split.split(factor=f[6] / perc_left)
         export_col = split.column(align=True)
         perc_left -= f[6]
-        print(perc_left)
         split = split.split(factor=0.0)
 
         # label row
@@ -646,8 +643,6 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             ABManagement.save_image(self, context)
         else:
             out_path = os.path.dirname(bpy.data.scenes['Scene'].render.filepath)
-            print('path', bpy.data.scenes['Scene'].render.filepath)
-            print('dirname', os.path.dirname(bpy.data.scenes['Scene'].render.filepath))
             # clear existing frames in video edit before rendering
             bpy.ops.sequencer.select_all(action='SELECT')
             bpy.ops.sequencer.delete()
@@ -663,7 +658,6 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
                 img_name = os.path.split(img_path)[1]
                 # img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
                 # img_path = r'%s' %img_path
-                print(img_path, img_name, os.path.isfile(img_path))
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
                 print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
 
