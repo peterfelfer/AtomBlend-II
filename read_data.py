@@ -166,6 +166,7 @@ class AtomBlendAddon:
                 raise Exception('added not 1')
 
         num_of_atoms_sum = 0
+
         for elem in ABGlobals.all_elements_by_name:
             num_of_atoms_sum += len(ABGlobals.all_elements_by_name[elem]['coordinates'])
 
@@ -174,11 +175,16 @@ class AtomBlendAddon:
 
         # build coord list for shader
         for elem in ABGlobals.all_elements_by_name:
+            # shuffle every element
+            ABGlobals.all_elements_by_name[elem]['coordinates'] = np.random.permutation(ABGlobals.all_elements_by_name[elem]['coordinates'])
+            ABGlobals.all_elements_by_name[elem]['coordinates'] = [tuple(i) for i in ABGlobals.all_elements_by_name[elem]['coordinates']]
             this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
             ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
             ABGlobals.all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
             print('READ DATA', elem)
             bpy.context.scene.color_settings[elem].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
+
+
 
         '''
         # build atom color list
@@ -204,6 +210,16 @@ class AtomBlendAddon:
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
         print('combine rrng and (e)pos done', time.perf_counter() - start)
+
+
+        # f = open(r'\tmp/unknown_coords.txt', 'w')
+        # coords = ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates']
+        # for i in range(len(coords)):
+        #     f.write(str(coords[i][0]) + '\t')
+        #     f.write(str(coords[i][1]) + '\t')
+        #     f.write(str(coords[i][2]) + '\t')
+        #     f.write('\n')
+        # f.close()
 
 
     def load_rrng_file(self, context):
