@@ -646,20 +646,24 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             ABManagement.save_image(self, context)
         else:
             out_path = os.path.dirname(bpy.data.scenes['Scene'].render.filepath)
+            print('path', bpy.data.scenes['Scene'].render.filepath)
+            print('dirname', os.path.dirname(bpy.data.scenes['Scene'].render.filepath))
             # clear existing frames in video edit before rendering
             bpy.ops.sequencer.select_all(action='SELECT')
             bpy.ops.sequencer.delete()
 
-            print('Starting animation rendering...', ABGlobals.frame_amount)
+            print('Starting animation rendering...')
             for i in range(1, ABGlobals.frame_amount+1):
                 bpy.context.scene.frame_set(i)
+
                 # write file
-                ABManagement.save_image(self, context, cur_frame=i)
+                img_path = ABManagement.save_image(self, context, cur_frame=i)
 
                 # add frame to video editor
-                img_name = ABGlobals.dataset_name + '_frame_' + str(i)
-                img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
-                img_path = r'%s' %img_path
+                img_name = os.path.split(img_path)[1]
+                # img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
+                # img_path = r'%s' %img_path
+                print(img_path, img_name, os.path.isfile(img_path))
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
                 print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
 
