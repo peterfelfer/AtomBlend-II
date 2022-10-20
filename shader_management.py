@@ -116,8 +116,13 @@ class ABManagement:
         bpy.data.objects['Top'].hide_viewport = True
         bpy.data.objects['Origin'].hide_viewport = True
 
+<<<<<<< Updated upstream
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
+=======
+        # set default file name
+        bpy.context.scene.render.filepath = bpy.context.scene.render.filepath + ABGlobals.dataset_name + '.png'
+>>>>>>> Stashed changes
 
     def handler(self, context):
         # print('handler!')
@@ -169,7 +174,7 @@ class ABManagement:
 
     def save_image(self, context, cur_frame=''):
         start = time.perf_counter()
-        #print('RENDERING START', time.perf_counter() - start)
+
         cache = ABManagement.cache
         scene = context.scene
 
@@ -226,6 +231,7 @@ class ABManagement:
 
         # actually save image
         path = bpy.data.scenes["Scene"].render.filepath
+
         #file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
         #print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
         filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png' #file_format.lower()
@@ -251,12 +257,48 @@ class ABManagement:
         image.file_format = 'PNG'
 
         render_path = r'%s' % render_path
+
+        file_format = context.scene.atom_blend_addon_settings.file_format
+        #file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
+        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.' + file_format.lower()
+
+        if file_format == 'PNG':
+            image.file_format  = 'PNG'
+            if os.path.splitext(path)[1].lower() == '.png': # file ending is already png
+                render_path = path
+            elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']: # file ending is not .png
+                render_path = path + '.png'
+            else: # there is no file name, just a directory -> add file name and format
+                render_path = path + filename
+        elif file_format == 'JPEG':
+            image.file_format  = 'JPEG'
+            if os.path.splitext(path)[1].lower() == '.jpg' or os.path.splitext(path)[1].lower() == '.jpeg':
+                render_path = path
+            elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
+                render_path = path + '.jpg'
+            else:
+                render_path = path + filename
+        else:
+            image.file_format  = 'TIFF'
+            if os.path.splitext(path)[1].lower() == '.tiff':
+                render_path = path
+            elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
+                render_path = path + '.tiff'
+            else:
+                render_path = path + filename
+
+        # if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
+        #     render_path = path
+        # else:
+        #     render_path = path + '//' + filename
+
+
         image.filepath_raw = render_path
 
         # if os.path.isfile(image.filepath_raw):
         #     os.remove(image.filepath_raw)
 
         image.save()
-        #print('RETURN', image.filepath_raw, os.path.isfile(image.filepath_raw))
-        return image.filepath_raw
-        #print('RENDERING DONE', time.perf_counter() - start)
+
+        print('Wrote file to ' + render_path)
+        return render_path

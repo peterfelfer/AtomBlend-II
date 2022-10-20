@@ -167,7 +167,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
-    export: bpy.props.BoolProperty(name='', default=False, update=export_update)
+    export: bpy.props.BoolProperty(name='', description='Export this element as an own object. Only available in 3.4.0+ Alpha.', default=False, update=export_update)
 
 # --- properties used for all elements ---
 class AB_properties(bpy.types.PropertyGroup):
@@ -224,6 +224,14 @@ class AB_properties(bpy.types.PropertyGroup):
         # if context.space_data.region_3d.view_perspective == 'CAMERA':
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = self.background_color
 
+    def update_file_format(self, context):
+        # if render mode is image, change the displayed file path to the new file ending
+        if ABGlobals.render_frame:
+            file_path = bpy.data.scenes["Scene"].render.filepath
+            file_format = context.scene.atom_blend_addon_settings.file_format.lower()
+
+            bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.' + file_format
+
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -244,6 +252,15 @@ class AB_properties(bpy.types.PropertyGroup):
                ],
         default='Circle around tip',
         update=update_animation_mode
+    )
+
+    file_format: bpy.props.EnumProperty(
+        name='File Format',
+        items=[('PNG', 'PNG', 'PNG'),
+               ('JPEG', 'JPEG', 'JPEG'),
+               ('TIFF', 'TIFF', 'TIFF')],
+        default='PNG',
+        update=update_file_format
     )
 
     # for developing purposes
@@ -362,7 +379,11 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         perc_left -= f[5]
         split = split.split(factor=f[6] / perc_left)
         export_col = split.column(align=True)
+<<<<<<< Updated upstream
         perc_left -= f[6]
+=======
+        perc_left -= f[7]
+>>>>>>> Stashed changes
         split = split.split(factor=0.0)
 
         # label row
@@ -375,6 +396,10 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         displayed_col.label(text='% Displayed')
         amount_col.label(text='# Displayed')
         export_col.label(text='Export')
+
+        # export feature is only available if (currently) version 3.4. alpha is used
+        if bpy.app.version < (3, 4, 0):
+            export_col.enabled = False
 
         display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
 
@@ -476,6 +501,10 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             # animation mode
             anim_mode = layout.row(align=True)
             anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
+
+        # file format
+        file_format_col = layout.row(align=True)
+        file_format_col.prop(context.scene.atom_blend_addon_settings, 'file_format')
 
         # file path selection
         file_path_row = layout.row(align=True)
@@ -603,9 +632,15 @@ class ATOMBLEND_OT_render_frame(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return True  # context.object is not None
+        return ABGlobals.FileLoaded_e_pos # context.object is not None
 
     def execute(self, context):
+        # set file format from avi to png/jpg/tiff
+        file_path = bpy.data.scenes["Scene"].render.filepath
+        file_format = context.scene.atom_blend_addon_settings.file_format.lower()
+        if os.path.splitext(file_path)[1].lower() == '.avi':
+            bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.' + file_format
+
         ABGlobals.render_frame = True
         if ABGlobals.animation_playing:  # if going to frame render mode and animation is still playing, stop it
             bpy.ops.screen.animation_play()
@@ -624,6 +659,11 @@ class ATOMBLEND_OT_render_video(bpy.types.Operator):
         # return True  # context.object is not None
 
     def execute(self, context):
+        # set file format from png/jpg/tiff to avi
+        file_path = bpy.data.scenes["Scene"].render.filepath
+        if os.path.splitext(file_path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
+            bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.avi'
+
         ABGlobals.render_frame = False
         return {'FINISHED'}
 
@@ -652,12 +692,20 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
                 bpy.context.scene.frame_set(i)
 
                 # write file
+<<<<<<< Updated upstream
                 img_path = ABManagement.save_image(self, context, cur_frame=i)
 
                 # add frame to video editor
                 img_name = os.path.split(img_path)[1]
                 # img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
                 # img_path = r'%s' %img_path
+=======
+                render_path = ABManagement.save_image(self, context, cur_frame=i)
+
+                # add frame to video editor
+                img_name = os.path.split(render_path)[-1]
+                img_path = render_path #out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
+>>>>>>> Stashed changes
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
                 print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
 
@@ -668,11 +716,17 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.render.render(animation=True)
 
             # delete all the written frames
+<<<<<<< Updated upstream
             # for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
             #     del_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
             #     del_path = r'%s' % del_path
             #     print('DEL PATH', del_path)
             #     os.remove(path=del_path)
+=======
+            file_format = context.scene.atom_blend_addon_settings.file_format.lower()
+            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
+                os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.' + file_format)
+>>>>>>> Stashed changes
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
