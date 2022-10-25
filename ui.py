@@ -232,6 +232,17 @@ class AB_properties(bpy.types.PropertyGroup):
 
             bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.' + file_format
 
+        if self.file_format == 'JPEG':
+            context.scene.atom_blend_addon_settings.transparent_background = False
+
+    def update_transparent_background(self, context):
+        if self.file_format != 'JPEG':
+            bpy.data.scenes["Scene"].render.film_transparent = not bpy.data.scenes["Scene"].render.film_transparent
+        else:
+            bpy.data.scenes["Scene"].render.film_transparent = False
+
+        if not ABGlobals.render_frame:
+            bpy.data.scenes["Scene"].render.film_transparent = False
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -240,6 +251,7 @@ class AB_properties(bpy.types.PropertyGroup):
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Changes the point size of all the atoms', update=update_point_size)
     display_all_elements: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.update_display_all_elements)
     background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
+    transparent_background: bpy.props.BoolProperty(name='Transparent Background', description='Only available for .png and .tiff file format and image rendering', default=False, update=update_transparent_background)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
     camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, step=50, description='Edit the camera elevation', update=update_camera_elevation)
@@ -253,7 +265,6 @@ class AB_properties(bpy.types.PropertyGroup):
         default='Circle around tip',
         update=update_animation_mode
     )
-
     file_format: bpy.props.EnumProperty(
         name='File Format',
         items=[('PNG', 'PNG', 'PNG'),
@@ -484,6 +495,16 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         background_color = layout.row(align=True)
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
+        # transparent background
+        split = layout.split(factor=0.5)
+        emtpy_space = split.column(align=True)
+        split = split.split(factor=1.0)
+        transparent_background = split.column(align=True)
+        transparent_background.prop(context.scene.atom_blend_addon_settings, 'transparent_background')
+
+        if context.scene.atom_blend_addon_settings.file_format == 'JPEG' or not ABGlobals.render_frame:
+            transparent_background.enabled = False
+
         if not ABGlobals.render_frame:
             col = layout.column(align=True)
             # frame amount
@@ -659,8 +680,10 @@ class ATOMBLEND_OT_render_video(bpy.types.Operator):
         file_path = bpy.data.scenes["Scene"].render.filepath
         if os.path.splitext(file_path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
             bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.avi'
-
+            
         ABGlobals.render_frame = False
+        context.scene.atom_blend_addon_settings.transparent_background = False
+
         return {'FINISHED'}
 
 
@@ -705,9 +728,9 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.render.render(animation=True)
 
             # delete all the written frames
-            file_format = context.scene.atom_blend_addon_settings.file_format.lower()
-            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
-                os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.' + file_format)
+            # file_format = context.scene.atom_blend_addon_settings.file_format.lower()
+            # for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
+            #     os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.' + file_format)
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
