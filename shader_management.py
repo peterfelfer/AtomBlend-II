@@ -185,7 +185,10 @@ class ABManagement:
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
-            background_color = context.scene.atom_blend_addon_settings.background_color
+            if context.scene.atom_blend_addon_settings.transparent_background:
+                background_color = [1, 1, 1, 0]
+            else:
+                background_color = context.scene.atom_blend_addon_settings.background_color
 
             fb.clear(color=background_color)#, depth=1.0)
 
@@ -218,7 +221,7 @@ class ABManagement:
         # create and save image
         render_name = 'render_output'
         if render_name not in bpy.data.images:
-            bpy.data.images.new(render_name, width, height)
+            bpy.data.images.new(render_name, width, height, alpha=True)
         image = bpy.data.images[render_name]
         image.scale(width, height)
 
