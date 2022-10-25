@@ -116,13 +116,8 @@ class ABManagement:
         bpy.data.objects['Top'].hide_viewport = True
         bpy.data.objects['Origin'].hide_viewport = True
 
-<<<<<<< Updated upstream
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
-=======
-        # set default file name
-        bpy.context.scene.render.filepath = bpy.context.scene.render.filepath + ABGlobals.dataset_name + '.png'
->>>>>>> Stashed changes
 
     def handler(self, context):
         # print('handler!')

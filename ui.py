@@ -379,11 +379,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         perc_left -= f[5]
         split = split.split(factor=f[6] / perc_left)
         export_col = split.column(align=True)
-<<<<<<< Updated upstream
         perc_left -= f[6]
-=======
-        perc_left -= f[7]
->>>>>>> Stashed changes
         split = split.split(factor=0.0)
 
         # label row
@@ -692,20 +688,13 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
                 bpy.context.scene.frame_set(i)
 
                 # write file
-<<<<<<< Updated upstream
                 img_path = ABManagement.save_image(self, context, cur_frame=i)
 
                 # add frame to video editor
                 img_name = os.path.split(img_path)[1]
                 # img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
                 # img_path = r'%s' %img_path
-=======
-                render_path = ABManagement.save_image(self, context, cur_frame=i)
 
-                # add frame to video editor
-                img_name = os.path.split(render_path)[-1]
-                img_path = render_path #out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
->>>>>>> Stashed changes
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
                 print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
 
@@ -716,17 +705,9 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.render.render(animation=True)
 
             # delete all the written frames
-<<<<<<< Updated upstream
-            # for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
-            #     del_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
-            #     del_path = r'%s' % del_path
-            #     print('DEL PATH', del_path)
-            #     os.remove(path=del_path)
-=======
             file_format = context.scene.atom_blend_addon_settings.file_format.lower()
             for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
                 os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.' + file_format)
->>>>>>> Stashed changes
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
