@@ -45,6 +45,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Camera rotation` - Change the rotation of the tip<br/>
 `Camera elevation` - Change the elevation of the camera<br/>
 `Background color` - Change the background color of the rendering<br/>
+`File Format` - Select the file format of your rendering. Currently, you can select between .png, .jpg and .tiff.
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
 `Render` - Render a picture of your tip. Currently only PNG files are supported.<br/>
@@ -62,6 +63,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
   - Circle around tip: Camera moves around the tip but stays at the same height<br/>
   - Spiral around tip: Camera moves spirally around the tip from top to bottom<br/>
 
+`File Format` - The file format of your rendering will be .avi. But first, all the frames will be rendered separately and will be converted to a video later. Here, you can choose the file format for these frames. You can select between .png, jpg and .tiff
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
 `Render` - Render a video of your tip. Currently only AVI files are supported. <b>Depending on your hardware and frame time, rendering may take a while! Try not to click anywhere while rendering as Blender may crash in that case.</b><br/>
