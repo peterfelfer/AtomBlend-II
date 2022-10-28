@@ -26,7 +26,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
         total_atoms_perc_displayed = total_atoms_perc_displayed #/ len(ABGlobals.all_data)
-        #print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
+        # print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
 
         # update function atom_coords_update gets called as we're editing perc_displayed
         for elem_name in ABGlobals.all_elements_by_name:
@@ -37,7 +37,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
         DisplaySettings.update_point_size(self, context)
 
     def atom_coords_update(self, context):
-        #print('atom coords update')
         # reset coords list
         ABGlobals.atom_coords = []
         for elem_name in ABGlobals.all_elements_by_name:
@@ -97,7 +96,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
 
     def update_point_size(self, context):
         ABGlobals.point_size_list = []
-        # print('UPDATE POINT SIZE DISPLAY SETTINGS')
 
         for elem_name in ABGlobals.all_elements_by_name:
             num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
@@ -167,7 +165,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
-    export: bpy.props.BoolProperty(name='', description='Export this element as an own object. Only available in 3.4.0+ Alpha.', default=False, update=export_update)
+    export: bpy.props.BoolProperty(name='', default=False, update=export_update)
 
 # --- properties used for all elements ---
 class AB_properties(bpy.types.PropertyGroup):
@@ -190,25 +188,36 @@ class AB_properties(bpy.types.PropertyGroup):
         offset = self.camera_rotation
         bpy.data.objects["Camera"].constraints["Follow Path"].offset = offset
 
-    def update_frame_rot_amount(self, context):
+    def update_frame_amount(self, context):
         # set frame amount in path settings
-        ABGlobals.frame_amount = int(self.video_duration * 24)
         bpy.context.view_layer.objects.active = bpy.data.objects['Camera path']
-        bpy.data.curves['BezierCircle'].path_duration = int(ABGlobals.frame_amount / self.rotation_amount)
+        bpy.data.curves['BezierCircle'].path_duration = int(self.frame_amount / self.rotation_amount)
 
         # animate path
         # bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
         # bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
 
         # set total amount of frames
-        bpy.data.scenes["Scene"].frame_end = ABGlobals.frame_amount
+        bpy.data.scenes["Scene"].frame_end = self.frame_amount
+
+        # set duration value of property
+        duration = self.frame_amount / 24
+        if float("{:.2f}".format(duration)) != float("{:.2f}".format(context.scene.atom_blend_addon_settings.duration)): # permit endless loop between frames and duration
+            context.scene.atom_blend_addon_settings.duration = float("{:.2f}".format(duration))
+
+    def update_duration(self, context):
+        # set frame value of property
+        frames = self.duration * 24
+        if ceil(frames) != context.scene.atom_blend_addon_settings.frame_amount: # permit endless loop between frames and duration
+            context.scene.atom_blend_addon_settings.frame_amount = int(frames)
+
 
     def update_animation_mode(self, context):
         if self.animation_mode == 'Circle around tip':
             # clear the keyframes in the first and last frame
             cam_path = bpy.data.objects['Camera path']
             cam_path.keyframe_delete(data_path='location', index=2, frame=1)
-            cam_path.keyframe_delete(data_path='location', index=2, frame=ABGlobals.frame_amount)
+            cam_path.keyframe_delete(data_path='location', index=2, frame=self.frame_amount)
 
         elif self.animation_mode == 'Spiral around tip':
             cam_path = bpy.data.objects['Camera path']
@@ -217,46 +226,28 @@ class AB_properties(bpy.types.PropertyGroup):
             cam_path.keyframe_insert(data_path="location", index=2, frame=1)
 
             # set keyframe for last frame
+            frame_amount = self.frame_amount
             cam_path.location[2] = -50
-            cam_path.keyframe_insert(data_path="location", index=2, frame=ABGlobals.frame_amount)
+            cam_path.keyframe_insert(data_path="location", index=2, frame=frame_amount)
 
     def update_background_color(self, context):
         # if context.space_data.region_3d.view_perspective == 'CAMERA':
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = self.background_color
 
-    def update_file_format(self, context):
-        # if render mode is image, change the displayed file path to the new file ending
-        if ABGlobals.render_frame:
-            file_path = bpy.data.scenes["Scene"].render.filepath
-            file_format = context.scene.atom_blend_addon_settings.file_format.lower()
-
-            bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.' + file_format
-
-        if self.file_format == 'JPEG':
-            context.scene.atom_blend_addon_settings.transparent_background = False
-
-    def update_transparent_background(self, context):
-        if self.file_format != 'JPEG':
-            bpy.data.scenes["Scene"].render.film_transparent = not bpy.data.scenes["Scene"].render.film_transparent
-        else:
-            bpy.data.scenes["Scene"].render.film_transparent = False
-
-        if not ABGlobals.render_frame:
-            bpy.data.scenes["Scene"].render.film_transparent = False
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
     rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
-    vertex_percentage: bpy.props.FloatProperty(name="Total displayed (%)", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
-    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Changes the point size of all the atoms', update=update_point_size)
+    vertex_percentage: bpy.props.FloatProperty(name="Total displayed", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
+    point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, soft_min=0.0, max=100.0, step=0.5, description='Point size of the atoms', update=update_point_size)
     display_all_elements: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.update_display_all_elements)
     background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
-    transparent_background: bpy.props.BoolProperty(name='Transparent Background', description='Only available for .png and .tiff file format and image rendering', default=False, update=update_transparent_background)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
-    camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, step=50, description='Edit the camera elevation', update=update_camera_elevation)
-    video_duration: bpy.props.FloatProperty(name='Duration', default=10.0, description='Duration of video', update=update_frame_rot_amount, precision=1, step=0.5)
-    rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, description='Number of rotations', update=update_frame_rot_amount)
+    camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, description='Edit the camera elevation', update=update_camera_elevation)
+    frame_amount: bpy.props.IntProperty(name='Frames', default=5, description='Amount of frames', min=0, soft_min=0, update=update_frame_amount)
+    duration: bpy.props.FloatProperty(name='Duration (seconds)', precision=2, description='Duration of the video', min=0.0, soft_min=0.0, update=update_duration)
+    rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, min=1, soft_min=1, description='Number of rotations', update=update_frame_amount)
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
         items=[('Circle around tip', 'Circle around tip', 'Circle around tip'),
@@ -265,24 +256,16 @@ class AB_properties(bpy.types.PropertyGroup):
         default='Circle around tip',
         update=update_animation_mode
     )
-    file_format: bpy.props.EnumProperty(
-        name='File Format',
-        items=[('PNG', 'PNG', 'PNG'),
-               ('JPEG', 'JPEG', 'JPEG'),
-               ('TIFF', 'TIFF', 'TIFF')],
-        default='PNG',
-        update=update_file_format
-    )
 
     # for developing purposes
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
-        # default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
-        default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
+        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
+        # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 
 class ATOMBLEND_PT_panel_general(bpy.types.Panel):
@@ -322,7 +305,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'e_pos_filepath')
         col.enabled = False
         col = load_e_pos_file_row.column(align=True)
-        col.operator('atom_blend_viewer.load_file', icon='FILE_FOLDER', text='')
+        col.operator('atom_blend_viewer.load_file', icon='FILE_FOLDER')
 
         # .rrng file
         load_rrng_file_row = layout.row(align=True)
@@ -332,7 +315,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'rrng_filepath')
         col.enabled = False
         col = load_rrng_file_row.column(align=True)
-        col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER", text='')
+        col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER")
 
 # --- display settings ---
 class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
@@ -365,7 +348,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         # col = layout.column()
         # display_col = row.column()
         # displayed, name, charge, color, point size, % displayed, # displayed, export
-        f = [0.07, 0.1, 0.1, 0.2, 0.2, 0.23, 0.1]
+        f = [0.07, 0.1, 0.1, 0.1, 0.15, 0.15, 0.23, 0.1]
         perc_left = 1.0
         split = layout.split(factor=f[0] / perc_left)
         display_col = split.column(align=True)
@@ -373,24 +356,25 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         split = split.split(factor=f[1] / perc_left)
         name_col = split.column(align=True)
         perc_left -= f[1]
-        # split = split.split(factor=f[2] / perc_left)
-        # charge_col = split.column(align=True)
-        # perc_left -= f[2]
         split = split.split(factor=f[2] / perc_left)
-        color_col = split.column(align=True)
+        charge_col = split.column(align=True)
         perc_left -= f[2]
         split = split.split(factor=f[3] / perc_left)
-        point_size_col = split.column(align=True)
+        color_col = split.column(align=True)
         perc_left -= f[3]
         split = split.split(factor=f[4] / perc_left)
-        displayed_col = split.column(align=True)
+        point_size_col = split.column(align=True)
         perc_left -= f[4]
         split = split.split(factor=f[5] / perc_left)
-        amount_col = split.column(align=True)
+        displayed_col = split.column(align=True)
         perc_left -= f[5]
         split = split.split(factor=f[6] / perc_left)
-        export_col = split.column(align=True)
+        amount_col = split.column(align=True)
         perc_left -= f[6]
+        split = split.split(factor=f[7] / perc_left)
+        export_col = split.column(align=True)
+        perc_left -= f[7]
+        # print(perc_left)
         split = split.split(factor=0.0)
 
         # label row
@@ -398,15 +382,12 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         display_col.prop(prop, 'display_all_elements', icon_only=True, icon='HIDE_OFF' if prop.display_all_elements else 'HIDE_ON')
         # display_col.label(text='')
         name_col.label(text='Name')
+        charge_col.label(text='Charge')
         color_col.label(text='Color')
         point_size_col.label(text='Point size')
         displayed_col.label(text='% Displayed')
         amount_col.label(text='# Displayed')
         export_col.label(text='Export')
-
-        # export feature is only available if (currently) version 3.4. alpha is used
-        if bpy.app.version < (3, 4, 0):
-            export_col.enabled = False
 
         display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
 
@@ -416,8 +397,10 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
 
             elem_name_charge = prop.name
             elem_name = elem_name_charge.split('_')[0]
+            elem_charge = elem_name_charge.split('_')[1]
             display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
             name_col.label(text=elem_name)
+            charge_col.label(text=elem_charge)
             color_col.prop(prop, 'color')
             point_size_col.prop(prop, 'point_size')
             displayed_col.prop(prop, 'perc_displayed')
@@ -430,8 +413,10 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         prop = bpy.context.scene.color_settings[ABGlobals.unknown_label]
         elem_name_charge = prop.name
         elem_name = elem_name_charge.split('_')[0]
+        elem_charge = elem_name_charge.split('_')[1]
         display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
         name_col.label(text=elem_name)
+        charge_col.label(text=elem_charge)
         color_col.prop(prop, 'color')
         point_size_col.prop(prop, 'point_size')
         displayed_col.prop(prop, 'perc_displayed')
@@ -495,21 +480,14 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         background_color = layout.row(align=True)
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
-        # transparent background
-        split = layout.split(factor=0.5)
-        emtpy_space = split.column(align=True)
-        split = split.split(factor=1.0)
-        transparent_background = split.column(align=True)
-        transparent_background.prop(context.scene.atom_blend_addon_settings, 'transparent_background')
-
-        if context.scene.atom_blend_addon_settings.file_format == 'JPEG' or not ABGlobals.render_frame:
-            transparent_background.enabled = False
-
         if not ABGlobals.render_frame:
             col = layout.column(align=True)
             # frame amount
-            video_duration = col.row(align=True)
-            video_duration.prop(context.scene.atom_blend_addon_settings, 'video_duration', text='Duration (' + str(ABGlobals.frame_amount) + ' frames)')
+            frame_duration_amount = col.row(align=True)
+            seconds = str('%.1f' % (context.scene.atom_blend_addon_settings.frame_amount / 24))
+            frame_duration_amount.prop(context.scene.atom_blend_addon_settings, 'duration')
+            frame_duration_amount.prop(context.scene.atom_blend_addon_settings, 'frame_amount')
+            # frame_duration_amount.prop(context.scene.atom_blend_addon_settings, 'frame_amount', text='Frames (approx.' + str(seconds) + ' seconds)')
 
             # rotation amount
             rot_amount = col.row(align=True)
@@ -518,10 +496,6 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             # animation mode
             anim_mode = layout.row(align=True)
             anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
-
-        # file format
-        file_format_col = layout.row(align=True)
-        file_format_col.prop(context.scene.atom_blend_addon_settings, 'file_format')
 
         # file path selection
         file_path_row = layout.row(align=True)
@@ -557,7 +531,7 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
 # --- file loading ---
 class ATOMBLEND_OT_load_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_file"
-    bl_label = "Load .pos/.epos file"
+    bl_label = ""
     bl_description = "Load a file of the following types:\n.epos, .pos"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -602,7 +576,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
 class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_rrng_file"
-    bl_label = "Load .rrng file"
+    bl_label = ""
     bl_description = "Load a file of the following types:\n.rrng"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
@@ -649,15 +623,9 @@ class ATOMBLEND_OT_render_frame(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return ABGlobals.FileLoaded_e_pos # context.object is not None
+        return True  # context.object is not None
 
     def execute(self, context):
-        # set file format from avi to png/jpg/tiff
-        file_path = bpy.data.scenes["Scene"].render.filepath
-        file_format = context.scene.atom_blend_addon_settings.file_format.lower()
-        if os.path.splitext(file_path)[1].lower() == '.avi':
-            bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.' + file_format
-
         ABGlobals.render_frame = True
         if ABGlobals.animation_playing:  # if going to frame render mode and animation is still playing, stop it
             bpy.ops.screen.animation_play()
@@ -676,14 +644,7 @@ class ATOMBLEND_OT_render_video(bpy.types.Operator):
         # return True  # context.object is not None
 
     def execute(self, context):
-        # set file format from png/jpg/tiff to avi
-        file_path = bpy.data.scenes["Scene"].render.filepath
-        if os.path.splitext(file_path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
-            bpy.data.scenes["Scene"].render.filepath = os.path.splitext(file_path)[0] + '.avi'
-            
         ABGlobals.render_frame = False
-        context.scene.atom_blend_addon_settings.transparent_background = False
-
         return {'FINISHED'}
 
 
@@ -706,20 +667,17 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.sequencer.select_all(action='SELECT')
             bpy.ops.sequencer.delete()
 
-            print('Starting animation rendering...')
-            for i in range(1, ABGlobals.frame_amount+1):
+            print('Starting animation rendering...', context.scene.atom_blend_addon_settings.frame_amount)
+            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
                 bpy.context.scene.frame_set(i)
-
                 # write file
-                img_path = ABManagement.save_image(self, context, cur_frame=i)
+                ABManagement.save_image(self, context, cur_frame=i)
 
                 # add frame to video editor
-                img_name = os.path.split(img_path)[1]
-                # img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
-                # img_path = r'%s' %img_path
-
+                img_name = ABGlobals.dataset_name + '_frame_' + str(i)
+                img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
-                print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
+                print('Rendered frame ' + str(i) + ' / ' + str(context.scene.atom_blend_addon_settings.frame_amount))
 
             print('Wrote all frames. Creating the video now...')
             # render and save video
@@ -728,9 +686,8 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.render.render(animation=True)
 
             # delete all the written frames
-            # file_format = context.scene.atom_blend_addon_settings.file_format.lower()
-            # for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
-            #     os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.' + file_format)
+            for i in range(1, context.scene.atom_blend_addon_settings.frame_amount+1):
+                os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png')
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
