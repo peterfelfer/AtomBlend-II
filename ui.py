@@ -253,6 +253,14 @@ class AB_properties(bpy.types.PropertyGroup):
         if not ABGlobals.render_frame:
             bpy.data.scenes["Scene"].render.film_transparent = False
 
+        # show the transparent color in ui background color panel
+        if self.transparent_background:
+            bc = self.background_color
+            context.scene.atom_blend_addon_settings.background_color = [bc[0], bc[1], bc[2], 0.0]
+        else:
+            bc = self.background_color
+            context.scene.atom_blend_addon_settings.background_color = [bc[0], bc[1], bc[2], 1.0]
+
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
     rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -502,18 +510,31 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
 
         # background color
-        background_color = layout.row(align=True)
-        background_color.prop(context.scene.atom_blend_addon_settings, 'background_color')
+        if ABGlobals.render_frame:
+            f = [0.3, 0.3, 0.4]
+        else:
+            f = [0.5, 0.5]
+
+        perc_left = 1.0
+        split = layout.split(factor=f[0] / perc_left)
+        text = split.column(align=True)
+        text.label(text='Background Color')
+        perc_left -= f[0]
+
+        split = split.split(factor=f[1]  / perc_left)
+        background_color = split.column(align=True)
+        background_color.prop(context.scene.atom_blend_addon_settings, 'background_color', text='')
+        perc_left -= f[1]
 
         # transparent background
-        split = layout.split(factor=0.5)
-        emtpy_space = split.column(align=True)
-        split = split.split(factor=1.0)
-        transparent_background = split.column(align=True)
-        transparent_background.prop(context.scene.atom_blend_addon_settings, 'transparent_background')
+        if ABGlobals.render_frame:
+            split = split.split(factor=f[2] / perc_left)
+            transparent_background = split.column(align=True)
+            transparent_background.prop(context.scene.atom_blend_addon_settings, 'transparent_background')
+            perc_left -= f[2]
 
-        if context.scene.atom_blend_addon_settings.file_format == 'JPEG' or not ABGlobals.render_frame:
-            transparent_background.enabled = False
+            if context.scene.atom_blend_addon_settings.file_format == 'JPEG':
+                transparent_background.enabled = False
 
         if not ABGlobals.render_frame:
             col = layout.column(align=True)
