@@ -45,7 +45,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Camera rotation` - Change the rotation of the tip<br/>
 `Camera elevation` - Change the elevation of the camera<br/>
 `Background color` - Change the background color of the rendering<br/>
-`Transparent Background` - Enable a transparent background. Only available for PNG and TIFF images as JPG images don't support transparency. Transparent backgrounds are currently only available for renderings of pictures.<br/> 
+`Transparent Background` - Enable a transparent background. Only available for PNG and TIFF images as JPG images don't support transparency<br/> 
 `File Format` - Select the file format of your rendering. Currently, you can select between PNG, JPG and TIFF<br/>
 `Output Path` - Select the output path of your rendering<br/>
 `Preview` - Preview your rendering<br/>
@@ -57,7 +57,7 @@ After loading both the .pos/.epos and .rrng files, your screen should look simil
 `Camera distance` - Change the distance of the camera to the tip<br/>
 `Camera rotation` - Change the start of the rotation of the tip<br/>
 `Camera elevation` - Change the elevation of the camera<br/>
-`Background color` - Change the background color of the rendering<br/>
+`Background color` - Change the background color of the rendering. Currently, transparent backgrounds aren't available for video rendering<br/>
 `Frames` - Total frame of your video, the approximal duration of the video is also shown<br/>
 `Number of rotations` - Change the number of rotations in your video<br/>
 `Animation mode` - Change the animation of your video. You can select between:
