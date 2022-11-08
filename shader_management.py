@@ -164,7 +164,6 @@ class ABManagement:
         shader.bind()
         shader.uniform_float('projection_matrix', proj_matrix)
         shader.uniform_float('object_matrix', object_matrix)
-        shader.uniform_float('alpha_radius', 1.0)
         batch.draw(shader)
 
     def save_image(self, context, cur_frame=''):
@@ -210,7 +209,6 @@ class ABManagement:
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
             shader.uniform_float('object_matrix', object_matrix)
-            shader.uniform_float('alpha_radius', 1.0)
             batch.draw(shader)
 
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
