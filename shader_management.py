@@ -1,5 +1,6 @@
 import bpy
 import gpu
+import blf
 from gpu.types import GPUShader
 from .shaders import *
 # from .read_data import AtomBlendAddon
@@ -15,6 +16,10 @@ class ABManagement:
     def init(self, context):
         # --- init shader ---
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
+        # line_shader = gpu.shader.from_builtin('3D_POLYLINE_UNIFORM_COLOR')
+        line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+        my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
+
 
         # shader input
         ABGlobals.atom_color_list = []
@@ -101,6 +106,8 @@ class ABManagement:
         # save in cache
         cache = ABManagement.cache
         cache['shader'] = shader
+        cache['line_shader'] = line_shader
+        cache['my_line_shader'] = my_line_shader
         cache['camera'] = bpy.context.scene.camera
 
         # set background color
@@ -119,6 +126,7 @@ class ABManagement:
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
 
+
     def handler(self, context):
         # print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
@@ -129,9 +137,64 @@ class ABManagement:
 
         # render frame
         ABManagement.render(self, context)
+        ABManagement.render_metric(self, context)
 
     #def frame_change_handler(self, context):
     #    pass
+
+    def render_metric(self, context):
+        cache = ABManagement.cache
+        line_shader = cache['my_line_shader']
+        gpu.state.blend_set('ALPHA')
+        gpu.state.program_point_size_set(True)
+        gpu.state.depth_mask_set(False)
+
+        # coords = [(-50, 0, 0), (50, 0, 0)]
+        coords = [(-10, 0, 0), (10, 0, 0)]
+        batch = batch_for_shader(line_shader, 'LINES', {"position": coords})
+
+        proj_matrix = bpy.context.region_data.perspective_matrix
+        object_matrix = bpy.data.objects['Origin'].matrix_world
+        view_matrix = context.scene.camera.matrix_world.inverted()
+
+        line_shader.bind()
+        line_shader.uniform_float('projection_matrix', proj_matrix)
+        line_shader.uniform_float('object_matrix', object_matrix)
+        # line_shader.uniform_float('view_matrix', view_matrix)
+        batch.draw(line_shader)
+
+        # draw text
+        font_id = 0
+        ui_scale = bpy.context.preferences.system.ui_scale
+        blf.color(font_id, 1, 0, 0, 1)
+        blf.position(font_id, 0, 0, 0)
+        blf.enable(font_id, 1) # 1 == ROTATION
+        blf.rotation(font_id, 90.0)
+        blf.size(font_id, 0.04, 72)
+        blf.draw(font_id, "THE SIZE")
+
+
+
+    '''def render_metric(self, context):
+        cache = ABManagement.cache
+        line_shader = cache['line_shader']
+
+        gpu.state.blend_set('ALPHA')
+        gpu.state.program_point_size_set(True)
+        gpu.state.depth_mask_set(False)
+
+        coords = [(-10, 0, 2), (10, 0, 2)]
+        # color = [(1.0, 0.0, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0)]
+
+        # batch = batch_for_shader(line_shader, 'LINES', {"pos": coords})
+        batch = batch_for_shader(line_shader, 'LINE_STRIP', {"pos": coords})
+
+        line_shader.bind()
+        line_shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
+        # line_shader.uniform_float("lineWidth", 50.0)
+        # line_shader.uniform_float("viewportSize", (0,0))
+        batch.draw(line_shader)'''
+
 
     def render(self, context):
         cache = ABManagement.cache
@@ -203,7 +266,7 @@ class ABManagement:
             # adapting the point size when writing image because the points are much smaller than in viewport when rendering for some reason
             adapted_point_size = [i * 2.5 for i in ABGlobals.point_size_list]
 
-            #offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
+            # offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
 
             batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
@@ -212,6 +275,8 @@ class ABManagement:
             shader.uniform_float('object_matrix', object_matrix)
             shader.uniform_float('alpha_radius', 1.0)
             batch.draw(shader)
+
+            ABManagement.render_metric(self, context)
 
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
             buffer.dimensions = width * height * 4
