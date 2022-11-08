@@ -216,7 +216,7 @@ class AB_properties(bpy.types.PropertyGroup):
             # clear the keyframes in the first and last frame
             cam_path = bpy.data.objects['Camera path']
             cam_path.keyframe_delete(data_path='location', index=2, frame=1)
-            cam_path.keyframe_delete(data_path='location', index=2, frame=ABGlobals.frame_amount)
+            cam_path.keyframe_delete(data_path='location', index=2, frame=context.scene.atom_blend_addon_settings.frames)
 
         elif self.animation_mode == 'Spiral around tip':
             cam_path = bpy.data.objects['Camera path']
@@ -741,7 +741,7 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.sequencer.delete()
 
             print('Starting animation rendering...')
-            for i in range(1, ABGlobals.frame_amount+1):
+            for i in range(1, context.scene.atom_blend_addon_settings.frames+1):
                 bpy.context.scene.frame_set(i)
 
                 # write file
@@ -753,7 +753,7 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
                 # img_path = r'%s' %img_path
 
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
-                print('Rendered frame ' + str(i) + ' / ' + str(ABGlobals.frame_amount))
+                print('Rendered frame ' + str(i) + ' / ' + str(context.scene.atom_blend_addon_settings.frames))
 
             print('Wrote all frames. Creating the video now...')
             # render and save video
