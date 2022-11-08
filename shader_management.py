@@ -92,6 +92,7 @@ class ABManagement:
         constraint.target = bpy.data.objects['Center']
         bpy.data.curves['BezierCircle'].path_duration = ABGlobals.frame_amount
         bpy.data.scenes["Scene"].frame_end = ABGlobals.frame_amount
+        bpy.data.cameras["Camera"].clip_end = 5000
 
         # init point sizes
         num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
