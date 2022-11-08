@@ -636,12 +636,12 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
 
 class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
     bl_idname = "atom_blend_viewer.load_rrng_file"
-    bl_label = "Load .rrng file"
+    bl_label = "Load .rng/.rrng file"
     bl_description = "Load a file of the following types:\n.rrng"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
     filter_glob: bpy.props.StringProperty(
-        default='*.rrng',
+        default='*.rng;*.rrng',
         options={'HIDDEN'}
     )
 
@@ -654,6 +654,8 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
 
         if ABGlobals.path_rrng.lower().endswith('.rrng'):
             AtomBlendAddon.load_rrng_file(self, context)
+        elif ABGlobals.path_rrng.lower().endswith('.rng'):
+            AtomBlendAddon.load_rng_file(self, context)
 
         ABGlobals.FileLoaded_rrng = True
         print(f"Object Loaded: {ABGlobals.FileLoaded_rrng}")

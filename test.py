@@ -1,83 +1,49 @@
-import numpy as np
-import time
+file_path = r'T:\Heller\AtomBlendII\alloy600TT\alloy600TT-RNGfile.rng'
+rrng_file = open(file_path, 'r')
 
-file_path = 'T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.epos'
-'''
-start = time.perf_counter()
-print('epos function entering', start)
+rrng_file.readline() # first line should be number of elements and ranges; we don't need this
 
-# reading the given binary file and store it into a numpy array
-# reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
-data_in_bytes_float = np.fromfile(file_path, dtype='>f')
-data_in_bytes_int = np.fromfile(file_path, dtype='>i')
+# read the elements and their colors
+line = rrng_file.readline()
 
-print('from file done', time.perf_counter() - start)
+all_elems = {}
 
-# converting byte data to float and int
-data_as_float = data_in_bytes_float.view()
-data_as_int = data_in_bytes_int.view()
+while not line.startswith('-'):
+    splitted_line = line.split(' ')
+    if len(splitted_line) == 1:
+        line = rrng_file.readline()
+        continue
 
-print('view() done', time.perf_counter() - start)
+    this_element = {}
 
-# calculating how many atoms we have as input; dividing by 11 because there are 11 features to store
-num_of_atoms = int(data_as_float.shape[0] / 11)
+    # setting element name, charge is added later
+    elem_name = splitted_line[0]
+    this_element['element_name'] = elem_name
 
-# reshaping so one atom has one row in the numpy array
-reshaped_data_float = np.reshape(data_as_float, (num_of_atoms, 11))
-reshaped_data_int = np.reshape(data_as_int, (num_of_atoms, 11))
+    # set color
+    this_element['color'] = [splitted_line[1], splitted_line[2], splitted_line[3]]
+    all_elems[elem_name] = this_element # todo: ABGlobals.all_elements; try with all_elements_by_name
 
-print('reshaping done', time.perf_counter() - start)
+    line = rrng_file.readline()
 
-# concatenate the first nine columns of float data and the last second columns from int data
-concat_data = np.concatenate((reshaped_data_float[:, :9], reshaped_data_int[:, 9:]), axis=1)
+# get the elements from the line starting with '-------------------'
+splitted_line = line.split(' ')
+all_elements_by_order = []
+for elem in range(1, len(splitted_line)):
+    all_elements_by_order.append(splitted_line[elem])
 
-print('concat done', time.perf_counter() - start)
+# remove new line element and double spaces from list
+all_elements_by_order[:] = (value for value in all_elements_by_order if value != '')
+all_elements_by_order[:] = (value for value in all_elements_by_order if value != '\n')
 
-num_of_atoms_percentage = int(num_of_atoms * 0.00001)
-concat_data = concat_data[:num_of_atoms_percentage]
+line = rrng_file.readline()
 
-############################
-
-from pathlib import Path
-from functools import partial
-from io import DEFAULT_BUFFER_SIZE
-
-def file_byte_iterator():
-     path = Path(file_path)
-     with path.open('rb') as file:
-        reader = partial(file.read1, DEFAULT_BUFFER_SIZE)
-        file_iterator = iter(reader, bytes())
-        print('hello')
-        for chunk in file_iterator:
-            yield from chunk
+while line.startswith('.'):
+    splitted_line = line.replace('\n', ' ').split(' ')
+    # remove new line element and double spaces from list
+    print(splitted_line)
+    splitted_line[:] = (value for value in splitted_line if value != '')
+    print(splitted_line)
 
 
-print('before file byte iterator', time.perf_counter() - start)
-l = file_byte_iterator()
-ll = list(l)
-print('after file byte iterator', time.perf_counter() - start)
-print(l)
-print(ll)'''
-
-import os
-import array
-
-
-# data_in_bytes_float = np.fromfile(file_path, dtype='>f')
-start = time.perf_counter()
-print('start 0')
-a = array.array('f')
-a.fromfile(open(file_path, 'rb'), os.path.getsize(file_path) // a.itemsize)
-
-print('a.fromfile', time.perf_counter() - start)
-
-print('NEW', os.path.getsize(file_path) // a.itemsize, a.itemsize)
-
-data_as_float = np.array(a).view()
-print('data_as_float', time.perf_counter() - start)
-num_of_atoms = int(data_as_float.shape[0] / 11)
-print('num_of_atoms', time.perf_counter() - start)
-reshaped_data_float = np.reshape(data_as_float, (num_of_atoms, 11))
-
-print('reshaped_data_float', time.perf_counter() - start)
-print('end')
+    line = rrng_file.readline()

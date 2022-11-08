@@ -218,6 +218,17 @@ class AtomBlendAddon:
         #     f.write('\n')
         # f.close()
 
+    def load_rng_file(self, context):
+        if ABGlobals.path_rrng == None:
+            print('No file loaded')
+            return
+
+        # if rng file is loaded first, init the unknown element into color structures
+        if not ABGlobals.FileLoaded_e_pos:
+            AtomBlendAddon.setup(self, context)
+
+        file_path = ABGlobals.path_rrng
+        rrng_file = open(file_path, 'r')
 
     def load_rrng_file(self, context):
         if(ABGlobals.path_rrng == None):
