@@ -641,7 +641,7 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
     filter_glob: bpy.props.StringProperty(
-        default='*.rng;*.rrng',
+        default='*.rrng',
         options={'HIDDEN'}
     )
 
