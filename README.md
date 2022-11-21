@@ -16,10 +16,10 @@ Go to 3D View, press `N` if the sidebar isn't showing yet, then click `AtomBlend
 ## Usage of the addon
 ### File loading
 <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-file_loading.PNG"/>
-Click the file browser icon in the first line to load .pos or .epos files and the icon in the second line to load .rrng files.<br/>
+Click the file browser icon in the first line to load .pos or .epos files and the icon in the second line to load .rng or .rrng files.<br/>
 <b>Depending on your hardware, file loading may take a while! Try not to click anywhere while loading a file as Blender may crash in that case.</b>
 <br/><br/>
-After loading both the .pos/.epos and .rrng files, your screen should look similar to this:
+After loading both the .pos/.epos and .rng/.rrng files, your screen should look similar to this:
 <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-after_file_loading.PNG" width="50%" height="50%"/>
 
 ### Display settings
