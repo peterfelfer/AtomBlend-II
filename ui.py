@@ -293,6 +293,7 @@ class AB_properties(bpy.types.PropertyGroup):
     )
 
     # for developing purposes
+    dev_mode: bpy.props.BoolProperty(name='Dev mode', default=True)
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
@@ -641,7 +642,7 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
     filter_glob: bpy.props.StringProperty(
-        default='*.rrng',
+        default='*.rng;*.rrng',
         options={'HIDDEN'}
     )
 
@@ -669,7 +670,7 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
     def invoke(self, context, event):
         path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
-            self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.rrng'
+            self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.RNG'
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
