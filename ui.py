@@ -410,7 +410,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         split = split.split(factor=f[6] / perc_left)
         export_col = split.column(align=True)
         perc_left -= f[6]
-        split = split.split(factor=0.0)
 
         # label row
         prop = context.scene.atom_blend_addon_settings
@@ -553,6 +552,24 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             # animation mode
             anim_mode = layout.row(align=True)
             anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
+
+        # output image resolution
+        # resolution_label = layout.row(align=True)
+        f = [0.23, 0.385, 0.385]
+        perc_left = 1.0
+        split = layout.split(factor=f[0] / perc_left, align=True)
+        resolution_xy = split.column(align=True)
+        resolution_xy.label(text='Resolution:')
+        perc_left -= f[0]
+
+        split = split.split(factor=f[1] / perc_left, align=True)
+        resolution_xy = split.column(align=True)
+        resolution_xy.prop(bpy.data.scenes["Scene"].render, 'resolution_x', text='Width')
+        perc_left -= f[1]
+
+        split = split.split(factor=f[2] / perc_left, align=True)
+        resolution_xy = split.column(align=True)
+        resolution_xy.prop(bpy.data.scenes["Scene"].render, 'resolution_y', text='Height')
 
         # file format
         file_format_col = layout.row(align=True)
