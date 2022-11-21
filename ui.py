@@ -165,7 +165,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
-    export: bpy.props.BoolProperty(name='', description='Export this element as an own object. Only available in 3.4.0+ Alpha.', default=False, update=export_update)
+    export: bpy.props.BoolProperty(name='', description='Export this element as an own object. Only available in 3.5.0+ Alpha.', default=False, update=export_update)
 
 # --- properties used for all elements ---
 class AB_properties(bpy.types.PropertyGroup):
@@ -346,7 +346,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         # .rrng file
         load_rrng_file_row = layout.row(align=True)
         col = load_rrng_file_row.split(factor=0.3)
-        col.label(text='.rrng file:')
+        col.label(text='.rng/.rrng file:')
         col = col.split(factor=1.0)
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'rrng_filepath')
         col.enabled = False
@@ -423,7 +423,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         export_col.label(text='Export')
 
         # export feature is only available if (currently) version 3.4. alpha is used
-        if bpy.app.version < (3, 4, 0):
+        if bpy.app.version < (3, 5, 0):
             export_col.enabled = False
 
         display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
