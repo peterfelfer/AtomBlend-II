@@ -1,6 +1,7 @@
 import bpy
 import gpu
 from gpu.types import GPUShader
+
 from .shaders import *
 # from .read_data import AtomBlendAddon
 from .read_data import *
@@ -24,6 +25,19 @@ class ABManagement:
             # col_struct = bpy.context.scene.color_settings[elem_name].color
             # col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             # ABGlobals.atom_color_list.append([col] * elem_amount)
+
+            # init point sizes
+            ABGlobals.point_size_list = []
+
+            for elem_name in ABGlobals.all_elements_by_name:
+                num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+                point_size = bpy.context.scene.color_settings[elem_name].point_size
+                ABGlobals.point_size_list.append([point_size] * num_displayed)
+                # print(elem_name, point_size, num_displayed, len(ABGlobals.point_size_list))
+
+            # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+            if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
+                ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
             bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
         '''
@@ -93,10 +107,11 @@ class ABManagement:
         bpy.data.curves['BezierCircle'].path_duration = context.scene.atom_blend_addon_settings.frames
         bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frames
         bpy.data.cameras["Camera"].clip_end = 5000
+
         # init point sizes
-        num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
-        point_size = bpy.context.scene.color_settings[elem_name].point_size
-        ABGlobals.point_size_list = [point_size] * num_displayed
+        # num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+        # point_size = bpy.context.scene.color_settings[elem_name].point_size
+        # ABGlobals.point_size_list = [point_size] * num_displayed
 
         # save in cache
         cache = ABManagement.cache
@@ -153,7 +168,8 @@ class ABManagement:
         # elif context.space_data.region_3d.view_perspective == 'CAMERA':
         #     background_color = bpy.context.scene.atom_blend_addon_settings.background_color
         #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
-        # print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
+        if (len(ABGlobals.atom_coords) != len(ABGlobals.atom_color_list)) or (len(ABGlobals.atom_coords) != len(ABGlobals.point_size_list)) or (len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
+            print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
         # uniform preparations

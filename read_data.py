@@ -78,7 +78,6 @@ class AtomBlendAddon:
         unknown_element_dict['num_displayed'] = len(ABGlobals.atom_coords)
         ABGlobals.all_elements_by_name[ABGlobals.unknown_label] = unknown_element_dict
 
-
     def combine_rrng_and_e_pos_file(self, context):
         start = time.perf_counter()
 
@@ -230,6 +229,201 @@ class AtomBlendAddon:
         file_path = ABGlobals.path_rrng
         rrng_file = open(file_path, 'r')
 
+        rrng_file.readline()  # first line should be number of elements and ranges; we don't need this
+
+        # read the elements and their colors
+        line = rrng_file.readline()
+
+        all_elems_color = {}  # store the colors of the elements as they are stated in a different section than the ranges
+
+        while not line.startswith('-'):
+            splitted_line = line.split(' ')
+
+            if len(splitted_line) == 1:
+                line = rrng_file.readline()
+                continue
+
+            splitted_line = line.replace('\n', ' ')
+            splitted_line = splitted_line.replace(',', '.').split(' ')
+
+            this_element = {}
+
+            # setting element name, charge is added later
+            elem_name = splitted_line[0]
+            this_element['element_name'] = elem_name
+
+            # set color
+            # r = int(float(splitted_line[1]) * 255)
+            # g = int(float(splitted_line[2]) * 255)
+            # b = int(float(splitted_line[3]) * 255)
+            r = float(splitted_line[1])
+            g = float(splitted_line[2])
+            b = float(splitted_line[3])
+
+            this_element['color'] = (r, g, b, 1)
+            all_elems_color[elem_name] = this_element  # todo: ABGlobals.all_elements; try with all_elements_by_name
+
+            line = rrng_file.readline()
+
+        # get the elements from the line starting with '-------------------'
+        splitted_line = line.replace('\n', ' ').split(' ')
+        all_elements_by_order = []
+        for elem in range(1, len(splitted_line)):
+            all_elements_by_order.append(splitted_line[elem])
+
+        # remove new line element and double spaces from list
+        all_elements_by_order[:] = (value for value in all_elements_by_order if value != '')
+        all_elements_by_order[:] = (value for value in all_elements_by_order if value != '\n')
+        line = rrng_file.readline()
+
+        # read single atoms
+        while line.startswith('.'):
+            this_elem = {}
+            this_elem['element_name'] = ''
+            splitted_line = line.replace('\n', ' ')
+            splitted_line = splitted_line.replace(',', '.').split(' ')
+            # remove new line element and double spaces from list
+            splitted_line[:] = (value for value in splitted_line if value != '')
+            only_bitmask = splitted_line[3:]
+            combined_elems = 0
+
+            for i in range(len(only_bitmask)):
+                if int(only_bitmask[i]) != 0:
+                    elem_name = all_elements_by_order[i]
+
+                    if int(only_bitmask[i]) == 1:
+                        this_elem['element_name'] += all_elems_color[elem_name]['element_name']  # todo maybe all_elems_by_order is better
+                    else:
+                        this_elem['element_name'] += all_elems_color[elem_name]['element_name'] + only_bitmask[i]
+                    this_elem['color'] = all_elems_color[elem_name]['color']
+                    this_elem['start_range'] = float(splitted_line[1])
+                    this_elem['end_range'] = float(splitted_line[2])
+                    combined_elems += 1
+
+            # only add element to list if its one single element. polyatomic elements will be added later
+            if int(combined_elems) == 1:
+                ABGlobals.all_elements.append(this_elem)
+
+                # set the current general point size to all the element point sizes
+                general_point_size = context.scene.atom_blend_addon_settings.point_size
+
+                # add single elements to color_settings
+                elem_name = this_elem['element_name']
+                if elem_name not in bpy.context.scene.color_settings:
+                    element_color_settings = bpy.context.scene.color_settings.add()
+                    element_color_settings.name = elem_name
+                    element_color_settings.point_size = general_point_size
+                    element_color_settings.color = this_elem['color']
+                    # element_color_settings.point_size = 5.0
+                    ABGlobals.element_count[elem_name] = 0
+
+            line = rrng_file.readline()
+
+        # read polyatomic extensions
+        while not line.startswith('-'):
+            line = rrng_file.readline()
+
+        # read '--- polyatomic extension' line
+        line = rrng_file.readline()
+
+        while not line.startswith('-'):
+            splitted_line = line.split(' ')
+
+            if len(splitted_line) != 4:
+                line = rrng_file.readline()
+                continue
+
+            splitted_line = line.replace('\n', ' ')
+            splitted_line = splitted_line.replace(',', '.').split(' ')
+            this_element = {}
+
+            # setting element name, charge is added later
+            elem_name = splitted_line[0]
+            this_element['element_name'] = elem_name
+
+            # set color
+            r = int(float(splitted_line[1]) * 255)
+            g = int(float(splitted_line[2]) * 255)
+            b = int(float(splitted_line[3]) * 255)
+            this_element['color'] = (r, g, b, 1)
+            all_elems_color[elem_name] = this_element  # todo: ABGlobals.all_elements; try with all_elements_by_name
+
+            line = rrng_file.readline()
+
+        # read ------------------- [elems]' line
+        all_elements_by_order = []
+        splitted_line = line.replace('\n', ' ').split(' ')
+        for elem in range(1, len(splitted_line)):
+            all_elements_by_order.append(splitted_line[elem])
+
+        # remove new line element and double spaces from list
+        all_elements_by_order[:] = (value for value in all_elements_by_order if value != '')
+        all_elements_by_order[:] = (value for value in all_elements_by_order if value != '\n')
+
+        for elem in range(1, len(splitted_line)):
+            all_elements_by_order.append(splitted_line[elem])
+
+        # read next line
+        line = rrng_file.readline()
+
+        # read ranges of polyatomic elements
+        while line.startswith('.'):
+            this_elem = {}
+            this_elem['element_name'] = ''
+            splitted_line = line.replace('\n', ' ')
+            splitted_line = splitted_line.replace(',', '.').split(' ')
+
+            # remove new line element and double spaces from list
+            splitted_line[:] = (value for value in splitted_line if value != '')
+            splitted_line[:] = (value for value in splitted_line if value != '\n')
+
+            only_bitmask = splitted_line[3:]
+            for i in range(len(only_bitmask)):
+                if int(only_bitmask[i]) != 0:
+                    elem_name = all_elements_by_order[i]
+                    this_elem['element_name'] += all_elems_color[elem_name]['element_name']
+                    this_elem['color'] = all_elems_color[elem_name]['color']
+                    this_elem['start_range'] = float(splitted_line[1])
+                    this_elem['end_range'] = float(splitted_line[2])
+            ABGlobals.all_elements.append(this_elem)
+
+            line = rrng_file.readline()
+
+            # set the current general point size to all the element point sizes
+            general_point_size = context.scene.atom_blend_addon_settings.point_size
+
+            # add this element to element property group to create a color picker in the color settings tab
+            elem_name = this_elem['element_name']  # + '_' + str(this_element['charge'])
+
+            # add polyatomic elements to color_settings
+            if elem_name not in bpy.context.scene.color_settings:
+                element_color_settings = bpy.context.scene.color_settings.add()
+                element_color_settings.name = elem_name
+                element_color_settings.point_size = general_point_size
+                element_color_settings.color = this_elem['color']
+                # element_color_settings.point_size = 5.0
+                ABGlobals.element_count[elem_name] = 0
+
+        # sort atoms by start range
+        ABGlobals.all_elements.sort(key=lambda x: x.get('start_range'))
+
+        # build all_elements_by_name dict
+        for elem in ABGlobals.all_elements:
+            name_and_charge = elem['element_name'] #+ '_' + str(elem['charge'])
+            if name_and_charge not in ABGlobals.all_elements_by_name:
+                this_element_dict = {}
+                this_element_dict['element_name'] = elem['element_name']
+                #this_element_dict['charge'] = elem['charge']
+                this_element_dict['color'] = elem['color']
+                this_element_dict['coordinates'] = []
+                this_element_dict['num_of_atoms'] = 0
+                this_element_dict['num_displayed'] = 0
+                ABGlobals.all_elements_by_name[name_and_charge] = this_element_dict
+
+        # if both (r)rng and (e)pos file are loaded, we combine these two files
+        if(ABGlobals.FileLoaded_e_pos):
+            AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
+
     def load_rrng_file(self, context):
         if(ABGlobals.path_rrng == None):
             print('No file loaded')
@@ -326,7 +520,7 @@ class AtomBlendAddon:
                 this_element_dict['num_displayed'] = 0
                 ABGlobals.all_elements_by_name[name_and_charge] = this_element_dict
 
-        # if both rrng and (e)pos file are loaded, we combine these two files
+        # if both (r)rng and (e)pos file are loaded, we combine these two files
         if(ABGlobals.FileLoaded_e_pos):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
@@ -334,6 +528,9 @@ class AtomBlendAddon:
         if (ABGlobals.path == None):
             print('No file loaded')
             return
+
+        if context.scene.atom_blend_addon_settings.dev_mode:
+            bpy.ops.wm.console_toggle()
 
         # set dataset name
         filename = ABGlobals.path.split(sep='\\')[-1]
@@ -380,8 +577,6 @@ class AtomBlendAddon:
         ABGlobals.min_z = concat_data[:, 2].min()
 
         #print(ABGlobals.max_x, ABGlobals.min_x, ABGlobals.max_y, ABGlobals.min_y, ABGlobals.max_z, ABGlobals.min_z)
-
-
         # shuffling the data as they're kind of sorted by the z value
         concat_data = np.random.permutation(concat_data)
 
