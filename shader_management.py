@@ -1,6 +1,7 @@
 import bpy
 import gpu
 import blf
+from blf import ROTATION
 from gpu.types import GPUShader
 from .shaders import *
 # from .read_data import AtomBlendAddon
@@ -162,18 +163,18 @@ class ABManagement:
         line_shader.uniform_float('object_matrix', object_matrix)
         # line_shader.uniform_float('view_matrix', view_matrix)
         batch.draw(line_shader)
-
+        
         # draw text
         font_id = 0
         ui_scale = bpy.context.preferences.system.ui_scale
         blf.color(font_id, 1, 0, 0, 1)
-        blf.position(font_id, 0, 0, 0)
-        blf.enable(font_id, 1) # 1 == ROTATION
-        blf.rotation(font_id, 90.0)
-        blf.size(font_id, 0.04, 72)
-        blf.draw(font_id, "THE SIZE")
-
-
+        blf.position(font_id, 2, 5, 0)
+        # blf.enable(font_id, ROTATION) # 1 == ROTATION
+        # blf.rotation(font_id, 90.0)
+        # blf.size(font_id, 0.04, 72)
+        blf.size(font_id, 50.0, 72)
+        blf.draw(font_id, "HELLO WORLD")
+        # blf.disable(font_id, ROTATION)
 
     '''def render_metric(self, context):
         cache = ABManagement.cache
