@@ -302,7 +302,7 @@ class AB_properties(bpy.types.PropertyGroup):
     )
 
     # for developing purposes
-    dev_mode: bpy.props.BoolProperty(name='Dev mode', default=True)
+    dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
@@ -330,7 +330,7 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_panel_general"
+    #bl_parent_id = "ATOMBLEND_PT_panel_general"
 
     # define own poll method to be able to hide / show the panel on demand
     @classmethod
@@ -369,7 +369,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_panel_general"
+    #bl_parent_id = "ATOMBLEND_PT_panel_general"
 
     @classmethod
     def poll(cls, context):
@@ -474,7 +474,7 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_panel_general"
+    #bl_parent_id = "ATOMBLEND_PT_panel_general"
     bl_options = {'DEFAULT_CLOSED'}
 
     # @classmethod
@@ -495,8 +495,8 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    bl_parent_id = "ATOMBLEND_PT_panel_general"
-    bl_options = {'DEFAULT_CLOSED'}
+    #bl_parent_id = "ATOMBLEND_PT_panel_general"
+    # bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
