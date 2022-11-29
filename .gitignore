@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .idea/
 test.py
+
+.idea/misc.xml
+*.iml
+*.xml
