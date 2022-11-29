@@ -18,7 +18,7 @@ class ABManagement:
         # --- init shader ---
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
         # line_shader = gpu.shader.from_builtin('3D_POLYLINE_UNIFORM_COLOR')
-        line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+        # line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
         my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
 
         # shader input
@@ -107,7 +107,6 @@ class ABManagement:
         # save in cache
         cache = ABManagement.cache
         cache['shader'] = shader
-        cache['line_shader'] = line_shader
         cache['my_line_shader'] = my_line_shader
         cache['camera'] = bpy.context.scene.camera
 
@@ -143,8 +142,8 @@ class ABManagement:
 
         # render frame
         ABManagement.render(self, context)
-        if bpy.context.scene.atom_blend_addon_settings.scaling_bar:
-            ABManagement.render_metric(self, context)
+        if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
+            # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context)
 
     #def frame_change_handler(self, context):
@@ -161,26 +160,57 @@ class ABManagement:
         zmax = ABGlobals.max_z - bpy.data.objects['Top'].location[2]
         bounding_box_coords = []
 
-        bounding_box_coords.append((xmax, ymin, zmin))
+        # lower square
+        bounding_box_coords.append((xmax, ymin, zmin)) # a
         bounding_box_coords.append((xmax, ymax, zmin))
-        bounding_box_coords.append((xmin, ymin, zmin))
+        bounding_box_coords.append((xmax, ymax, zmin)) # b
         bounding_box_coords.append((xmin, ymax, zmin))
-        bounding_box_coords.append((xmax, ymin, zmax))
+        bounding_box_coords.append((xmin, ymin, zmin)) # c
+        bounding_box_coords.append((xmin, ymax, zmin))
+        bounding_box_coords.append((xmax, ymin, zmin)) # d
+        bounding_box_coords.append((xmin, ymin, zmin))
+        # lines from lower square to upper
+        bounding_box_coords.append((xmax, ymin, zmax)) # e
         bounding_box_coords.append((xmax, ymax, zmax))
-        bounding_box_coords.append((xmin, ymin, zmax))
+        bounding_box_coords.append((xmax, ymax, zmax)) # f
         bounding_box_coords.append((xmin, ymax, zmax))
+        bounding_box_coords.append((xmin, ymin, zmax)) # g
+        bounding_box_coords.append((xmin, ymax, zmax))
+        bounding_box_coords.append((xmax, ymin, zmax)) # h
+        bounding_box_coords.append((xmin, ymin, zmax))
+        # upper square
+        bounding_box_coords.append((xmax, ymin, zmin)) # i
+        bounding_box_coords.append((xmax, ymin, zmax))
+        bounding_box_coords.append((xmax, ymax, zmin)) # j
+        bounding_box_coords.append((xmax, ymax, zmax))
+        bounding_box_coords.append((xmin, ymax, zmin)) # k
+        bounding_box_coords.append((xmin, ymax, zmax))
+        bounding_box_coords.append((xmin, ymin, zmin)) # l
+        bounding_box_coords.append((xmin, ymin, zmax))
 
-        bounding_box_indices = [(0, 1), (1, 3), (3, 2), (2, 0),
-                                (0, 4), (1, 5), (3, 7), (2, 6),
-                                (4, 5), (5, 7), (7, 6), (6, 4)]
+        if bpy.context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
+            r = (1,0,0,1)
+            g = (0,1,0,1)
+            b = (0,0,1,1)
+
+            color_list = [g, g, r, r, g, g, r, r,
+                          g, g, r, r, g, g, r, r,
+                          b, b, b, b, b, b, b, b]
+        else:
+            col_struct = bpy.context.scene.atom_blend_addon_settings.scaling_cube_uniform_color
+            color = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            color_list = [[color] * len(bounding_box_coords)][0]
+            print(color_list)
+
         proj_matrix = bpy.context.region_data.perspective_matrix
         object_matrix = bpy.data.objects['Origin'].matrix_world
 
-        batch = batch_for_shader(line_shader, 'LINES', {"position": bounding_box_coords}, indices=bounding_box_indices)
-        # line_shader.bind()
+        print(len(color_list), len(bounding_box_coords))
+
+        batch = batch_for_shader(line_shader, 'LINES', {"position": bounding_box_coords, "color": color_list})
         line_shader.uniform_float('projection_matrix', proj_matrix)
         line_shader.uniform_float('object_matrix', object_matrix)
-        # line_shader.uniform_float('col', (1,0,0,1))
+        # line_shader.uniform_float('color', (1,0,0,1))
         batch.draw(line_shader)
 
     def render_metric(self, context):

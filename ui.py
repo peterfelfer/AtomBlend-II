@@ -275,7 +275,14 @@ class AB_properties(bpy.types.PropertyGroup):
     frames: bpy.props.IntProperty(name='Frames', default=5, description='Duration of video', update=update_frame_amount, step=5)
     duration: bpy.props.FloatProperty(name='Duration (seconds)', precision=2, description='Duration of the video', min=0.0, soft_min=0.0, step=0.5, update=update_duration)
     rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, description='Number of rotations', update=update_frame_amount)
-    scaling_bar: bpy.props.BoolProperty(name='Scaling bar', default=True, description='Display the scaling bar')
+    scaling_cube: bpy.props.BoolProperty(name='Scaling bar', default=True, description='Display the scaling bar')
+    scaling_cube_mode: bpy.props.EnumProperty(
+        name='',
+        items=[('RGB', 'RGB', 'RGB'),
+               ('Uniform Color', 'Uniform Color', 'Uniform Color')],
+        default='RGB',
+    )
+    scaling_cube_uniform_color: bpy.props.FloatVectorProperty(name='', subtype='COLOR', description='Uniform color for scaling bar', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -528,9 +535,16 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color', text='')
         perc_left -= f[1]
 
-        # scaling bar
-        scaling_bar_col = layout.row(align=True)
-        scaling_bar_col.prop(context.scene.atom_blend_addon_settings, 'scaling_bar')
+        # scaling cube
+        scaling_cube_row = layout.row(align=True)
+        scaling_cube_text = scaling_cube_row.column(align=True)
+        scaling_cube_text.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
+        scaling_cube_selec = scaling_cube_row.column(align=True)
+        scaling_cube_selec.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
+
+        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
+            color_selector = scaling_cube_row.column(align=True)
+            color_selector.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
 
         # transparent background
         if ABGlobals.render_frame:
