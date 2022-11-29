@@ -102,7 +102,7 @@ def unregister():
 classes = (
     AB_properties, DisplaySettings,
 
-    ATOMBLEND_PT_panel_general, #ATOMBLEND_PT_panel_dev,
+    #ATOMBLEND_PT_panel_general, #ATOMBLEND_PT_panel_dev,
     ATOMBLEND_PT_panel_file, ATOMBLEND_PT_shader_display_settings, ATOMBLEND_PT_rendering, ATOMBLEND_OT_preview,
     ATOMBLEND_OT_load_file, ATOMBLEND_OT_load_rrng_file, ATOMBLEND_OT_render, ATOMBLEND_OT_render_frame,
     ATOMBLEND_OT_render_video, ATOMBLEND_OT_start_stop,
