@@ -1,5 +1,7 @@
 import bpy
 import gpu
+import blf
+from blf import ROTATION
 from gpu.types import GPUShader
 
 from .shaders import *
@@ -16,6 +18,9 @@ class ABManagement:
     def init(self, context):
         # --- init shader ---
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
+        # line_shader = gpu.shader.from_builtin('3D_POLYLINE_UNIFORM_COLOR')
+        # line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+        my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
 
         # shader input
         ABGlobals.atom_color_list = []
@@ -63,7 +68,8 @@ class ABManagement:
         # batch = batch_for_shader(shader, 'POINTS', {'position': vertices, 'color': col_list, })
         '''
         # add draw handler that will be called every time this region in this space type will be drawn
-        ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
+        # ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
+        ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_PIXEL')
 
         # --- init other things needed for shader drawing ---
         # create empty to move the atom tip to the center (0,0,0)
@@ -116,6 +122,7 @@ class ABManagement:
         # save in cache
         cache = ABManagement.cache
         cache['shader'] = shader
+        cache['my_line_shader'] = my_line_shader
         cache['camera'] = bpy.context.scene.camera
 
         # set background color
@@ -134,6 +141,7 @@ class ABManagement:
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
 
+
     def handler(self, context):
         # print('handler!')
         # update camera position in addon (if the camera is moved via viewport)
@@ -142,19 +150,153 @@ class ABManagement:
         context.scene.atom_blend_addon_settings.camera_location_y_frame = cam_loc[1]
         context.scene.atom_blend_addon_settings.camera_location_z_frame = cam_loc[2]
 
+        gpu.state.blend_set('ALPHA')
+        gpu.state.program_point_size_set(True)
+        gpu.state.depth_mask_set(False)
+        gpu.state.depth_test_set('ALWAYS')
+
         # render frame
         ABManagement.render(self, context)
+        if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
+            # ABManagement.render_metric(self, context)
+            ABManagement.create_bounding_box(self, context)
 
     #def frame_change_handler(self, context):
     #    pass
+
+    def create_bounding_box(self, context):
+        cache = ABManagement.cache
+        line_shader = cache['my_line_shader']
+        xmin = ABGlobals.min_x
+        xmax = ABGlobals.max_x
+        ymin = ABGlobals.min_y
+        ymax = ABGlobals.max_y
+        zmin = ABGlobals.min_z - bpy.data.objects['Top'].location[2]
+        zmax = ABGlobals.max_z - bpy.data.objects['Top'].location[2]
+        bounding_box_coords = []
+
+        # lower square
+        bounding_box_coords.append((xmax, ymin, zmin)) # a
+        bounding_box_coords.append((xmax, ymax, zmin))
+        bounding_box_coords.append((xmax, ymax, zmin)) # b
+        bounding_box_coords.append((xmin, ymax, zmin))
+        bounding_box_coords.append((xmin, ymin, zmin)) # c
+        bounding_box_coords.append((xmin, ymax, zmin))
+        bounding_box_coords.append((xmax, ymin, zmin)) # d
+        bounding_box_coords.append((xmin, ymin, zmin))
+        # lines from lower square to upper
+        bounding_box_coords.append((xmax, ymin, zmax)) # e
+        bounding_box_coords.append((xmax, ymax, zmax))
+        bounding_box_coords.append((xmax, ymax, zmax)) # f
+        bounding_box_coords.append((xmin, ymax, zmax))
+        bounding_box_coords.append((xmin, ymin, zmax)) # g
+        bounding_box_coords.append((xmin, ymax, zmax))
+        bounding_box_coords.append((xmax, ymin, zmax)) # h
+        bounding_box_coords.append((xmin, ymin, zmax))
+        # upper square
+        bounding_box_coords.append((xmax, ymin, zmin)) # i
+        bounding_box_coords.append((xmax, ymin, zmax))
+        bounding_box_coords.append((xmax, ymax, zmin)) # j
+        bounding_box_coords.append((xmax, ymax, zmax))
+        bounding_box_coords.append((xmin, ymax, zmin)) # k
+        bounding_box_coords.append((xmin, ymax, zmax))
+        bounding_box_coords.append((xmin, ymin, zmin)) # l
+        bounding_box_coords.append((xmin, ymin, zmax))
+
+        if bpy.context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
+            r = (1,0,0,1)
+            g = (0,1,0,1)
+            b = (0,0,1,1)
+
+            color_list = [g, g, r, r, g, g, r, r,
+                          g, g, r, r, g, g, r, r,
+                          b, b, b, b, b, b, b, b]
+        else:
+            col_struct = bpy.context.scene.atom_blend_addon_settings.scaling_cube_uniform_color
+            color = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
+            color_list = [[color] * len(bounding_box_coords)][0]
+            print(color_list)
+
+        proj_matrix = bpy.context.region_data.perspective_matrix
+        object_matrix = bpy.data.objects['Origin'].matrix_world
+
+        print(len(color_list), len(bounding_box_coords))
+
+        batch = batch_for_shader(line_shader, 'LINES', {"position": bounding_box_coords, "color": color_list})
+        line_shader.uniform_float('projection_matrix', proj_matrix)
+        line_shader.uniform_float('object_matrix', object_matrix)
+        # line_shader.uniform_float('color', (1,0,0,1))
+        batch.draw(line_shader)
+
+    def render_metric(self, context):
+        cache = ABManagement.cache
+        line_shader = cache['my_line_shader']
+        # gpu.state.blend_set('ALPHA')
+        # gpu.state.program_point_size_set(True)
+        # # gpu.state.depth_mask_set(False)
+        # gpu.state.depth_test_set('ALWAYS')
+
+        # coords = [(-50, 0, 0), (50, 0, 0)]
+        coords = [(-10, 0, 0), (10, 0, 0)]
+        batch = batch_for_shader(line_shader, 'LINES', {"position": coords})
+
+        proj_matrix = bpy.context.region_data.perspective_matrix
+        object_matrix = bpy.data.objects['Origin'].matrix_world
+        view_matrix = context.scene.camera.matrix_world.inverted()
+
+        line_shader.bind()
+        line_shader.uniform_float('projection_matrix', proj_matrix)
+        line_shader.uniform_float('object_matrix', object_matrix)
+        # line_shader.uniform_float('view_matrix', view_matrix)
+        batch.draw(line_shader)
+
+        # draw text
+        x_width = ABGlobals.max_x - ABGlobals.min_x
+        y_width = ABGlobals.max_y - ABGlobals.min_y
+        z_width = ABGlobals.max_z - ABGlobals.min_z
+        font_id = 0
+        blf.color(font_id, 1, 0, 0, 1)
+        # blf.enable(font_id, ROTATION) # 1 == ROTATION
+        # blf.rotation(font_id, 90.0)
+        # blf.size(font_id, 0.04, 72)
+        blf.size(font_id, 20.0, 72)
+        blf.position(font_id, 2, 45, 0)
+        blf.draw(font_id, 'x: ' + str(x_width) + ' nm')
+        blf.position(font_id, 2, 25, 0)
+        blf.draw(font_id, 'y: ' + str(y_width) + ' nm')
+        blf.position(font_id, 2, 5, 0)
+        blf.draw(font_id, 'z: ' + str(z_width) + ' nm')
+        # blf.disable(font_id, ROTATION)
+
+    '''def render_metric(self, context):
+        cache = ABManagement.cache
+        line_shader = cache['line_shader']
+
+        gpu.state.blend_set('ALPHA')
+        gpu.state.program_point_size_set(True)
+        gpu.state.depth_mask_set(False)
+
+        coords = [(-10, 0, 2), (10, 0, 2)]
+        # color = [(1.0, 0.0, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0)]
+
+        # batch = batch_for_shader(line_shader, 'LINES', {"pos": coords})
+        batch = batch_for_shader(line_shader, 'LINE_STRIP', {"pos": coords})
+
+        line_shader.bind()
+        line_shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
+        # line_shader.uniform_float("lineWidth", 50.0)
+        # line_shader.uniform_float("viewportSize", (0,0))
+        batch.draw(line_shader)'''
+
 
     def render(self, context):
         cache = ABManagement.cache
         shader = cache['shader']
 
-        gpu.state.blend_set('ALPHA')
-        gpu.state.program_point_size_set(True)
-        gpu.state.depth_mask_set(False)
+        # gpu.state.blend_set('ALPHA')
+        # gpu.state.program_point_size_set(True)
+        # gpu.state.depth_mask_set(False)
+        # gpu.state.depth_test_set('ALWAYS')
 
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
             # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
@@ -218,7 +360,7 @@ class ABManagement:
             # adapting the point size when writing image because the points are much smaller than in viewport when rendering for some reason
             adapted_point_size = [i * 2.5 for i in ABGlobals.point_size_list]
 
-            #offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
+            # offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
 
             batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
@@ -226,6 +368,8 @@ class ABManagement:
             shader.uniform_float('projection_matrix', proj_matrix)
             shader.uniform_float('object_matrix', object_matrix)
             batch.draw(shader)
+
+            ABManagement.render_metric(self, context)
 
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
             buffer.dimensions = width * height * 4
