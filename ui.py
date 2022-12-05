@@ -513,38 +513,32 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         render_mode_row.operator('atom_blend.render_video', depress=not ABGlobals.render_frame)
 
         # camera location
-        col.label(text='Camera settings:')
+        box = layout.box()
+        col = box.column(align=True)
         col.prop(context.scene.atom_blend_addon_settings, 'camera_distance')
         col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
         col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
 
+        layout.row().separator(factor=0.01)
+
         # background color
+        box = layout.box()
+        col = box.column()
         if ABGlobals.render_frame:
             f = [0.3, 0.3, 0.4]
         else:
-            f = [0.5, 0.5]
+            f = [0.3, 0.7]
 
         perc_left = 1.0
-        split = layout.split(factor=f[0] / perc_left)
+        split = col.split(factor=f[0] / perc_left)
         text = split.column(align=True)
         text.label(text='Background Color')
         perc_left -= f[0]
 
-        split = split.split(factor=f[1]  / perc_left)
+        split = split.split(factor=f[1] / perc_left)
         background_color = split.column(align=True)
         background_color.prop(context.scene.atom_blend_addon_settings, 'background_color', text='')
         perc_left -= f[1]
-
-        # scaling cube
-        scaling_cube_row = layout.row(align=True)
-        scaling_cube_text = scaling_cube_row.column(align=True)
-        scaling_cube_text.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
-        scaling_cube_selec = scaling_cube_row.column(align=True)
-        scaling_cube_selec.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
-
-        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
-            color_selector = scaling_cube_row.column(align=True)
-            color_selector.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
 
         # transparent background
         if ABGlobals.render_frame:
@@ -556,8 +550,29 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             if context.scene.atom_blend_addon_settings.file_format == 'JPEG':
                 transparent_background.enabled = False
 
+        # scaling cube
+        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
+            f = [0.3, 0.7]
+        else:
+            f = [0.3, 0.3, 0.4]
+        perc_left = 1.0
+        # col = box.column(align=True)
+        col = col.row(align=True)
+        split = col.split(factor=f[0] / perc_left)
+        split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
+        perc_left -= f[0]
+        split = split.split(factor=f[1] / perc_left)
+        split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
+        perc_left -= f[1]
+
+        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
+            split = split.split(factor=f[2] / perc_left)
+            split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
+
         if not ABGlobals.render_frame:
-            col = layout.column(align=True)
+            layout.row().separator(factor=0.01)
+            box = layout.box()
+            col = box.column()
             # frame amount
             frame_duration_amount = col.row(align=True)
             seconds = str('%.1f' % (context.scene.atom_blend_addon_settings.frames / 24))
@@ -570,14 +585,18 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             rot_amount.prop(context.scene.atom_blend_addon_settings, 'rotation_amount')
 
             # animation mode
-            anim_mode = layout.row(align=True)
+            anim_mode = col.row(align=True)
             anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
+
+        layout.row().separator(factor=0.01)
 
         # output image resolution
         # resolution_label = layout.row(align=True)
+        box = layout.box()
+        col = box.column()
         f = [0.23, 0.385, 0.385]
         perc_left = 1.0
-        split = layout.split(factor=f[0] / perc_left, align=True)
+        split = col.split(factor=f[0] / perc_left, align=True)
         resolution_xy = split.column(align=True)
         resolution_xy.label(text='Resolution:')
         perc_left -= f[0]
@@ -592,11 +611,13 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         resolution_xy.prop(bpy.data.scenes["Scene"].render, 'resolution_y', text='Height')
 
         # file format
-        file_format_col = layout.row(align=True)
+        # file_format_col = layout.row(align=True)
+        file_format_col = col
         file_format_col.prop(context.scene.atom_blend_addon_settings, 'file_format')
 
         # file path selection
-        file_path_row = layout.row(align=True)
+        # file_path_row = layout.row(align=True)
+        file_path_row = col
         file_path_row.prop(bpy.data.scenes["Scene"].render, 'filepath')
 
         # render

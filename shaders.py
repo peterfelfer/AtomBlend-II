@@ -51,6 +51,9 @@ class ABShaders:
                 r = dot(cxy, cxy);
                 d = fwidth(r);
                 a = 1.0 - smoothstep(1.0 - (d / 2), 1.0 + (d / 2), r);
+                if(r > 0.6){
+                    discard;
+                }
                 fragColor = vec4(f_color.rgb, f_color.a * a);
             }
        '''
