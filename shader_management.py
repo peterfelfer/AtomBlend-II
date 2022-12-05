@@ -152,14 +152,18 @@ class ABManagement:
 
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
-        gpu.state.depth_mask_set(False)
-        gpu.state.depth_test_set('ALWAYS')
+        # gpu.state.depth_mask_set(False)
+        # gpu.state.depth_test_set('ALWAYS')
+        gpu.state.depth_test_set('LESS_EQUAL')
+        gpu.state.depth_mask_set(True)
 
         # render frame
         ABManagement.render(self, context)
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
             # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context)
+
+        gpu.state.depth_mask_set(False)
 
     #def frame_change_handler(self, context):
     #    pass
