@@ -168,7 +168,7 @@ class ABManagement:
     #def frame_change_handler(self, context):
     #    pass
 
-    def create_bounding_box(self, context):
+    def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
         cache = ABManagement.cache
         line_shader = cache['my_line_shader']
         xmin = ABGlobals.min_x
@@ -221,8 +221,11 @@ class ABManagement:
             color_list = [[color] * len(bounding_box_coords)][0]
             print(color_list)
 
-        proj_matrix = bpy.context.region_data.perspective_matrix
-        object_matrix = bpy.data.objects['Origin'].matrix_world
+        # when rendering in viewport, we need to calculate the proj and object matrix, when rendering pictures / videos, we need the matrices from the camera
+        if proj_matrix == None:
+            proj_matrix = bpy.context.region_data.perspective_matrix
+        if object_matrix == None:
+            object_matrix = bpy.data.objects['Origin'].matrix_world
 
         print(len(color_list), len(bounding_box_coords))
 
@@ -342,7 +345,7 @@ class ABManagement:
         offscreen = gpu.types.GPUOffScreen(width, height)
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
-        gpu.state.depth_mask_set(False)
+
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
@@ -351,7 +354,10 @@ class ABManagement:
             else:
                 background_color = context.scene.atom_blend_addon_settings.background_color
 
-            fb.clear(color=background_color)#, depth=1.0)
+            fb.clear(color=background_color, depth=1.0)
+
+            gpu.state.depth_test_set('LESS_EQUAL')
+            gpu.state.depth_mask_set(True)
 
             view_matrix = scene.camera.matrix_world.inverted()
             camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
@@ -373,7 +379,8 @@ class ABManagement:
             shader.uniform_float('object_matrix', object_matrix)
             batch.draw(shader)
 
-            ABManagement.render_metric(self, context)
+            # ABManagement.render_metric(self, context)
+            ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
 
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
             buffer.dimensions = width * height * 4
@@ -461,4 +468,6 @@ class ABManagement:
         image.save()
 
         print('Wrote file to ' + render_path)
+
+        gpu.state.depth_mask_set(False)
         return render_path
