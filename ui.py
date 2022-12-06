@@ -283,6 +283,8 @@ class AB_properties(bpy.types.PropertyGroup):
         default='RGB',
     )
     scaling_cube_uniform_color: bpy.props.FloatVectorProperty(name='', subtype='COLOR', description='Uniform color for scaling bar', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
+    scaling_cube_line_width: bpy.props.FloatProperty(name='Line width', default=1.0, step=1.0, description='Line width of the scaling cube')
+
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -519,7 +521,7 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
         col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
 
-        layout.row().separator(factor=0.01)
+        # layout.row().separator(factor=0.01)
 
         # background color
         box = layout.box()
@@ -551,14 +553,16 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
                 transparent_background.enabled = False
 
         # scaling cube
+        box = layout.box()
+        col = box.column()
         if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
             f = [0.3, 0.7]
         else:
             f = [0.3, 0.3, 0.4]
         perc_left = 1.0
         # col = box.column(align=True)
-        col = col.row(align=True)
-        split = col.split(factor=f[0] / perc_left)
+        row = col.row(align=True)
+        split = row.split(factor=f[0] / perc_left)
         split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
         perc_left -= f[0]
         split = split.split(factor=f[1] / perc_left)
@@ -569,8 +573,11 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             split = split.split(factor=f[2] / perc_left)
             split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
 
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_line_width')
+
         if not ABGlobals.render_frame:
-            layout.row().separator(factor=0.01)
+            # layout.row().separator(factor=0.01)
             box = layout.box()
             col = box.column()
             # frame amount
@@ -588,7 +595,7 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             anim_mode = col.row(align=True)
             anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
 
-        layout.row().separator(factor=0.01)
+        # layout.row().separator(factor=0.01)
 
         # output image resolution
         # resolution_label = layout.row(align=True)
