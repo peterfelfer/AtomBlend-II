@@ -160,7 +160,7 @@ class ABManagement:
         # render frame
         ABManagement.render(self, context)
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
-            # ABManagement.render_metric(self, context)
+            ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context)
 
         gpu.state.depth_mask_set(False)
@@ -229,6 +229,7 @@ class ABManagement:
 
         print(len(color_list), len(bounding_box_coords))
 
+        gpu.state.line_width_set(bpy.context.scene.atom_blend_addon_settings.scaling_cube_line_width)
         batch = batch_for_shader(line_shader, 'LINES', {"position": bounding_box_coords, "color": color_list})
         line_shader.uniform_float('projection_matrix', proj_matrix)
         line_shader.uniform_float('object_matrix', object_matrix)
@@ -242,7 +243,7 @@ class ABManagement:
         # gpu.state.program_point_size_set(True)
         # # gpu.state.depth_mask_set(False)
         # gpu.state.depth_test_set('ALWAYS')
-
+        '''
         # coords = [(-50, 0, 0), (50, 0, 0)]
         coords = [(-10, 0, 0), (10, 0, 0)]
         batch = batch_for_shader(line_shader, 'LINES', {"position": coords})
@@ -256,6 +257,7 @@ class ABManagement:
         line_shader.uniform_float('object_matrix', object_matrix)
         # line_shader.uniform_float('view_matrix', view_matrix)
         batch.draw(line_shader)
+        '''
 
         # draw text
         x_width = ABGlobals.max_x - ABGlobals.min_x
