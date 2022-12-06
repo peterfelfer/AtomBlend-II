@@ -10,6 +10,8 @@ from .read_data import *
 from gpu_extras.batch import batch_for_shader
 from .globals import ABGlobals
 import numpy as np
+import bpy_extras
+import mathutils
 
 
 class ABManagement:
@@ -160,7 +162,7 @@ class ABManagement:
         # render frame
         ABManagement.render(self, context)
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
-            ABManagement.render_metric(self, context)
+            # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context)
 
         gpu.state.depth_mask_set(False)
@@ -188,7 +190,7 @@ class ABManagement:
         bounding_box_coords.append((xmin, ymax, zmin))
         bounding_box_coords.append((xmax, ymin, zmin)) # d
         bounding_box_coords.append((xmin, ymin, zmin))
-        # lines from lower square to upper
+        # upper square
         bounding_box_coords.append((xmax, ymin, zmax)) # e
         bounding_box_coords.append((xmax, ymax, zmax))
         bounding_box_coords.append((xmax, ymax, zmax)) # f
@@ -197,7 +199,7 @@ class ABManagement:
         bounding_box_coords.append((xmin, ymax, zmax))
         bounding_box_coords.append((xmax, ymin, zmax)) # h
         bounding_box_coords.append((xmin, ymin, zmax))
-        # upper square
+        # lines from lower square to upper
         bounding_box_coords.append((xmax, ymin, zmin)) # i
         bounding_box_coords.append((xmax, ymin, zmax))
         bounding_box_coords.append((xmax, ymax, zmin)) # j
@@ -228,6 +230,7 @@ class ABManagement:
             object_matrix = bpy.data.objects['Origin'].matrix_world
 
         print(len(color_list), len(bounding_box_coords))
+        ABManagement.get_nearest_points_metric(self, context, bounding_box_coords)
 
         gpu.state.line_width_set(bpy.context.scene.atom_blend_addon_settings.scaling_cube_line_width)
         batch = batch_for_shader(line_shader, 'LINES', {"position": bounding_box_coords, "color": color_list})
@@ -236,76 +239,93 @@ class ABManagement:
         # line_shader.uniform_float('color', (1,0,0,1))
         batch.draw(line_shader)
 
-    def render_metric(self, context):
-        cache = ABManagement.cache
-        line_shader = cache['my_line_shader']
-        # gpu.state.blend_set('ALPHA')
-        # gpu.state.program_point_size_set(True)
-        # # gpu.state.depth_mask_set(False)
-        # gpu.state.depth_test_set('ALWAYS')
-        '''
-        # coords = [(-50, 0, 0), (50, 0, 0)]
-        coords = [(-10, 0, 0), (10, 0, 0)]
-        batch = batch_for_shader(line_shader, 'LINES', {"position": coords})
+    def get_nearest_points_metric(self, context, bbc, proj_matrix=None):
+        # get the view matrix of the current view space view (in order to get the position of the "viewport camera") and calculate the nearest x, y and z axis
+        v3d = [a for a in bpy.context.screen.areas if a.type == 'VIEW_3D'][0]
+        r3d = v3d.spaces[0].region_3d
+        view_mat = r3d.view_matrix.inverted()
+        loc, rot, sca = view_mat.decompose()
 
-        proj_matrix = bpy.context.region_data.perspective_matrix
-        object_matrix = bpy.data.objects['Origin'].matrix_world
-        view_matrix = context.scene.camera.matrix_world.inverted()
+        bbc_v = [mathutils.Vector(x) for x in bbc]
 
-        line_shader.bind()
-        line_shader.uniform_float('projection_matrix', proj_matrix)
-        line_shader.uniform_float('object_matrix', object_matrix)
-        # line_shader.uniform_float('view_matrix', view_matrix)
-        batch.draw(line_shader)
-        '''
+        # calculate nearest x axis and draw text for x width
+        a = bbc_v[0] + bbc_v[1]
+        a /= 2.0
+        a_len = (loc - a).length
 
-        # draw text
-        x_width = ABGlobals.max_x - ABGlobals.min_x
-        y_width = ABGlobals.max_y - ABGlobals.min_y
-        z_width = ABGlobals.max_z - ABGlobals.min_z
+        c = bbc_v[4] + bbc_v[5]
+        c /= 2.0
+        c_len = (loc - c).length
+
+        x_width = round(ABGlobals.max_x - ABGlobals.min_x)
+        if a_len <= c_len:
+            ABManagement.draw_text(self, context, a, str(x_width) + ' nm')
+        else:
+            ABManagement.draw_text(self, context, c, str(x_width) + ' nm')
+
+        # calculate nearest y axis and draw text for y width
+        b = bbc_v[2] + bbc_v[3]
+        b /= 2.0
+        b_len = (loc - b).length
+
+        d = bbc_v[6] + bbc_v[7]
+        d /= 2.0
+        d_len = (loc - d).length
+
+        y_width = round(ABGlobals.max_y - ABGlobals.min_y)
+        if b_len <= d_len:
+            ABManagement.draw_text(self, context, b, str(y_width) + ' nm')
+        else:
+            ABManagement.draw_text(self, context, d, str(y_width) + ' nm')
+
+        # calculate nearest z axis and draw text for z width
+        z_pos = []
+        z_lenghts = []
+
+        i = bbc_v[16] + bbc_v[17]
+        i /= 2.0
+        i_len = (loc - i).length
+        z_pos.append(i)
+        z_lenghts.append(i_len)
+
+        j = bbc_v[18] + bbc_v[19]
+        j /= 2.0
+        j_len = (loc - j).length
+        z_pos.append(j)
+        z_lenghts.append(j_len)
+
+        k = bbc_v[20] + bbc_v[21]
+        k /= 2.0
+        k_len = (loc - k).length
+        z_pos.append(k)
+        z_lenghts.append(k_len)
+
+        l = bbc_v[22] + bbc_v[23]
+        l /= 2.0
+        l_len = (loc - l).length
+        z_pos.append(l)
+        z_lenghts.append(l_len)
+
+        z_width = round(ABGlobals.max_z - ABGlobals.min_z)
+        min_index = z_lenghts.index(min(z_lenghts))
+        min_pos = z_pos[min_index]
+
+        ABManagement.draw_text(self, context,  min_pos, str(z_width) + ' nm')
+
+
+    def draw_text(self, context, point_3d, text):
         font_id = 0
-        blf.color(font_id, 1, 0, 0, 1)
-        # blf.enable(font_id, ROTATION) # 1 == ROTATION
-        # blf.rotation(font_id, 90.0)
-        # blf.size(font_id, 0.04, 72)
+        blf.color(font_id, 0, 0, 0, 1)
         blf.size(font_id, 20.0, 72)
-        blf.position(font_id, 2, 45, 0)
-        blf.draw(font_id, 'x: ' + str(x_width) + ' nm')
-        blf.position(font_id, 2, 25, 0)
-        blf.draw(font_id, 'y: ' + str(y_width) + ' nm')
-        blf.position(font_id, 2, 5, 0)
-        blf.draw(font_id, 'z: ' + str(z_width) + ' nm')
-        # blf.disable(font_id, ROTATION)
+        tuple_point_3d = (point_3d[0], point_3d[1], point_3d[2])
+        point_2d =  bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
 
-    '''def render_metric(self, context):
-        cache = ABManagement.cache
-        line_shader = cache['line_shader']
-
-        gpu.state.blend_set('ALPHA')
-        gpu.state.program_point_size_set(True)
-        gpu.state.depth_mask_set(False)
-
-        coords = [(-10, 0, 2), (10, 0, 2)]
-        # color = [(1.0, 0.0, 0.0, 1.0), (1.0, 0.0, 0.0, 1.0)]
-
-        # batch = batch_for_shader(line_shader, 'LINES', {"pos": coords})
-        batch = batch_for_shader(line_shader, 'LINE_STRIP', {"pos": coords})
-
-        line_shader.bind()
-        line_shader.uniform_float("color", (1.0, 0.0, 0.0, 1.0))
-        # line_shader.uniform_float("lineWidth", 50.0)
-        # line_shader.uniform_float("viewportSize", (0,0))
-        batch.draw(line_shader)'''
-
+        blf.position(font_id, point_2d[0], point_2d[1], 0)
+        blf.draw(font_id, text)
 
     def render(self, context):
         cache = ABManagement.cache
         shader = cache['shader']
-
-        # gpu.state.blend_set('ALPHA')
-        # gpu.state.program_point_size_set(True)
-        # gpu.state.depth_mask_set(False)
-        # gpu.state.depth_test_set('ALWAYS')
 
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
             # print('ATOM COLOR LIST', ABGlobals.atom_color_list)

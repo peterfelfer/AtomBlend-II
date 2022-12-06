@@ -39,6 +39,7 @@ class AtomBlendAddon:
         space = bpy.data.screens["Layout"]
         for s in space.areas:
             if s.type == 'VIEW_3D':
+
                 s.spaces[0].shading.type = 'RENDERED'
                 s.spaces[0].clip_end = 5000
 
