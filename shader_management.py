@@ -316,9 +316,46 @@ class ABManagement:
     def draw_text(self, context, point_3d, text):
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
-        blf.size(font_id, 20.0, 72)
+        font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
+        blf.size(font_id, 20.0, font_size)
         tuple_point_3d = (point_3d[0], point_3d[1], point_3d[2])
-        point_2d =  bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
+
+        # scene = context.scene
+        # render = scene.render
+        # width = int(render.resolution_x)
+        # height = int(render.resolution_y)
+        # view_matrix = scene.camera.matrix_world.inverted()
+        # object_matrix = bpy.data.objects['Origin'].matrix_world
+        # camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
+        # proj_matrix = camera_matrix @ view_matrix
+        vec_point_3d = mathutils.Vector((point_3d[0], point_3d[1], point_3d[2], 1))
+        # cam_point_3d = camera_matrix @ object_matrix @ vec_point_3d
+        # tuple_point_3d = (cam_point_3d[0], cam_point_3d[1], cam_point_3d[2])
+        # print('POSITION', tuple_point_3d)
+        # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
+
+        import bpy_extras.object_utils as object_utils
+        scene = bpy.context.scene
+        cam = scene.camera
+        # if 'Camera.001' not in bpy.data.objects:
+        # bpy.ops.object.camera_add(location=(0, 0, 0))
+        # newcam = bpy.data.objects['Camera.001']
+        depsgraph = context.evaluated_depsgraph_get()
+        obj = bpy.data.objects['Origin']
+        obj_eval = obj.evaluated_get(depsgraph)
+        mw = obj.matrix_world
+        co_2d = object_utils.world_to_camera_view(scene, cam, mw @ vec_point_3d)
+        # Get pixel coords
+        render_scale = scene.render.resolution_percentage / 100
+        render_size = (int(scene.render.resolution_x * render_scale),
+                       int(scene.render.resolution_y * render_scale))
+        print(render_size)
+
+        point_2d = [round(co_2d.x * render_size[0]), round(co_2d.y * render_size[1])]
+        print(point_2d, text)
+        print('-------------')
+
+        # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
 
         blf.position(font_id, point_2d[0], point_2d[1], 0)
         blf.draw(font_id, text)
@@ -367,7 +404,6 @@ class ABManagement:
         offscreen = gpu.types.GPUOffScreen(width, height)
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
-
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
