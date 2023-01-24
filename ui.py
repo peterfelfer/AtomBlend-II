@@ -305,7 +305,7 @@ class AB_properties(bpy.types.PropertyGroup):
 
     # for developing purposes
     dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
@@ -618,6 +618,8 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         split = split.split(factor=f[2] / perc_left, align=True)
         resolution_xy = split.column(align=True)
         resolution_xy.prop(bpy.data.scenes["Scene"].render, 'resolution_y', text='Height')
+        resolution_xy = resolution_xy.row()
+        resolution_xy.operator('atom_blend.resolution_debug')
 
         # file format
         # file_format_col = layout.row(align=True)
@@ -882,4 +884,24 @@ class ATOMBLEND_OT_start_stop(bpy.types.Operator):
     def execute(self, context):
         bpy.ops.screen.animation_play()
         ABGlobals.animation_playing = not ABGlobals.animation_playing
+        return {'FINISHED'}
+
+# debug
+class ATOMBLEND_OT_resolution_debug(bpy.types.Operator):
+    bl_idname = "atom_blend.resolution_debug"
+    bl_label = ""
+    bl_description = ""
+
+    @classmethod
+    def poll(cls, context):
+        return True  # context.object is not None
+
+    def execute(self, context):
+
+        if bpy.data.scenes["Scene"].render.resolution_x  == 1080:
+            bpy.data.scenes["Scene"].render.resolution_x = 1920
+            bpy.data.scenes["Scene"].render.resolution_y = 1080
+        else:
+            bpy.data.scenes["Scene"].render.resolution_x = 1080
+            bpy.data.scenes["Scene"].render.resolution_y = 1920
         return {'FINISHED'}

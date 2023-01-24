@@ -12,6 +12,7 @@ from .globals import ABGlobals
 import numpy as np
 import bpy_extras
 import mathutils
+import bpy_extras.object_utils as object_utils
 
 
 class ABManagement:
@@ -93,12 +94,13 @@ class ABManagement:
 
         # rotate tip 180 degrees around x axis
         bpy.data.objects['Top'].rotation_euler[0] = math.pi
+        bpy.data.objects['Center'].rotation_euler[0] = math.pi
 
         # set camera if it doesn't exist yet
         if bpy.context.scene.camera is None:
             # calculate camera position
             bpy.ops.object.camera_add(location=(0,0,0))
-            bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
+            # bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
             # TODO: disable for viewport
 
         # preparations for video rendering
@@ -318,6 +320,11 @@ class ABManagement:
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
         blf.size(font_id, 20.0, font_size)
+
+        obj = bpy.data.objects['Top']
+        print('point 3d', point_3d)
+        mw = obj.matrix_world
+        point_3d = mw @ point_3d
         tuple_point_3d = (point_3d[0], point_3d[1], point_3d[2])
 
         # scene = context.scene
@@ -332,26 +339,81 @@ class ABManagement:
         # cam_point_3d = camera_matrix @ object_matrix @ vec_point_3d
         # tuple_point_3d = (cam_point_3d[0], cam_point_3d[1], cam_point_3d[2])
         # print('POSITION', tuple_point_3d)
-        # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
-
-        import bpy_extras.object_utils as object_utils
+        '''
+        point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
+        print('point 2d', point_2d)
+    
+        ###  todo: works for horizontal images, not for vertical ones, see print outs
         scene = bpy.context.scene
         cam = scene.camera
+        vec_point_3d = mathutils.Vector((point_3d[0], point_3d[1], point_3d[2], 1))
+
         # if 'Camera.001' not in bpy.data.objects:
         # bpy.ops.object.camera_add(location=(0, 0, 0))
         # newcam = bpy.data.objects['Camera.001']
         depsgraph = context.evaluated_depsgraph_get()
-        obj = bpy.data.objects['Origin']
+        obj = bpy.data.objects['Top']
         obj_eval = obj.evaluated_get(depsgraph)
         mw = obj.matrix_world
+
+        proj_matrix = bpy.context.region_data.perspective_matrix
+
+        proj_obj = proj_matrix @ mw
+        width = scene.render.resolution_x
+        height = scene.render.resolution_y
+        camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=scene.render.pixel_aspect_x, scale_y=scene.render.pixel_aspect_y)
+        camera_matrix = camera_matrix.normalized()
+
+        vec_point_3d = mw @ vec_point_3d
+
+        # print('perspective matrix', proj_matrix)
         co_2d = object_utils.world_to_camera_view(scene, cam, mw @ vec_point_3d)
-        # Get pixel coords
+        # co_2d = object_utils.world_to_camera_view(scene, cam, mw @ vec_point_3d)
+        # co_2d = object_utils.world_to_camera_view(scene, cam, vec_point_3d)
         render_scale = scene.render.resolution_percentage / 100
         render_size = (int(scene.render.resolution_x * render_scale),
                        int(scene.render.resolution_y * render_scale))
-        print(render_size)
+        '''
+        '''
+        horizontal_pos = [round(co_2d.x * scene.render.resolution_x), round(co_2d.y * scene.render.resolution_y)]
+        print('horizontal', horizontal_pos)
+        vertical_pos = [horizontal_pos[0] / scene.render.resolution_y, horizontal_pos[1] / scene.render.resolution_x]
+        vertical_pos_round = [round(horizontal_pos[0] / scene.render.resolution_y), round(horizontal_pos[1] - scene.render.resolution_x)]
+        print('vertical pre', vertical_pos)
+        print('vertical pre round', vertical_pos_round)
+        vertical_pos = [round(vertical_pos[0] * scene.render.resolution_x), round(vertical_pos[1] * scene.render.resolution_y)]
+        print('vertical post', vertical_pos)
 
-        point_2d = [round(co_2d.x * render_size[0]), round(co_2d.y * render_size[1])]
+        # Get pixel coords
+        print('scene.render.resolution_: ', scene.render.resolution_x, scene.render.resolution_y)
+        print('renderscale: ', render_scale)
+        print('rendersize: ', render_size)
+        print('co 2d', co_2d)
+        '''
+        scene = bpy.context.scene
+        cam = scene.camera
+        # point in 3d scene
+        vec_point_3d = mathutils.Vector((point_3d[0], point_3d[1], point_3d[2], 1))
+
+        # mapping the 3d point into the camera space
+        obj = bpy.data.objects['Top']  # empty representing the origin of my bounding box
+        matrix_world = obj.matrix_world
+        co_2d = object_utils.world_to_camera_view(scene, cam, matrix_world @ vec_point_3d)
+        render_scale = scene.render.resolution_percentage / 100
+        render_size = (int(scene.render.resolution_x * render_scale),
+                       int(scene.render.resolution_y * render_scale))
+
+        print('co_2d', co_2d)
+        x_pos = round(co_2d.x * render_size[0])  # / render_size[0]
+        y_pos = round(co_2d.y * render_size[1])  # / render_size[1]
+
+        print('x pos y pos', x_pos, y_pos)
+        # x_pos = round(vertical_pos[0])
+        # y_pos = round(vertical_pos[1])
+
+        # x_pos = 0.5
+        # y_pos = 0.5
+        point_2d = [x_pos, y_pos]
         print(point_2d, text)
         print('-------------')
 
@@ -404,6 +466,9 @@ class ABManagement:
         offscreen = gpu.types.GPUOffScreen(width, height)
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
+        # bpy.ops.object.camera_add(location=(0, 0, 0))
+        # scene.camera = bpy.data.objects['Camera.001']
+
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
