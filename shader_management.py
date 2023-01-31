@@ -45,9 +45,11 @@ class ABManagement:
 
             # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
             if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
-                ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+                ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in
+                                             xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-            bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
+            bpy.context.scene.color_settings[
+                elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
         '''
         # check if we have a list for each element for the atom coords and atom color list
         # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
@@ -56,7 +58,7 @@ class ABManagement:
 
         if isinstance(ABGlobals.atom_color_list[0], list):
             ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-        
+
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
             # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
             # print('ATOM COORDS', ABGlobals.atom_coords)
@@ -72,7 +74,8 @@ class ABManagement:
         '''
         # add draw handler that will be called every time this region in this space type will be drawn
         # ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
-        ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_PIXEL')
+        ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW',
+                                                                     'POST_PIXEL')
 
         # --- init other things needed for shader drawing ---
         # create empty to move the atom tip to the center (0,0,0)
@@ -80,7 +83,7 @@ class ABManagement:
         top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
         top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
 
-        #print(top_x, top_y, top_z)
+        # print(top_x, top_y, top_z)
         bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, top_z))
         bpy.data.objects['Empty'].name = 'Top'
 
@@ -94,13 +97,12 @@ class ABManagement:
 
         # rotate tip 180 degrees around x axis
         bpy.data.objects['Top'].rotation_euler[0] = math.pi
-        bpy.data.objects['Center'].rotation_euler[0] = math.pi
 
         # set camera if it doesn't exist yet
         if bpy.context.scene.camera is None:
             # calculate camera position
-            bpy.ops.object.camera_add(location=(0,0,0))
-            # bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
+            bpy.ops.object.camera_add(location=(0, 0, 0))
+            bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
             # TODO: disable for viewport
 
         # preparations for video rendering
@@ -143,8 +145,8 @@ class ABManagement:
         bpy.data.objects['Origin'].hide_viewport = True
 
         # set default path
-        bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
-
+        bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes[
+                                                       "Scene"].render.filepath + ABGlobals.dataset_name + '.png'
 
     def handler(self, context):
         # print('handler!')
@@ -169,7 +171,7 @@ class ABManagement:
 
         gpu.state.depth_mask_set(False)
 
-    #def frame_change_handler(self, context):
+    # def frame_change_handler(self, context):
     #    pass
 
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
@@ -184,37 +186,37 @@ class ABManagement:
         bounding_box_coords = []
 
         # lower square
-        bounding_box_coords.append((xmax, ymin, zmin)) # a
+        bounding_box_coords.append((xmax, ymin, zmin))  # a
         bounding_box_coords.append((xmax, ymax, zmin))
-        bounding_box_coords.append((xmax, ymax, zmin)) # b
+        bounding_box_coords.append((xmax, ymax, zmin))  # b
         bounding_box_coords.append((xmin, ymax, zmin))
-        bounding_box_coords.append((xmin, ymin, zmin)) # c
+        bounding_box_coords.append((xmin, ymin, zmin))  # c
         bounding_box_coords.append((xmin, ymax, zmin))
-        bounding_box_coords.append((xmax, ymin, zmin)) # d
+        bounding_box_coords.append((xmax, ymin, zmin))  # d
         bounding_box_coords.append((xmin, ymin, zmin))
         # upper square
-        bounding_box_coords.append((xmax, ymin, zmax)) # e
+        bounding_box_coords.append((xmax, ymin, zmax))  # e
         bounding_box_coords.append((xmax, ymax, zmax))
-        bounding_box_coords.append((xmax, ymax, zmax)) # f
+        bounding_box_coords.append((xmax, ymax, zmax))  # f
         bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmin, ymin, zmax)) # g
+        bounding_box_coords.append((xmin, ymin, zmax))  # g
         bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmax, ymin, zmax)) # h
+        bounding_box_coords.append((xmax, ymin, zmax))  # h
         bounding_box_coords.append((xmin, ymin, zmax))
         # lines from lower square to upper
-        bounding_box_coords.append((xmax, ymin, zmin)) # i
+        bounding_box_coords.append((xmax, ymin, zmin))  # i
         bounding_box_coords.append((xmax, ymin, zmax))
-        bounding_box_coords.append((xmax, ymax, zmin)) # j
+        bounding_box_coords.append((xmax, ymax, zmin))  # j
         bounding_box_coords.append((xmax, ymax, zmax))
-        bounding_box_coords.append((xmin, ymax, zmin)) # k
+        bounding_box_coords.append((xmin, ymax, zmin))  # k
         bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmin, ymin, zmin)) # l
+        bounding_box_coords.append((xmin, ymin, zmin))  # l
         bounding_box_coords.append((xmin, ymin, zmax))
 
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
-            r = (1,0,0,1)
-            g = (0,1,0,1)
-            b = (0,0,1,1)
+            r = (1, 0, 0, 1)
+            g = (0, 1, 0, 1)
+            b = (0, 0, 1, 1)
 
             color_list = [g, g, r, r, g, g, r, r,
                           g, g, r, r, g, g, r, r,
@@ -312,119 +314,43 @@ class ABManagement:
         min_index = z_lenghts.index(min(z_lenghts))
         min_pos = z_pos[min_index]
 
-        ABManagement.draw_text(self, context,  min_pos, str(z_width) + ' nm')
-
+        ABManagement.draw_text(self, context, min_pos, str(z_width) + ' nm')
 
     def draw_text(self, context, point_3d, text):
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
-        #blf.size(font_id, 20.0, font_size)
 
-        obj = bpy.data.objects['Top']
-        print('point 3d', point_3d)
-        mw = obj.matrix_world
-        point_3d = mw @ point_3d
-        tuple_point_3d = (point_3d[0], point_3d[1], point_3d[2])
+        if ABGlobals.currently_writing_img:
+            ### rendering
+            font_id = 0
+            blf.color(font_id, 0, 0, 0, 1)
+            font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
 
-        # scene = context.scene
-        # render = scene.render
-        # width = int(render.resolution_x)
-        # height = int(render.resolution_y)
-        # view_matrix = scene.camera.matrix_world.inverted()
-        # object_matrix = bpy.data.objects['Origin'].matrix_world
-        # camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
-        # proj_matrix = camera_matrix @ view_matrix
-        vec_point_3d = mathutils.Vector((point_3d[0], point_3d[1], point_3d[2], 1))
-        # cam_point_3d = camera_matrix @ object_matrix @ vec_point_3d
-        # tuple_point_3d = (cam_point_3d[0], cam_point_3d[1], cam_point_3d[2])
-        # print('POSITION', tuple_point_3d)
-        '''
-        point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
-        print('point 2d', point_2d)
-    
-        ###  todo: works for horizontal images, not for vertical ones, see print outs
-        scene = bpy.context.scene
-        cam = scene.camera
-        vec_point_3d = mathutils.Vector((point_3d[0], point_3d[1], point_3d[2], 1))
+            scene = bpy.context.scene
+            cam = scene.camera
 
-        # if 'Camera.001' not in bpy.data.objects:
-        # bpy.ops.object.camera_add(location=(0, 0, 0))
-        # newcam = bpy.data.objects['Camera.001']
-        depsgraph = context.evaluated_depsgraph_get()
-        obj = bpy.data.objects['Top']
-        obj_eval = obj.evaluated_get(depsgraph)
-        mw = obj.matrix_world
+            # mapping the 3d point into the camera space
+            co_2d = object_utils.world_to_camera_view(scene, cam, point_3d)
+            render_scale = scene.render.resolution_percentage / 100
+            render_size = (int(scene.render.resolution_x * render_scale),
+                           int(scene.render.resolution_y * render_scale))
 
-        proj_matrix = bpy.context.region_data.perspective_matrix
+            x_pos = round(co_2d.x * render_size[0])  # / render_size[0]
+            y_pos = round(co_2d.y * render_size[1])  # / render_size[1]
 
-        proj_obj = proj_matrix @ mw
-        width = scene.render.resolution_x
-        height = scene.render.resolution_y
-        camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=scene.render.pixel_aspect_x, scale_y=scene.render.pixel_aspect_y)
-        camera_matrix = camera_matrix.normalized()
+            point_2d = [x_pos, y_pos]
 
-        vec_point_3d = mw @ vec_point_3d
+            # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
+            ui_scale = bpy.context.preferences.system.ui_scale
+            blf.size(font_id, 20.0, font_size)
+        else:
+            ### viewport
+            point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region,
+                                                                        bpy.context.space_data.region_3d, point_3d)
 
-        # print('perspective matrix', proj_matrix)
-        co_2d = object_utils.world_to_camera_view(scene, cam, mw @ vec_point_3d)
-        # co_2d = object_utils.world_to_camera_view(scene, cam, mw @ vec_point_3d)
-        # co_2d = object_utils.world_to_camera_view(scene, cam, vec_point_3d)
-        render_scale = scene.render.resolution_percentage / 100
-        render_size = (int(scene.render.resolution_x * render_scale),
-                       int(scene.render.resolution_y * render_scale))
-        '''
-        '''
-        horizontal_pos = [round(co_2d.x * scene.render.resolution_x), round(co_2d.y * scene.render.resolution_y)]
-        print('horizontal', horizontal_pos)
-        vertical_pos = [horizontal_pos[0] / scene.render.resolution_y, horizontal_pos[1] / scene.render.resolution_x]
-        vertical_pos_round = [round(horizontal_pos[0] / scene.render.resolution_y), round(horizontal_pos[1] - scene.render.resolution_x)]
-        print('vertical pre', vertical_pos)
-        print('vertical pre round', vertical_pos_round)
-        vertical_pos = [round(vertical_pos[0] * scene.render.resolution_x), round(vertical_pos[1] * scene.render.resolution_y)]
-        print('vertical post', vertical_pos)
-
-        # Get pixel coords
-        print('scene.render.resolution_: ', scene.render.resolution_x, scene.render.resolution_y)
-        print('renderscale: ', render_scale)
-        print('rendersize: ', render_size)
-        print('co 2d', co_2d)
-        '''
-        scene = bpy.context.scene
-        cam = scene.camera
-        # point in 3d scene
-        vec_point_3d = mathutils.Vector((point_3d[0], point_3d[1], point_3d[2], 1))
-
-        # mapping the 3d point into the camera space
-        obj = bpy.data.objects['Top']  # empty representing the origin of my bounding box
-        matrix_world = obj.matrix_world
-        co_2d = object_utils.world_to_camera_view(scene, cam, matrix_world @ vec_point_3d)
-        render_scale = scene.render.resolution_percentage / 100
-        render_size = (int(scene.render.resolution_x * render_scale),
-                       int(scene.render.resolution_y * render_scale))
-
-        print('co_2d', co_2d)
-        x_pos = round(co_2d.x * render_size[0])  # / render_size[0]
-        y_pos = round(co_2d.y * render_size[1])  # / render_size[1]
-
-        print('x pos y pos', x_pos, y_pos)
-        # x_pos = round(vertical_pos[0])
-        # y_pos = round(vertical_pos[1])
-
-        print('render size', render_size)
-
-        x_pos = 0.1 * render_size[0]
-        y_pos = 0.0 * render_size[1]
-        point_2d = [x_pos, y_pos]
-        print(point_2d, text)
-        print('-------------')
-
-        # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
-        ui_scale = bpy.context.preferences.system.ui_scale
-        blf.size(font_id, round(50 * ui_scale), 72)
         blf.position(font_id, point_2d[0], point_2d[1], 0)
-        # blf.draw(font_id, text)
-        blf.draw(font_id, 'hello world')
+        blf.draw(font_id, text)
 
     def render(self, context):
         cache = ABManagement.cache
@@ -433,7 +359,8 @@ class ABManagement:
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
             # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
             # print('ATOM COORDS', ABGlobals.atom_coords)
-            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
+            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list),
+                            len(ABGlobals.atom_coords))
 
         # set background color
         # if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
@@ -442,9 +369,13 @@ class ABManagement:
         # elif context.space_data.region_3d.view_perspective == 'CAMERA':
         #     background_color = bpy.context.scene.atom_blend_addon_settings.background_color
         #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
-        if (len(ABGlobals.atom_coords) != len(ABGlobals.atom_color_list)) or (len(ABGlobals.atom_coords) != len(ABGlobals.point_size_list)) or (len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
+        if (len(ABGlobals.atom_coords) != len(ABGlobals.atom_color_list)) or (
+                len(ABGlobals.atom_coords) != len(ABGlobals.point_size_list)) or (
+                len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
             print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
-        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
+        batch = batch_for_shader(shader, 'POINTS',
+                                 {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list,
+                                  'ps': ABGlobals.point_size_list})
 
         # uniform preparations
         proj_matrix = bpy.context.region_data.perspective_matrix
@@ -457,6 +388,8 @@ class ABManagement:
         batch.draw(shader)
 
     def save_image(self, context, cur_frame=''):
+        ABGlobals.currently_writing_img = True
+
         start = time.perf_counter()
 
         cache = ABManagement.cache
@@ -466,19 +399,16 @@ class ABManagement:
         width = int(render.resolution_x)
         height = int(render.resolution_y)
 
+        view_matrix = mathutils.Matrix([
+            [2 / width, 0, 0, -1],
+            [0, 2 / height, 0, -1],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]])
+
         # create buffer
         offscreen = gpu.types.GPUOffScreen(width, height)
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
-
-
-        # bgl.glMatrixMode(bgl.GL_PROJECTION)
-        # bgl.glLoadIdentity()
-        # bgl.gluOrtho2D(0, width, 0, height)
-        # bgl.glMatrixMode(bgl.GL_MODELVIEW)
-        # bgl.glLoadIdentity()
-        # bpy.ops.object.camera_add(location=(0, 0, 0))
-        # scene.camera = bpy.data.objects['Camera.001']
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
@@ -489,20 +419,15 @@ class ABManagement:
 
             fb.clear(color=background_color, depth=1.0)
 
-            from mathutils import Matrix
-            view_matrix = Matrix([
-                [2 / width, 0, 0, -1],
-                [0, 2 / height, 0, -1],
-                [0, 0, 1, 0],
-                [0, 0, 0, 1]])
-
             gpu.state.depth_test_set('LESS_EQUAL')
             gpu.state.depth_mask_set(True)
             gpu.matrix.load_matrix(view_matrix)
-            gpu.matrix.load_projection_matrix(Matrix.Identity(4))
+            gpu.matrix.load_projection_matrix(mathutils.Matrix.Identity(4))
 
             view_matrix = scene.camera.matrix_world.inverted()
-            camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
+            camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height,
+                                                            scale_x=render.pixel_aspect_x,
+                                                            scale_y=render.pixel_aspect_y)
             proj_matrix = camera_matrix @ view_matrix
             object_matrix = bpy.data.objects['Top'].matrix_world
 
@@ -514,7 +439,9 @@ class ABManagement:
 
             # offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
 
-            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
+            batch = batch_for_shader(shader, 'POINTS',
+                                     {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list,
+                                      'ps': adapted_point_size})
 
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
@@ -524,18 +451,8 @@ class ABManagement:
             # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
 
-            font_id = 0
-            # blf.position(font_id, 1820, 980, 0)
-            blf.position(font_id, 980, 1820, 0)
-            blf.draw(font_id, 'test')
-
-            #### TODO aus irgendwelchen gründen geht blf.position(1820, 980) in die rechte obere ecke... obwohl es ein
-            #### (1080, 1920) bild ist. vllt schauen ob man es hinbekommt nochmal eine blf font drawing funktion
-            #### from scratch zu schreiben
-
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
             buffer.dimensions = width * height * 4
-            print('buffer', width, height)
 
         offscreen.free()
 
@@ -545,16 +462,15 @@ class ABManagement:
             bpy.data.images.new(render_name, width, height, alpha=True)
         image = bpy.data.images[render_name]
         image.scale(width, height)
-        print('img scale', width, height)
 
         image.pixels = [v / 255 for v in buffer]
 
         # actually save image
         path = bpy.data.scenes["Scene"].render.filepath
 
-        #file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
-        #print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
-        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png' #file_format.lower()
+        # file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
+        # print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
+        filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png'  # file_format.lower()
         # if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
         #     render_path = path
         #     image.file_format = file_format.upper() #render_path.split('.')[-1].upper()  # 'PNG'
@@ -579,19 +495,19 @@ class ABManagement:
         render_path = r'%s' % render_path
 
         file_format = context.scene.atom_blend_addon_settings.file_format
-        #file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
+        # file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
         filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.' + file_format.lower()
 
         if file_format == 'PNG':
-            image.file_format  = 'PNG'
-            if os.path.splitext(path)[1].lower() == '.png': # file ending is already png
+            image.file_format = 'PNG'
+            if os.path.splitext(path)[1].lower() == '.png':  # file ending is already png
                 render_path = path
-            elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']: # file ending is not .png
+            elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:  # file ending is not .png
                 render_path = path + '.png'
-            else: # there is no file name, just a directory -> add file name and format
+            else:  # there is no file name, just a directory -> add file name and format
                 render_path = path + filename
         elif file_format == 'JPEG':
-            image.file_format  = 'JPEG'
+            image.file_format = 'JPEG'
             if os.path.splitext(path)[1].lower() == '.jpg' or os.path.splitext(path)[1].lower() == '.jpeg':
                 render_path = path
             elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
@@ -599,7 +515,7 @@ class ABManagement:
             else:
                 render_path = path + filename
         else:
-            image.file_format  = 'TIFF'
+            image.file_format = 'TIFF'
             if os.path.splitext(path)[1].lower() == '.tiff':
                 render_path = path
             elif os.path.splitext(path)[1].lower() in ['.png', '.jpg', '.jpeg', '.tiff']:
@@ -612,7 +528,6 @@ class ABManagement:
         # else:
         #     render_path = path + '//' + filename
 
-
         image.filepath_raw = render_path
 
         # if os.path.isfile(image.filepath_raw):
@@ -623,4 +538,5 @@ class ABManagement:
         print('Wrote file to ' + render_path)
 
         gpu.state.depth_mask_set(False)
+        ABGlobals.currently_writing_img = False
         return render_path
