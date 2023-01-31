@@ -319,7 +319,7 @@ class ABManagement:
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
-        blf.size(font_id, 20.0, font_size)
+        #blf.size(font_id, 20.0, font_size)
 
         obj = bpy.data.objects['Top']
         print('point 3d', point_3d)
@@ -411,16 +411,20 @@ class ABManagement:
         # x_pos = round(vertical_pos[0])
         # y_pos = round(vertical_pos[1])
 
-        # x_pos = 0.5
-        # y_pos = 0.5
+        print('render size', render_size)
+
+        x_pos = 0.1 * render_size[0]
+        y_pos = 0.0 * render_size[1]
         point_2d = [x_pos, y_pos]
         print(point_2d, text)
         print('-------------')
 
         # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
-
+        ui_scale = bpy.context.preferences.system.ui_scale
+        blf.size(font_id, round(50 * ui_scale), 72)
         blf.position(font_id, point_2d[0], point_2d[1], 0)
-        blf.draw(font_id, text)
+        # blf.draw(font_id, text)
+        blf.draw(font_id, 'hello world')
 
     def render(self, context):
         cache = ABManagement.cache
@@ -466,9 +470,15 @@ class ABManagement:
         offscreen = gpu.types.GPUOffScreen(width, height)
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
+
+
+        # bgl.glMatrixMode(bgl.GL_PROJECTION)
+        # bgl.glLoadIdentity()
+        # bgl.gluOrtho2D(0, width, 0, height)
+        # bgl.glMatrixMode(bgl.GL_MODELVIEW)
+        # bgl.glLoadIdentity()
         # bpy.ops.object.camera_add(location=(0, 0, 0))
         # scene.camera = bpy.data.objects['Camera.001']
-
 
         with offscreen.bind():
             fb = gpu.state.active_framebuffer_get()
@@ -479,8 +489,17 @@ class ABManagement:
 
             fb.clear(color=background_color, depth=1.0)
 
+            from mathutils import Matrix
+            view_matrix = Matrix([
+                [2 / width, 0, 0, -1],
+                [0, 2 / height, 0, -1],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]])
+
             gpu.state.depth_test_set('LESS_EQUAL')
             gpu.state.depth_mask_set(True)
+            gpu.matrix.load_matrix(view_matrix)
+            gpu.matrix.load_projection_matrix(Matrix.Identity(4))
 
             view_matrix = scene.camera.matrix_world.inverted()
             camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
@@ -505,8 +524,18 @@ class ABManagement:
             # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
 
+            font_id = 0
+            # blf.position(font_id, 1820, 980, 0)
+            blf.position(font_id, 980, 1820, 0)
+            blf.draw(font_id, 'test')
+
+            #### TODO aus irgendwelchen gründen geht blf.position(1820, 980) in die rechte obere ecke... obwohl es ein
+            #### (1080, 1920) bild ist. vllt schauen ob man es hinbekommt nochmal eine blf font drawing funktion
+            #### from scratch zu schreiben
+
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
             buffer.dimensions = width * height * 4
+            print('buffer', width, height)
 
         offscreen.free()
 
@@ -516,6 +545,7 @@ class ABManagement:
             bpy.data.images.new(render_name, width, height, alpha=True)
         image = bpy.data.images[render_name]
         image.scale(width, height)
+        print('img scale', width, height)
 
         image.pixels = [v / 255 for v in buffer]
 
