@@ -249,11 +249,11 @@ class ABManagement:
         bbc_v = [mathutils.Vector(x) for x in bbc]
 
         # calculate nearest y axis and draw text for y width
-        a = bbc_v[0] - bbc_v[1]
+        a = bbc_v[0] + bbc_v[1]
         a /= 2.0
         a_len = (loc - a).length
 
-        c = bbc_v[4] - bbc_v[5]
+        c = bbc_v[4] + bbc_v[5]
         c /= 2.0
         c_len = (loc - c).length
 
@@ -265,11 +265,11 @@ class ABManagement:
             ABManagement.draw_text(self, context, bbc_v[4], bbc_v[5], str(y_width) + ' nm')
 
         # calculate nearest x axis and draw text for x width
-        b = bbc_v[1] - bbc_v[3]
+        b = bbc_v[1] + bbc_v[3]
         b /= 2.0
         b_len = (loc - b).length
 
-        d = bbc_v[6] - bbc_v[7]
+        d = bbc_v[6] + bbc_v[7]
         d /= 2.0
         d_len = (loc - d).length
 
@@ -281,36 +281,30 @@ class ABManagement:
             ABManagement.draw_text(self, context, bbc_v[6], bbc_v[7], str(x_width) + ' nm')
 
         # calculate nearest z axis and draw text for z width
-        z_pos = []
         z_lenghts = []
 
         i = bbc_v[16] + bbc_v[17]
         i /= 2.0
         i_len = (loc - i).length
-        z_pos.append(i)
         z_lenghts.append(i_len)
 
         j = bbc_v[18] + bbc_v[19]
         j /= 2.0
         j_len = (loc - j).length
-        z_pos.append(j)
         z_lenghts.append(j_len)
 
         k = bbc_v[20] + bbc_v[21]
         k /= 2.0
         k_len = (loc - k).length
-        z_pos.append(k)
         z_lenghts.append(k_len)
 
         l = bbc_v[22] + bbc_v[23]
         l /= 2.0
         l_len = (loc - l).length
-        z_pos.append(l)
         z_lenghts.append(l_len)
 
         z_width = round(ABGlobals.max_z - ABGlobals.min_z)
         min_index = z_lenghts.index(min(z_lenghts))
-        min_pos = z_pos[min_index]
 
         if min_index == 0:
             ABManagement.draw_text(self, context, bbc_v[16], bbc_v[17], str(z_width) + ' nm')
@@ -328,25 +322,21 @@ class ABManagement:
             delta_y = b[1] - a[1]
 
             angle = math.atan2(delta_y, delta_x)
-            if angle > math.pi:
-                angle -= math.pi
+            # if axis == 'x':
+            #     print(angle)
+                # if angle > math.pi/2.0:
+                #     print('angle > x', angle, math.pi)
+                #     print('post angle', angle)
+            # print('angle', angle)
+            # angle = angle + (math.pi) # for some reason this doesnt work...
+            # print('post angle', angle)
+
             return angle
 
-        font_id = 0
-        blf.color(font_id, 0, 0, 0, 1)
-        font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
-        point_3d = (a + b) / 2.0
-        angle = 0
-
-        # get hight of one line
-        line_width, line_height = blf.dimensions(font_id, "T")
-        print(line_width, line_height)
-
-        if ABGlobals.currently_writing_img: # write picture
+        # mapping the 3d point into the camera space
+        def img_writing_3d_to_2d(point_3d):
             scene = bpy.context.scene
             cam = scene.camera
-
-            # mapping the 3d point into the camera space
             co_2d = object_utils.world_to_camera_view(scene, cam, point_3d)
             render_scale = scene.render.resolution_percentage / 100
             render_size = (int(scene.render.resolution_x * render_scale),
@@ -354,6 +344,25 @@ class ABManagement:
 
             x_pos = round(co_2d.x * render_size[0])  # / render_size[0]
             y_pos = round(co_2d.y * render_size[1])  # / render_size[1]
+
+            return [x_pos, y_pos]
+
+        font_id = 0
+        blf.color(font_id, 0, 0, 0, 1)
+        font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
+        point_3d = (a + b) / 2.0
+        angle = 0
+
+        if ABGlobals.currently_writing_img: # write picture
+            scene = bpy.context.scene
+            cam = scene.camera
+
+            # mapping the 3d point into the camera space
+            x_pos, y_pos = img_writing_3d_to_2d(point_3d)
+            co_2d_a = img_writing_3d_to_2d(a)
+            co_2d_b = img_writing_3d_to_2d(b)
+
+            angle = calc_angle(co_2d_a, co_2d_b)
 
             point_2d = [x_pos, y_pos]
 
@@ -364,7 +373,6 @@ class ABManagement:
             b_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, b)
 
             if a_2d is None or b_2d is None:
-                print('a2d or b2d none')
                 return
 
             angle = calc_angle(a_2d, b_2d)
@@ -377,14 +385,12 @@ class ABManagement:
             point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
 
             if point_2d is None:
-                print('point2d none')
                 return
-
 
         blf.enable(font_id, blf.ROTATION)
         blf.size(font_id, 20.0, font_size)
-        blf.position(font_id, point_2d[0], point_2d[1], 0)
         blf.rotation(font_id, angle)
+        blf.position(font_id, point_2d[0], point_2d[1], 0)
         blf.draw(font_id, text)
         blf.disable(font_id, blf.ROTATION)
 
