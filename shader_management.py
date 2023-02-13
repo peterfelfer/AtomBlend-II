@@ -45,11 +45,9 @@ class ABManagement:
 
             # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
             if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
-                ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in
-                                             xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+                ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-            bpy.context.scene.color_settings[
-                elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
+            bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
         '''
         # check if we have a list for each element for the atom coords and atom color list
         # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
@@ -74,8 +72,7 @@ class ABManagement:
         '''
         # add draw handler that will be called every time this region in this space type will be drawn
         # ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
-        ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW',
-                                                                     'POST_PIXEL')
+        ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_PIXEL')
 
         # --- init other things needed for shader drawing ---
         # create empty to move the atom tip to the center (0,0,0)
@@ -233,7 +230,6 @@ class ABManagement:
         if object_matrix == None:
             object_matrix = bpy.data.objects['Origin'].matrix_world
 
-        print(len(color_list), len(bounding_box_coords))
         ABManagement.get_nearest_points_metric(self, context, bounding_box_coords)
 
         gpu.state.line_width_set(bpy.context.scene.atom_blend_addon_settings.scaling_cube_line_width)
@@ -243,7 +239,7 @@ class ABManagement:
         # line_shader.uniform_float('color', (1,0,0,1))
         batch.draw(line_shader)
 
-    def get_nearest_points_metric(self, context, bbc, proj_matrix=None):
+    def get_nearest_points_metric(self, context, bbc):
         # get the view matrix of the current view space view (in order to get the position of the "viewport camera") and calculate the nearest x, y and z axis
         v3d = [a for a in bpy.context.screen.areas if a.type == 'VIEW_3D'][0]
         r3d = v3d.spaces[0].region_3d
@@ -322,11 +318,6 @@ class ABManagement:
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
 
         if ABGlobals.currently_writing_img:
-            ### rendering
-            font_id = 0
-            blf.color(font_id, 0, 0, 0, 1)
-            font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
-
             scene = bpy.context.scene
             cam = scene.camera
 
@@ -343,12 +334,10 @@ class ABManagement:
 
             # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
             ui_scale = bpy.context.preferences.system.ui_scale
-            blf.size(font_id, 20.0, font_size)
-        else:
-            ### viewport
-            point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region,
-                                                                        bpy.context.space_data.region_3d, point_3d)
+        else:  ### viewport
+            point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
 
+        blf.size(font_id, 20.0, font_size)
         blf.position(font_id, point_2d[0], point_2d[1], 0)
         blf.draw(font_id, text)
 
@@ -359,8 +348,7 @@ class ABManagement:
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
             # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
             # print('ATOM COORDS', ABGlobals.atom_coords)
-            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list),
-                            len(ABGlobals.atom_coords))
+            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
         # set background color
         # if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
@@ -373,9 +361,7 @@ class ABManagement:
                 len(ABGlobals.atom_coords) != len(ABGlobals.point_size_list)) or (
                 len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
             print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
-        batch = batch_for_shader(shader, 'POINTS',
-                                 {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list,
-                                  'ps': ABGlobals.point_size_list})
+        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
         # uniform preparations
         proj_matrix = bpy.context.region_data.perspective_matrix
@@ -425,9 +411,7 @@ class ABManagement:
             gpu.matrix.load_projection_matrix(mathutils.Matrix.Identity(4))
 
             view_matrix = scene.camera.matrix_world.inverted()
-            camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height,
-                                                            scale_x=render.pixel_aspect_x,
-                                                            scale_y=render.pixel_aspect_y)
+            camera_matrix = scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
             proj_matrix = camera_matrix @ view_matrix
             object_matrix = bpy.data.objects['Top'].matrix_world
 
@@ -439,9 +423,7 @@ class ABManagement:
 
             # offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
 
-            batch = batch_for_shader(shader, 'POINTS',
-                                     {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list,
-                                      'ps': adapted_point_size})
+            batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
             shader.bind()
             shader.uniform_float('projection_matrix', proj_matrix)
