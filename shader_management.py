@@ -317,7 +317,7 @@ class ABManagement:
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
 
-        if ABGlobals.currently_writing_img:
+        if ABGlobals.currently_writing_img: # write picture
             scene = bpy.context.scene
             cam = scene.camera
 
@@ -333,13 +333,14 @@ class ABManagement:
             point_2d = [x_pos, y_pos]
 
             # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
-            ui_scale = bpy.context.preferences.system.ui_scale
+            # ui_scale = bpy.context.preferences.system.ui_scale
         else:  ### viewport
             point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
 
-        blf.size(font_id, 20.0, font_size)
-        blf.position(font_id, point_2d[0], point_2d[1], 0)
-        blf.draw(font_id, text)
+        if point_2d is not None: # point_2d is None if position is behind camera
+            blf.size(font_id, 20.0, font_size)
+            blf.position(font_id, point_2d[0], point_2d[1], 0)
+            blf.draw(font_id, text)
 
     def render(self, context):
         cache = ABManagement.cache
