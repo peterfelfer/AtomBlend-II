@@ -248,35 +248,37 @@ class ABManagement:
 
         bbc_v = [mathutils.Vector(x) for x in bbc]
 
-        # calculate nearest x axis and draw text for x width
-        a = bbc_v[0] + bbc_v[1]
+        # calculate nearest y axis and draw text for y width
+        a = bbc_v[0] - bbc_v[1]
         a /= 2.0
         a_len = (loc - a).length
 
-        c = bbc_v[4] + bbc_v[5]
+        c = bbc_v[4] - bbc_v[5]
         c /= 2.0
         c_len = (loc - c).length
 
-        x_width = round(ABGlobals.max_x - ABGlobals.min_x)
+        # y
+        y_width = round(ABGlobals.max_y - ABGlobals.min_y)
         if a_len <= c_len:
-            ABManagement.draw_text(self, context, a, str(x_width) + ' nm')
+            ABManagement.draw_text(self, context, bbc_v[0], bbc_v[1], str(y_width) + ' nm')
         else:
-            ABManagement.draw_text(self, context, c, str(x_width) + ' nm')
+            ABManagement.draw_text(self, context, bbc_v[4], bbc_v[5], str(y_width) + ' nm')
 
-        # calculate nearest y axis and draw text for y width
-        b = bbc_v[2] + bbc_v[3]
+        # calculate nearest x axis and draw text for x width
+        b = bbc_v[1] - bbc_v[3]
         b /= 2.0
         b_len = (loc - b).length
 
-        d = bbc_v[6] + bbc_v[7]
+        d = bbc_v[6] - bbc_v[7]
         d /= 2.0
         d_len = (loc - d).length
 
-        y_width = round(ABGlobals.max_y - ABGlobals.min_y)
+        #x
+        x_width = round(ABGlobals.max_x - ABGlobals.min_x)
         if b_len <= d_len:
-            ABManagement.draw_text(self, context, b, str(y_width) + ' nm')
+            ABManagement.draw_text(self, context, bbc_v[1], bbc_v[3], str(x_width) + ' nm')
         else:
-            ABManagement.draw_text(self, context, d, str(y_width) + ' nm')
+            ABManagement.draw_text(self, context, bbc_v[6], bbc_v[7], str(x_width) + ' nm')
 
         # calculate nearest z axis and draw text for z width
         z_pos = []
@@ -310,12 +312,35 @@ class ABManagement:
         min_index = z_lenghts.index(min(z_lenghts))
         min_pos = z_pos[min_index]
 
-        ABManagement.draw_text(self, context, min_pos, str(z_width) + ' nm')
+        if min_index == 0:
+            ABManagement.draw_text(self, context, bbc_v[16], bbc_v[17], str(z_width) + ' nm')
+        elif min_index == 1:
+            ABManagement.draw_text(self, context, bbc_v[18], bbc_v[19], str(z_width) + ' nm')
+        elif min_index == 2:
+            ABManagement.draw_text(self, context, bbc_v[20], bbc_v[21], str(z_width) + ' nm')
+        elif min_index == 3:
+            ABManagement.draw_text(self, context, bbc_v[22], bbc_v[23], str(z_width) + ' nm')
 
-    def draw_text(self, context, point_3d, text):
+    def draw_text(self, context, a, b, text):
+        # calculates angle between the points a and b in relation to the x-axis
+        def calc_angle(a, b):
+            delta_x = b[0] - a[0]
+            delta_y = b[1] - a[1]
+
+            angle = math.atan2(delta_y, delta_x)
+            if angle > math.pi:
+                angle -= math.pi
+            return angle
+
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
+        point_3d = (a + b) / 2.0
+        angle = 0
+
+        # get hight of one line
+        line_width, line_height = blf.dimensions(font_id, "T")
+        print(line_width, line_height)
 
         if ABGlobals.currently_writing_img: # write picture
             scene = bpy.context.scene
@@ -335,12 +360,33 @@ class ABManagement:
             # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
             # ui_scale = bpy.context.preferences.system.ui_scale
         else:  ### viewport
+            a_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, a)
+            b_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, b)
+
+            if a_2d is None or b_2d is None:
+                print('a2d or b2d none')
+                return
+
+            angle = calc_angle(a_2d, b_2d)
+
+            # text_dim = blf.dimensions(font_id, text)
+            # text_dim = mathutils.Vector(text_dim) / 2.0
+            # point_3d[0] -= text_dim[0]
+            # point_3d -= mathutils.Vector((text_dim[0], text_dim[1], 0))
+
             point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
 
-        if point_2d is not None: # point_2d is None if position is behind camera
-            blf.size(font_id, 20.0, font_size)
-            blf.position(font_id, point_2d[0], point_2d[1], 0)
-            blf.draw(font_id, text)
+            if point_2d is None:
+                print('point2d none')
+                return
+
+
+        blf.enable(font_id, blf.ROTATION)
+        blf.size(font_id, 20.0, font_size)
+        blf.position(font_id, point_2d[0], point_2d[1], 0)
+        blf.rotation(font_id, angle)
+        blf.draw(font_id, text)
+        blf.disable(font_id, blf.ROTATION)
 
     def render(self, context):
         cache = ABManagement.cache
@@ -354,7 +400,7 @@ class ABManagement:
         # set background color
         # if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
         #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
-        #
+
         # elif context.space_data.region_3d.view_perspective == 'CAMERA':
         #     background_color = bpy.context.scene.atom_blend_addon_settings.background_color
         #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
