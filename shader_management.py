@@ -359,23 +359,25 @@ class ABManagement:
 
             # mapping the 3d point into the camera space
             x_pos, y_pos = img_writing_3d_to_2d(point_3d)
-            co_2d_a = img_writing_3d_to_2d(a)
-            co_2d_b = img_writing_3d_to_2d(b)
 
-            angle = calc_angle(co_2d_a, co_2d_b)
+            if bpy.context.scene.atom_blend_addon_settings.scaling_cube_rotate_font:
+                co_2d_a = img_writing_3d_to_2d(a)
+                co_2d_b = img_writing_3d_to_2d(b)
+                angle = calc_angle(co_2d_a, co_2d_b)
 
             point_2d = [x_pos, y_pos]
 
             # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
             # ui_scale = bpy.context.preferences.system.ui_scale
         else:  ### viewport
-            a_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, a)
-            b_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, b)
+            if bpy.context.scene.atom_blend_addon_settings.scaling_cube_rotate_font:
+                a_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, a)
+                b_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, b)
 
-            if a_2d is None or b_2d is None:
-                return
+                if a_2d is None or b_2d is None:
+                    return
 
-            angle = calc_angle(a_2d, b_2d)
+                angle = calc_angle(a_2d, b_2d)
 
             # text_dim = blf.dimensions(font_id, text)
             # text_dim = mathutils.Vector(text_dim) / 2.0
