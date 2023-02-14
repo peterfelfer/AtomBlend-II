@@ -48,3 +48,6 @@ class ABGlobals:
     render_frame = True  # if True, we render a picture, if False, we render a video
     animation_playing = False
     currently_writing_img = False
+
+    # legend
+    legend_pos = []

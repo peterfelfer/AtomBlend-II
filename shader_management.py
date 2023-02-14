@@ -28,7 +28,7 @@ class ABManagement:
         # line_shader = gpu.shader.from_builtin('3D_POLYLINE_UNIFORM_COLOR')
         # line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
         my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
-        triangle_shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+        legend_shader = GPUShader(ABShaders.legend_vertex_shader, ABShaders.legend_fragment_shader)
 
         # shader input
         ABGlobals.atom_color_list = []
@@ -132,7 +132,7 @@ class ABManagement:
         cache['shader'] = shader
         cache['my_line_shader'] = my_line_shader
         cache['camera'] = bpy.context.scene.camera
-        cache['triangle_shader'] = triangle_shader
+        cache['legend_shader'] = legend_shader
 
         # set background color
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = [1.0, 1.0, 1.0, 1.0]
@@ -148,8 +148,7 @@ class ABManagement:
         bpy.data.objects['Origin'].hide_viewport = True
 
         # set default path
-        bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes[
-                                                       "Scene"].render.filepath + ABGlobals.dataset_name + '.png'
+        bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
 
     def handler(self, context):
         # print('handler!')
@@ -176,40 +175,67 @@ class ABManagement:
 
         gpu.state.depth_mask_set(False)
 
-    def create_legend(self, context):
+    def create_legend(self, context, render_img=False):
         cache = ABManagement.cache
         cam_obj = bpy.context.scene.camera
         cam = cam_obj.data
-        # cam = bpy.context.camera
-        render = bpy.context.scene.render
-        width = int(render.resolution_x)
-        height = int(render.resolution_y)
 
-        frame = cam.view_frame(scene=bpy.context.scene)
+        viewport_width = bpy.context.region.width
+        viewport_height = bpy.context.region.height
+
+        render_width = bpy.context.scene.render.resolution_x
+        render_height = bpy.context.scene.render.resolution_y
+
+        frame = cam.view_frame(scene=bpy.context.scene)[2]
 
         # object space -> world space
-        frame = [cam_obj.matrix_world @ v for v in frame]
+        frame = cam_obj.matrix_world @ frame
 
         # world space -> screen space
-        frame_px = [ABManagement.get_3d_to_2d_viewport(self, v) for v in frame]
+        frame_px = ABManagement.get_3d_to_2d_viewport(self, frame)
+        if frame_px is None:
+            return
 
-        cam_2d_x = frame_px[2].x
-        cam_2d_y = frame_px[2].y
+        frame_px = (frame_px[0] + 50, frame_px[1] + 50)
+
 
         # print('frame px', frame_px[2])
 
         # vertices =  ((100, 100), (150, 100), (100, 150), (150, 150))
-        vertices =  ((cam_2d_x, cam_2d_y), (cam_2d_x+50, cam_2d_y), (cam_2d_x, cam_2d_y+50), (cam_2d_x+50, cam_2d_y+50))
-        indices = ((0, 1, 2), (2, 1, 3))
+        # vertices =  ((cam_2d_x, cam_2d_y), (cam_2d_x+50, cam_2d_y), (cam_2d_x, cam_2d_y+50), (cam_2d_x+50, cam_2d_y+50))
+        # indices = ((0, 1, 2), (2, 1, 3))
+        #
+        shader = cache['legend_shader']
 
-        shader = cache['triangle_shader']
-        batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
+        if render_img:
+            screen_space = (float(50.0 / render_width), float(50.0 / render_height))
+        else:
+            screen_space = (float(frame_px[0] / viewport_width), float(frame_px[1] / viewport_height))
+
+        screen_space = (screen_space[0] * 2.0 - 1.0, screen_space[1] * 2.0 - 1.0)
+        vertices = [(screen_space[0], screen_space[1], 0)]
+
+
+        colors = [(1,0,0,1)]
+        legend_size = 50.0
+        if render_img:
+            ps = [legend_size * 2.5]
+        else:
+            ps = [legend_size]
+        batch = batch_for_shader(shader, 'POINTS', {'position': vertices, 'color': colors, 'ps': ps})
 
         shader.bind()
-        shader.uniform_float('color', (1,0,0,1))
+        # shader.uniform_float('color', (1,0,0,1))
+        # shader.uniform_float('ps', 50.0)
+        # view_matrix = bpy.context.scene.camera.matrix_world.inverted()
+        # camera_matrix = bpy.context.scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
+        # proj_matrix = camera_matrix @ view_matrix
+        # object_matrix = bpy.data.objects['Top'].matrix_world
+        # shader.uniform_float('projection_matrix', proj_matrix)
+        # shader.uniform_float('object_matrix', object_matrix)
         batch.draw(shader)
 
-
+        print(vertices)
 
 
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
@@ -457,6 +483,10 @@ class ABManagement:
                 len(ABGlobals.atom_coords) != len(ABGlobals.point_size_list)) or (
                 len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
             print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
+
+        # print('position', ABGlobals.atom_coords)
+        # print('color', ABGlobals.atom_color_list)
+        # print('point size', ABGlobals.point_size_list)
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
         # uniform preparations
@@ -528,6 +558,8 @@ class ABManagement:
 
             # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
+
+            ABManagement.create_legend(self, context, render_img=True)
 
             buffer = fb.read_color(0, 0, width, height, 4, 0, 'UBYTE')
             buffer.dimensions = width * height * 4
