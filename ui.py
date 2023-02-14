@@ -536,7 +536,6 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
             split = split.split(factor=f[1] / perc_left)
             split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
 
-
         row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_line_width')
         row = col.row()
