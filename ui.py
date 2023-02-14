@@ -285,6 +285,7 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_uniform_color: bpy.props.FloatVectorProperty(name='', subtype='COLOR', description='Uniform color for scaling bar', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
     scaling_cube_line_width: bpy.props.FloatProperty(name='Line width', default=1.0, step=1.0, description='Line width of the scaling cube')
     scaling_cube_font_size: bpy.props.IntProperty(name='Font size', default=50, min=0, soft_min=0, description='Font size of metric')
+    scaling_cube_rotate_font: bpy.props.BoolProperty(name='Rotate font', default=True, description='Rotate the font to align the axes')
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -490,6 +491,59 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_automatic_file_loading')
 
 
+# --- scaling bar ---
+class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_scaling_cube"
+    bl_label = "Scaling cube"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+
+    @classmethod
+    def poll(cls, context):
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.atom_blend_addon_settings, 'scaling_cube', text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        col = layout.column()
+        row = col.row(align=True)
+        # if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
+        #
+        # else:
+        #     f = [0.3, 0.3, 0.4]
+        perc_left = 1.0
+        # col = box.column(align=True)
+        # row = col.row(align=True)
+        # split = row.split(factor=f[0] / perc_left)
+        # split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
+        # perc_left -= f[0]
+        # split = split.split(factor=f[1] / perc_left)
+        # split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
+        # perc_left -= f[1]
+
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
+        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
+
+            f = [0.5, 0.5]
+            split = row.split(factor=f[0] - perc_left)
+            perc_left -= f[0]
+
+            split = split.split(factor=f[1] / perc_left)
+            split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
+
+
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_line_width')
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_font_size')
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_font')
+
 # --- render settings ---
 class ATOMBLEND_PT_rendering(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_rendering"
@@ -551,32 +605,6 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
 
             if context.scene.atom_blend_addon_settings.file_format == 'JPEG':
                 transparent_background.enabled = False
-
-        # scaling cube
-        box = layout.box()
-        col = box.column()
-        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
-            f = [0.3, 0.7]
-        else:
-            f = [0.3, 0.3, 0.4]
-        perc_left = 1.0
-        # col = box.column(align=True)
-        row = col.row(align=True)
-        split = row.split(factor=f[0] / perc_left)
-        split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
-        perc_left -= f[0]
-        split = split.split(factor=f[1] / perc_left)
-        split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
-        perc_left -= f[1]
-
-        if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
-            split = split.split(factor=f[2] / perc_left)
-            split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
-
-        row = col.row()
-        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_line_width')
-        row = col.row()
-        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_font_size')
 
         if not ABGlobals.render_frame:
             # layout.row().separator(factor=0.01)
