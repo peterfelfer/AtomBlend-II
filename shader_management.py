@@ -18,12 +18,17 @@ import bpy_extras.object_utils as object_utils
 class ABManagement:
     cache = {}
 
+    def get_3d_to_2d_viewport(self, point_3d):
+        point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
+        return point_2d
+
     def init(self, context):
         # --- init shader ---
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
         # line_shader = gpu.shader.from_builtin('3D_POLYLINE_UNIFORM_COLOR')
         # line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
         my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
+        triangle_shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 
         # shader input
         ABGlobals.atom_color_list = []
@@ -127,6 +132,7 @@ class ABManagement:
         cache['shader'] = shader
         cache['my_line_shader'] = my_line_shader
         cache['camera'] = bpy.context.scene.camera
+        cache['triangle_shader'] = triangle_shader
 
         # set background color
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = [1.0, 1.0, 1.0, 1.0]
@@ -166,10 +172,45 @@ class ABManagement:
             # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context)
 
+        ABManagement.create_legend(self, context)
+
         gpu.state.depth_mask_set(False)
 
-    # def frame_change_handler(self, context):
-    #    pass
+    def create_legend(self, context):
+        cache = ABManagement.cache
+        cam_obj = bpy.context.scene.camera
+        cam = cam_obj.data
+        # cam = bpy.context.camera
+        render = bpy.context.scene.render
+        width = int(render.resolution_x)
+        height = int(render.resolution_y)
+
+        frame = cam.view_frame(scene=bpy.context.scene)
+
+        # object space -> world space
+        frame = [cam_obj.matrix_world @ v for v in frame]
+
+        # world space -> screen space
+        frame_px = [ABManagement.get_3d_to_2d_viewport(self, v) for v in frame]
+
+        cam_2d_x = frame_px[2].x
+        cam_2d_y = frame_px[2].y
+
+        # print('frame px', frame_px[2])
+
+        # vertices =  ((100, 100), (150, 100), (100, 150), (150, 150))
+        vertices =  ((cam_2d_x, cam_2d_y), (cam_2d_x+50, cam_2d_y), (cam_2d_x, cam_2d_y+50), (cam_2d_x+50, cam_2d_y+50))
+        indices = ((0, 1, 2), (2, 1, 3))
+
+        shader = cache['triangle_shader']
+        batch = batch_for_shader(shader, 'TRIS', {"pos": vertices}, indices=indices)
+
+        shader.bind()
+        shader.uniform_float('color', (1,0,0,1))
+        batch.draw(shader)
+
+
+
 
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
         cache = ABManagement.cache
