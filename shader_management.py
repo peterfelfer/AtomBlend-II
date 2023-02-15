@@ -176,6 +176,9 @@ class ABManagement:
         gpu.state.depth_mask_set(False)
 
     def create_legend(self, context, render_img=False):
+        if not context.scene.atom_blend_addon_settings.legend:
+            return
+
         cache = ABManagement.cache
         cam_obj = bpy.context.scene.camera
         cam = cam_obj.data
@@ -196,35 +199,44 @@ class ABManagement:
         if legend_pos_viewport is None:
             return
 
+        ui_scale = context.scene.atom_blend_addon_settings.legend_scale
+        legend_point_size = 20.0 * ui_scale
+        legend_point_font_space = 20.0 # space between element color point and element name
+
         corner_start_pos = mathutils.Vector((50.0, 50.0))
         legend_pos_viewport += corner_start_pos # for the viewport the lower left corner of camera can be zoomed in/out with camera wheel
         legend_pos_image = corner_start_pos # for rendered image the lower left corner is just (0,0)
         vertices = []
         colors = []
         point_size = []
-        legend_size = 20.0
         counter = 0
 
-        for elem_name in ABGlobals.all_elements_by_name:
-            color =  ABGlobals.all_elements_by_name[elem_name]['color']
+        debug = context.scene.atom_blend_addon_settings.debug_v_vs_r
+
+        print('type', type(bpy.context.scene.color_settings))
+        # go through color_settings in reverse order because legend
+        # should be displayed in the same order as in ui (the ui is drawn bottom to top)
+        keys = context.scene.color_settings.keys()
+        keys.reverse() # in place reverse
+        # remove the unknown label from its index and add it to the last row
+        keys.remove(ABGlobals.unknown_label)
+        keys.append(ABGlobals.unknown_label)
+        for k in keys:
+            prop = bpy.context.scene.color_settings[k]
+            elem_name = prop.name
+            color = prop.color
 
             if render_img:
-                point_size.append(legend_size * 2.5)
-                if counter is not 0:
-                    legend_pos_image += mathutils.Vector((0.0, legend_size * 2.5 + 5.0))
+                point_size.append(legend_point_size * debug)
+                if counter != 0:
+                    legend_pos_image += mathutils.Vector((0.0, legend_point_font_space * debug + 5.0))
                 screen_space = mathutils.Vector((float(legend_pos_image.x / render_width), float(legend_pos_image.y / render_height)))
 
-                # [0,1] -> [0, w/h]
-                # legend_pos_w_h = legend_pos_image * mathutils.Vector((render_width, render_height))
-
             else:
-                point_size.append(legend_size)
-                if counter is not 0:
-                    legend_pos_viewport += mathutils.Vector((0.0, legend_size + 5.0))
+                point_size.append(legend_point_size)
+                if counter != 0:
+                    legend_pos_viewport += mathutils.Vector((0.0, legend_point_font_space + 5.0))
                 screen_space = mathutils.Vector((float(legend_pos_viewport.x / viewport_width), float(legend_pos_viewport.y / viewport_height)))
-
-                # [0,1] -> [0, w/h]
-                # legend_pos_w_h = legend_pos_viewport * mathutils.Vector((viewport_width, viewport_height))
 
             clip_space = screen_space * mathutils.Vector((2.0, 2.0)) - mathutils.Vector((1.0, 1.0)) # [0,1] -> [-1,1] mapping
 
@@ -234,14 +246,19 @@ class ABManagement:
 
             # draw font
             font_id = 0
-            blf.color(font_id, 0, 0, 0, 1)
-            font_dim = blf.dimensions(font_id, elem_name) # high and low letters
+            font_size = int(50 * ui_scale)
+            color = context.scene.atom_blend_addon_settings.legend_font_color
+            blf.color(font_id, color[0], color[1], color[2], color[3])
+            font_dim = blf.dimensions(font_id, elem_name)
             if render_img:
-                blf.size(font_id, 20, int(50.0 * 2.5))
-                blf.position(font_id, legend_pos_image.x + 20 * 2.5, legend_pos_image.y - font_dim[1] / 2.0, 0)
+                radius = legend_point_size * debug / 2.0
+                blf.size(font_id, 20, int(font_size * debug))
+                blf.position(font_id, legend_pos_image.x + 20 * debug + radius, legend_pos_image.y - font_dim[1] / 2.0, 0)
                 print('legend pos image', legend_pos_image)
             else:
-                blf.position(font_id, legend_pos_viewport.x + 20, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
+                radius = legend_point_size / 2.0
+                blf.size(font_id, 20, font_size)
+                blf.position(font_id, legend_pos_viewport.x + 20 + radius, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
                 print('legend pos viewport', legend_pos_viewport)
             # blf.position(font_id, 100, 100, 0)
 
