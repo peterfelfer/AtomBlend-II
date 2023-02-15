@@ -287,6 +287,11 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_font_size: bpy.props.IntProperty(name='Font size', default=50, min=0, soft_min=0, description='Font size of metric')
     scaling_cube_rotate_font: bpy.props.BoolProperty(name='Rotate font', default=True, description='Rotate the font to align the axes')
 
+    legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
+    legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend')
+    legend_font_color: bpy.props.FloatVectorProperty(name='Font color', subtype='COLOR', description='Color of the legend font', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
+    debug_v_vs_r: bpy.props.FloatProperty(name='debug', default=2.5, min=0.0, soft_min=0.0, description='')
+
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
         items=[('Circle around tip', 'Circle around tip', 'Circle around tip'),
@@ -296,7 +301,7 @@ class AB_properties(bpy.types.PropertyGroup):
         update=update_animation_mode
     )
     file_format: bpy.props.EnumProperty(
-        name='File Format',
+        name='File format',
         items=[('PNG', 'PNG', 'PNG'),
                ('JPEG', 'JPEG', 'JPEG'),
                ('TIFF', 'TIFF', 'TIFF')],
@@ -490,6 +495,37 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_dataset_selection')
         col.prop(bpy.context.scene.atom_blend_addon_settings, 'dev_automatic_file_loading')
 
+
+# --- legend ---
+class ATOMBLEND_PT_legend(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_legend"
+    bl_label = "Legend"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+
+    @classmethod
+    def poll(cls, context):
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.atom_blend_addon_settings, 'legend', text="")
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'legend_scale')
+
+        row = col.row()
+        split = row.split(factor=0.3)
+        split.label(text='Font color:')
+        split = split.split(factor=1.0)
+        split.prop(context.scene.atom_blend_addon_settings, 'legend_font_color', text='')
+
+        row.prop(context.scene.atom_blend_addon_settings, 'debug_v_vs_r')
 
 # --- scaling bar ---
 class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
