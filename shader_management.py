@@ -186,56 +186,76 @@ class ABManagement:
         render_width = bpy.context.scene.render.resolution_x
         render_height = bpy.context.scene.render.resolution_y
 
-        frame = cam.view_frame(scene=bpy.context.scene)[2]
+        frame = cam.view_frame(scene=bpy.context.scene)[2] # lower left corner
 
         # object space -> world space
         frame = cam_obj.matrix_world @ frame
 
         # world space -> screen space
-        frame_px = ABManagement.get_3d_to_2d_viewport(self, frame)
-        if frame_px is None:
+        legend_pos_viewport = ABManagement.get_3d_to_2d_viewport(self, frame)
+        if legend_pos_viewport is None:
             return
 
-        frame_px = (frame_px[0] + 50, frame_px[1] + 50)
+        corner_start_pos = mathutils.Vector((50.0, 50.0))
+        legend_pos_viewport += corner_start_pos # for the viewport the lower left corner of camera can be zoomed in/out with camera wheel
+        legend_pos_image = corner_start_pos # for rendered image the lower left corner is just (0,0)
+        vertices = []
+        colors = []
+        point_size = []
+        legend_size = 20.0
+        counter = 0
 
+        for elem_name in ABGlobals.all_elements_by_name:
+            color =  ABGlobals.all_elements_by_name[elem_name]['color']
 
-        # print('frame px', frame_px[2])
+            if render_img:
+                point_size.append(legend_size * 2.5)
+                if counter is not 0:
+                    legend_pos_image += mathutils.Vector((0.0, legend_size * 2.5 + 5.0))
+                screen_space = mathutils.Vector((float(legend_pos_image.x / render_width), float(legend_pos_image.y / render_height)))
 
-        # vertices =  ((100, 100), (150, 100), (100, 150), (150, 150))
-        # vertices =  ((cam_2d_x, cam_2d_y), (cam_2d_x+50, cam_2d_y), (cam_2d_x, cam_2d_y+50), (cam_2d_x+50, cam_2d_y+50))
-        # indices = ((0, 1, 2), (2, 1, 3))
-        #
+                # [0,1] -> [0, w/h]
+                # legend_pos_w_h = legend_pos_image * mathutils.Vector((render_width, render_height))
+
+            else:
+                point_size.append(legend_size)
+                if counter is not 0:
+                    legend_pos_viewport += mathutils.Vector((0.0, legend_size + 5.0))
+                screen_space = mathutils.Vector((float(legend_pos_viewport.x / viewport_width), float(legend_pos_viewport.y / viewport_height)))
+
+                # [0,1] -> [0, w/h]
+                # legend_pos_w_h = legend_pos_viewport * mathutils.Vector((viewport_width, viewport_height))
+
+            clip_space = screen_space * mathutils.Vector((2.0, 2.0)) - mathutils.Vector((1.0, 1.0)) # [0,1] -> [-1,1] mapping
+
+            vertices.append((clip_space.x, clip_space.y, 0))
+            colors.append(color)
+            counter += 1
+
+            # draw font
+            font_id = 0
+            blf.color(font_id, 0, 0, 0, 1)
+            font_dim = blf.dimensions(font_id, elem_name) # high and low letters
+            if render_img:
+                blf.size(font_id, 20, int(50.0 * 2.5))
+                blf.position(font_id, legend_pos_image.x + 20 * 2.5, legend_pos_image.y - font_dim[1] / 2.0, 0)
+                print('legend pos image', legend_pos_image)
+            else:
+                blf.position(font_id, legend_pos_viewport.x + 20, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
+                print('legend pos viewport', legend_pos_viewport)
+            # blf.position(font_id, 100, 100, 0)
+
+            print('font dim', font_dim)
+            blf.draw(font_id, elem_name)
+
+        print('vertices', vertices)
+        print('colors', colors)
+        print('point size', point_size)
+
         shader = cache['legend_shader']
-
-        if render_img:
-            screen_space = (float(50.0 / render_width), float(50.0 / render_height))
-        else:
-            screen_space = (float(frame_px[0] / viewport_width), float(frame_px[1] / viewport_height))
-
-        screen_space = (screen_space[0] * 2.0 - 1.0, screen_space[1] * 2.0 - 1.0)
-        vertices = [(screen_space[0], screen_space[1], 0)]
-
-
-        colors = [(1,0,0,1)]
-        legend_size = 50.0
-        if render_img:
-            ps = [legend_size * 2.5]
-        else:
-            ps = [legend_size]
-        batch = batch_for_shader(shader, 'POINTS', {'position': vertices, 'color': colors, 'ps': ps})
-
+        batch = batch_for_shader(shader, 'POINTS', {'position': vertices, 'color': colors, 'ps': point_size})
         shader.bind()
-        # shader.uniform_float('color', (1,0,0,1))
-        # shader.uniform_float('ps', 50.0)
-        # view_matrix = bpy.context.scene.camera.matrix_world.inverted()
-        # camera_matrix = bpy.context.scene.camera.calc_matrix_camera(bpy.context.evaluated_depsgraph_get(), x=width, y=height, scale_x=render.pixel_aspect_x, scale_y=render.pixel_aspect_y)
-        # proj_matrix = camera_matrix @ view_matrix
-        # object_matrix = bpy.data.objects['Top'].matrix_world
-        # shader.uniform_float('projection_matrix', proj_matrix)
-        # shader.uniform_float('object_matrix', object_matrix)
         batch.draw(shader)
-
-        print(vertices)
 
 
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
