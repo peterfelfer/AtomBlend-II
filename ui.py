@@ -261,6 +261,22 @@ class AB_properties(bpy.types.PropertyGroup):
             bc = self.background_color
             context.scene.atom_blend_addon_settings.background_color = [bc[0], bc[1], bc[2], 1.0]
 
+    # only accept values that are in a acceptable range
+    def set_legend_position_x(self, value):
+        if 0 <= value <= bpy.data.scenes["Scene"].render.resolution_x:
+            self['legend_position_x'] = value
+
+    def get_legend_position_x(self):
+        return self.get('legend_position_x', 50) # if key is not found, return 50 (default)
+
+    # only accept values that are in a acceptable range
+    def set_legend_position_y(self, value):
+        if 0 <= value <= bpy.data.scenes["Scene"].render.resolution_y:
+            self['legend_position_y'] = value
+
+    def get_legend_position_y(self):
+        return self.get('legend_position_y', 50) # if key is not found, return 50 (default)
+
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
     rrng_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -290,6 +306,10 @@ class AB_properties(bpy.types.PropertyGroup):
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
     legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend')
     legend_font_color: bpy.props.FloatVectorProperty(name='Font color', subtype='COLOR', description='Color of the legend font', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
+    legend_position_x: bpy.props.IntProperty(name='X', description='Lower left corner x-position of the legend', min=0, default=50, set=set_legend_position_x, get=get_legend_position_x)
+    legend_position_y: bpy.props.IntProperty(name='Y', description='Lower left corner y-position of the legend', min=0, default=50, set=set_legend_position_y, get=get_legend_position_y)
+    legend_line_spacing: bpy.props.IntProperty(name='Line spacing', description='Line spacing between elements', min=0, default=20)
+
     debug_v_vs_r: bpy.props.FloatProperty(name='debug', default=2.5, min=0.0, soft_min=0.0, description='')
 
     animation_mode: bpy.props.EnumProperty(
@@ -507,6 +527,7 @@ class ATOMBLEND_PT_legend(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         # draw panel as soon as e_pos file is loaded
+        return True
         return ABGlobals.FileLoaded_e_pos
 
     def draw_header(self, context):
@@ -525,7 +546,21 @@ class ATOMBLEND_PT_legend(bpy.types.Panel):
         split = split.split(factor=1.0)
         split.prop(context.scene.atom_blend_addon_settings, 'legend_font_color', text='')
 
-        row.prop(context.scene.atom_blend_addon_settings, 'debug_v_vs_r')
+        # update max values for legend position
+
+
+        row = col.row()
+        x_pos = row.column(align=True)
+        x_pos.prop(context.scene.atom_blend_addon_settings, 'legend_position_x')
+        y_pos = row.column(align=True)
+        y_pos.prop(context.scene.atom_blend_addon_settings, 'legend_position_y')
+
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'legend_line_spacing')
+
+        # row.prop(context.area.spaces.active.region_3d, 'view_distance')
+        # context.area.spaces.active.region_3d.view_distance = 50.0
+        #row.prop(context.scene.atom_blend_addon_settings, 'debug_v_vs_r')
 
 # --- scaling bar ---
 class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
