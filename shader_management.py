@@ -11,6 +11,7 @@ from gpu_extras.batch import batch_for_shader
 from .globals import ABGlobals
 import numpy as np
 import bpy_extras
+import bpy_extras.view3d_utils
 import mathutils
 import bpy_extras.object_utils as object_utils
 
@@ -176,6 +177,16 @@ class ABManagement:
         gpu.state.depth_mask_set(False)
 
     def create_legend(self, context, render_img=False):
+        # functions to set a value/vec2 into relation with the render resolution to map it into the viewport
+        def in_relation_vec2(value):
+            return mathutils.Vector((value[0] / render_width, value[1] / render_height))
+
+        def in_relation_x(value):
+            return value / render_width
+
+        def in_relation_y(value):
+            return value / render_height
+
         if not context.scene.atom_blend_addon_settings.legend:
             return
 
@@ -189,23 +200,41 @@ class ABManagement:
         render_width = bpy.context.scene.render.resolution_x
         render_height = bpy.context.scene.render.resolution_y
 
-        frame = cam.view_frame(scene=bpy.context.scene)[2] # lower left corner
+        # upper_right = cam.view_frame(scene=bpy.context.scene)[0]
+        lower_right = cam.view_frame(scene=bpy.context.scene)[1]
+        lower_left = cam.view_frame(scene=bpy.context.scene)[2]
+        upper_left = cam.view_frame(scene=bpy.context.scene)[3]
 
         # object space -> world space
-        frame = cam_obj.matrix_world @ frame
+        lower_left = cam_obj.matrix_world @ lower_left
+        lower_right = cam_obj.matrix_world @ lower_right
+        upper_left = cam_obj.matrix_world @ upper_left
 
         # world space -> screen space
-        legend_pos_viewport = ABManagement.get_3d_to_2d_viewport(self, frame)
-        if legend_pos_viewport is None:
+        lower_left_viewport = ABManagement.get_3d_to_2d_viewport(self, lower_left)
+        lower_right_viewport = ABManagement.get_3d_to_2d_viewport(self, lower_right)
+        upper_left_viewport = ABManagement.get_3d_to_2d_viewport(self, upper_left)
+
+        if lower_left_viewport is None:
             return
+
+        viewport_camera_measurement = mathutils.Vector((lower_right_viewport.x - lower_left_viewport.x, upper_left_viewport.y - lower_left_viewport.y))
+        print('lower left', lower_left_viewport)
+        print('vp cam mesurement', viewport_camera_measurement)
 
         ui_scale = context.scene.atom_blend_addon_settings.legend_scale
         legend_point_size = 20.0 * ui_scale
-        legend_point_font_space = 20.0 # space between element color point and element name
+        line_spacing = context.scene.atom_blend_addon_settings.legend_line_spacing
 
-        corner_start_pos = mathutils.Vector((50.0, 50.0))
-        legend_pos_viewport += corner_start_pos # for the viewport the lower left corner of camera can be zoomed in/out with camera wheel
-        legend_pos_image = corner_start_pos # for rendered image the lower left corner is just (0,0)
+        legend_y_element_space = in_relation_y(line_spacing) * viewport_camera_measurement.y # space between element color point and element name
+
+        # we have to set the placement of the legend on the rendered image in relation to the viewport
+        legend_start_pos = mathutils.Vector((context.scene.atom_blend_addon_settings.legend_position_x, context.scene.atom_blend_addon_settings.legend_position_y))
+
+        legend_pos_viewport = lower_left_viewport + in_relation_vec2(legend_start_pos) * viewport_camera_measurement
+        print('lp vp', legend_pos_viewport)
+        # legend_pos_viewport = lower_left_viewport + legend_start_pos # for the viewport the lower left corner of camera can be zoomed in/out with camera wheel
+        legend_pos_image = legend_start_pos # for rendered image the lower left corner is just (0,0)
         vertices = []
         colors = []
         point_size = []
@@ -213,7 +242,6 @@ class ABManagement:
 
         debug = context.scene.atom_blend_addon_settings.debug_v_vs_r
 
-        print('type', type(bpy.context.scene.color_settings))
         # go through color_settings in reverse order because legend
         # should be displayed in the same order as in ui (the ui is drawn bottom to top)
         keys = context.scene.color_settings.keys()
@@ -223,19 +251,22 @@ class ABManagement:
         keys.append(ABGlobals.unknown_label)
         for k in keys:
             prop = bpy.context.scene.color_settings[k]
-            elem_name = prop.name
+            if prop.name == ABGlobals.unknown_label:
+                elem_name = 'n/a'
+            else:
+                elem_name = prop.name
             color = prop.color
 
             if render_img:
                 point_size.append(legend_point_size * debug)
                 if counter != 0:
-                    legend_pos_image += mathutils.Vector((0.0, legend_point_font_space * debug + 5.0))
+                    legend_pos_image += mathutils.Vector((0.0, legend_y_element_space * debug))
                 screen_space = mathutils.Vector((float(legend_pos_image.x / render_width), float(legend_pos_image.y / render_height)))
 
             else:
                 point_size.append(legend_point_size)
                 if counter != 0:
-                    legend_pos_viewport += mathutils.Vector((0.0, legend_point_font_space + 5.0))
+                    legend_pos_viewport += mathutils.Vector((0.0, legend_y_element_space))
                 screen_space = mathutils.Vector((float(legend_pos_viewport.x / viewport_width), float(legend_pos_viewport.y / viewport_height)))
 
             clip_space = screen_space * mathutils.Vector((2.0, 2.0)) - mathutils.Vector((1.0, 1.0)) # [0,1] -> [-1,1] mapping
@@ -249,31 +280,27 @@ class ABManagement:
             font_size = int(50 * ui_scale)
             color = context.scene.atom_blend_addon_settings.legend_font_color
             blf.color(font_id, color[0], color[1], color[2], color[3])
-            font_dim = blf.dimensions(font_id, elem_name)
             if render_img:
                 radius = legend_point_size * debug / 2.0
                 blf.size(font_id, 20, int(font_size * debug))
+                font_dim = blf.dimensions(font_id, elem_name)
                 blf.position(font_id, legend_pos_image.x + 20 * debug + radius, legend_pos_image.y - font_dim[1] / 2.0, 0)
                 print('legend pos image', legend_pos_image)
             else:
                 radius = legend_point_size / 2.0
                 blf.size(font_id, 20, font_size)
+                font_dim = blf.dimensions(font_id, elem_name)
                 blf.position(font_id, legend_pos_viewport.x + 20 + radius, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
                 print('legend pos viewport', legend_pos_viewport)
-            # blf.position(font_id, 100, 100, 0)
 
+            # blf.position(font_id, 100, 100, 0)
             print('font dim', font_dim)
             blf.draw(font_id, elem_name)
-
-        print('vertices', vertices)
-        print('colors', colors)
-        print('point size', point_size)
 
         shader = cache['legend_shader']
         batch = batch_for_shader(shader, 'POINTS', {'position': vertices, 'color': colors, 'ps': point_size})
         shader.bind()
         batch.draw(shader)
-
 
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
         cache = ABManagement.cache
@@ -326,7 +353,6 @@ class ABManagement:
             col_struct = bpy.context.scene.atom_blend_addon_settings.scaling_cube_uniform_color
             color = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
             color_list = [[color] * len(bounding_box_coords)][0]
-            print(color_list)
 
         # when rendering in viewport, we need to calculate the proj and object matrix, when rendering pictures / videos, we need the matrices from the camera
         if proj_matrix == None:
