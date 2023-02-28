@@ -223,7 +223,7 @@ class ABManagement:
         print('vp cam mesurement', viewport_camera_measurement)
 
         ui_scale = context.scene.atom_blend_addon_settings.legend_scale
-        legend_point_size = 20.0 * ui_scale
+        legend_point_size = in_relation_x(context.scene.atom_blend_addon_settings.legend_point_size) * viewport_camera_measurement.x
         line_spacing = context.scene.atom_blend_addon_settings.legend_line_spacing
 
         legend_y_element_space = in_relation_y(line_spacing) * viewport_camera_measurement.y # space between element color point and element name
@@ -239,8 +239,6 @@ class ABManagement:
         colors = []
         point_size = []
         counter = 0
-
-        debug = context.scene.atom_blend_addon_settings.debug_v_vs_r
 
         # go through color_settings in reverse order because legend
         # should be displayed in the same order as in ui (the ui is drawn bottom to top)
@@ -258,9 +256,9 @@ class ABManagement:
             color = prop.color
 
             if render_img:
-                point_size.append(legend_point_size * debug)
+                point_size.append(context.scene.atom_blend_addon_settings.legend_point_size)
                 if counter != 0:
-                    legend_pos_image += mathutils.Vector((0.0, legend_y_element_space * debug))
+                    legend_pos_image += mathutils.Vector((0.0, line_spacing))
                 screen_space = mathutils.Vector((float(legend_pos_image.x / render_width), float(legend_pos_image.y / render_height)))
 
             else:
@@ -277,24 +275,29 @@ class ABManagement:
 
             # draw font
             font_id = 0
-            font_size = int(50 * ui_scale)
             color = context.scene.atom_blend_addon_settings.legend_font_color
             blf.color(font_id, color[0], color[1], color[2], color[3])
             if render_img:
-                radius = legend_point_size * debug / 2.0
-                blf.size(font_id, 20, int(font_size * debug))
-                font_dim = blf.dimensions(font_id, elem_name)
-                blf.position(font_id, legend_pos_image.x + 20 * debug + radius, legend_pos_image.y - font_dim[1] / 2.0, 0)
+                radius = legend_point_size / 2.0
+                font_size = context.scene.atom_blend_addon_settings.legend_font_size
+                blf.size(font_id, font_size)
+                x_dim, y_dim = blf.dimensions(font_id, elem_name)
+                column_spacing = context.scene.atom_blend_addon_settings.legend_column_spacing
+                blf.position(font_id, legend_pos_image.x + column_spacing + radius, legend_pos_image.y - y_dim / 2.0, 0)
                 print('legend pos image', legend_pos_image)
             else:
                 radius = legend_point_size / 2.0
-                blf.size(font_id, 20, font_size)
-                font_dim = blf.dimensions(font_id, elem_name)
-                blf.position(font_id, legend_pos_viewport.x + 20 + radius, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
+                font_size = in_relation_y(context.scene.atom_blend_addon_settings.legend_font_size) * viewport_camera_measurement.y
+                blf.size(font_id, font_size)
+                x_dim, y_dim = blf.dimensions(font_id, elem_name)
+                print('font_dim', x_dim, y_dim)
+                # blf.position(font_id, legend_pos_viewport.x + 20 + radius, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
+                column_spacing = in_relation_x(context.scene.atom_blend_addon_settings.legend_column_spacing) * viewport_camera_measurement.x
+                blf.position(font_id, legend_pos_viewport.x + column_spacing + radius, legend_pos_viewport.y - (y_dim / 2.0), 0)
                 print('legend pos viewport', legend_pos_viewport)
 
             # blf.position(font_id, 100, 100, 0)
-            print('font dim', font_dim)
+            print('font dim', x_dim, y_dim)
             blf.draw(font_id, elem_name)
 
         shader = cache['legend_shader']
