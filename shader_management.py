@@ -222,7 +222,6 @@ class ABManagement:
         print('lower left', lower_left_viewport)
         print('vp cam mesurement', viewport_camera_measurement)
 
-        ui_scale = context.scene.atom_blend_addon_settings.legend_scale
         legend_point_size = in_relation_x(context.scene.atom_blend_addon_settings.legend_point_size) * viewport_camera_measurement.x
         line_spacing = context.scene.atom_blend_addon_settings.legend_line_spacing
 
@@ -243,12 +242,14 @@ class ABManagement:
         # go through color_settings in reverse order because legend
         # should be displayed in the same order as in ui (the ui is drawn bottom to top)
         keys = context.scene.color_settings.keys()
-        keys.reverse() # in place reverse
-        # remove the unknown label from its index and add it to the last row
         keys.remove(ABGlobals.unknown_label)
         keys.append(ABGlobals.unknown_label)
+        keys.reverse() # in place reverse
+        # remove the unknown label from its index and add it to the last row
         for k in keys:
             prop = bpy.context.scene.color_settings[k]
+            if not prop.display and context.scene.atom_blend_addon_settings.legend_hide_hidden_elements:
+                continue
             if prop.name == ABGlobals.unknown_label:
                 elem_name = 'n/a'
             else:
@@ -449,6 +450,36 @@ class ABManagement:
             ABManagement.draw_text(self, context, bbc_v[22], bbc_v[23], str(z_width) + ' nm')
 
     def draw_text(self, context, a, b, text):
+        def get_viewport_camera_mesaurement():
+            cam_obj = bpy.context.scene.camera
+            cam = cam_obj.data
+
+            # upper_right = cam.view_frame(scene=bpy.context.scene)[0]
+            lower_right = cam.view_frame(scene=bpy.context.scene)[1]
+            lower_left = cam.view_frame(scene=bpy.context.scene)[2]
+            upper_left = cam.view_frame(scene=bpy.context.scene)[3]
+
+            # object space -> world space
+            lower_left = cam_obj.matrix_world @ lower_left
+            lower_right = cam_obj.matrix_world @ lower_right
+            upper_left = cam_obj.matrix_world @ upper_left
+
+            # world space -> screen space
+            lower_left_viewport = ABManagement.get_3d_to_2d_viewport(self, lower_left)
+            lower_right_viewport = ABManagement.get_3d_to_2d_viewport(self, lower_right)
+            upper_left_viewport = ABManagement.get_3d_to_2d_viewport(self, upper_left)
+
+            if lower_left_viewport is None:
+                return
+
+            viewport_camera_measurement = mathutils.Vector((lower_right_viewport.x - lower_left_viewport.x, upper_left_viewport.y - lower_left_viewport.y))
+            return viewport_camera_measurement
+
+        # function to set a value into relation with the render resolution to map it into the viewport
+        def in_relation_y(value):
+            render_height = bpy.context.scene.render.resolution_y
+            return value / render_height
+
         # calculates angle between the points a and b in relation to the x-axis
         def calc_angle(a, b):
             delta_x = b[0] - a[0]
@@ -498,6 +529,9 @@ class ABManagement:
                 co_2d_b = img_writing_3d_to_2d(b)
                 angle = calc_angle(co_2d_a, co_2d_b)
 
+            font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
+            blf.size(font_id, font_size)
+
             point_2d = [x_pos, y_pos]
 
             # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
@@ -512,6 +546,15 @@ class ABManagement:
 
                 angle = calc_angle(a_2d, b_2d)
 
+                # map font size to viewport
+                if context.space_data.region_3d.view_perspective == 'CAMERA': # camera preview
+                    viewport_camera_measurement = get_viewport_camera_mesaurement()
+                    font_size = in_relation_y(context.scene.atom_blend_addon_settings.scaling_cube_font_size) * viewport_camera_measurement.y
+                    blf.size(font_id, font_size)
+                else:
+                    font_size = int(context.scene.atom_blend_addon_settings.scaling_cube_font_size / 2)
+                    blf.size(font_id, font_size)
+
             # text_dim = blf.dimensions(font_id, text)
             # text_dim = mathutils.Vector(text_dim) / 2.0
             # point_3d[0] -= text_dim[0]
@@ -523,7 +566,7 @@ class ABManagement:
                 return
 
         blf.enable(font_id, blf.ROTATION)
-        blf.size(font_id, 20.0, font_size)
+        # blf.size(font_id, 20.0, font_size)
         blf.rotation(font_id, angle)
         blf.position(font_id, point_2d[0], point_2d[1], 0)
         blf.draw(font_id, text)
