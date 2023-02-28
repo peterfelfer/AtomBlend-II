@@ -261,6 +261,19 @@ class AB_properties(bpy.types.PropertyGroup):
             bc = self.background_color
             context.scene.atom_blend_addon_settings.background_color = [bc[0], bc[1], bc[2], 1.0]
 
+    def update_legend_scale(self, context):
+        print('update legend scale')
+        scale = context.scene.atom_blend_addon_settings.legend_scale
+        default_line_spacing = 50
+        default_column_spacing = 20
+        default_point_size = 50
+        default_font_size = 30
+        context.scene.atom_blend_addon_settings.legend_line_spacing = int(default_line_spacing * scale)
+        context.scene.atom_blend_addon_settings.legend_column_spacing = int(default_column_spacing * scale)
+        context.scene.atom_blend_addon_settings.legend_point_size = int(default_point_size * scale)
+        context.scene.atom_blend_addon_settings.legend_font_size = int(default_font_size * scale)
+
+
     # only accept values that are in a acceptable range
     def set_legend_position_x(self, value):
         if 0 <= value <= bpy.data.scenes["Scene"].render.resolution_x:
@@ -304,7 +317,7 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_rotate_font: bpy.props.BoolProperty(name='Rotate font', default=True, description='Rotate the font to align the axes')
 
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
-    legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend')
+    legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend', update=update_legend_scale)
     legend_font_color: bpy.props.FloatVectorProperty(name='Font color', subtype='COLOR', description='Color of the legend font', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
     legend_position_x: bpy.props.IntProperty(name='x-position', description='Lower left corner x-position of the legend', min=0, default=50, set=set_legend_position_x, get=get_legend_position_x)
     legend_position_y: bpy.props.IntProperty(name='y-position', description='Lower left corner y-position of the legend', min=0, default=50, set=set_legend_position_y, get=get_legend_position_y)
@@ -312,6 +325,7 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_column_spacing: bpy.props.IntProperty(name='Column spacing', description='Column spacing between the colored circle and element name', min=0, default=20)
     legend_point_size: bpy.props.IntProperty(name='Point size', description='Point size of the colored circle', min=0, default=50)
     legend_font_size: bpy.props.IntProperty(name='Font size', description='Font size of the element names', min=0, default=30)
+    legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -524,6 +538,7 @@ class ATOMBLEND_PT_legend(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
@@ -540,6 +555,23 @@ class ATOMBLEND_PT_legend(bpy.types.Panel):
         row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'legend_scale')
 
+
+
+class ATOMBLEND_PT_legend_advanced_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_legend_advanced_settings"
+    bl_label = "Advanced settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = 'ATOMBLEND_PT_legend'
+
+    @classmethod
+    def poll(cls, context):
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
+
+    def draw(self, context):
+        layout = self.layout
         col = layout.column(align=True)
         row = col.row(align=True)
         x_pos = row.column(align=True)
@@ -564,6 +596,10 @@ class ATOMBLEND_PT_legend(bpy.types.Panel):
         split.label(text='Font color:')
         split = split.split(factor=1.0)
         split.prop(context.scene.atom_blend_addon_settings, 'legend_font_color', text='')
+
+        col = layout.column(align=True)
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'legend_hide_hidden_elements')
 
 
 # --- scaling bar ---
