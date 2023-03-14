@@ -565,6 +565,7 @@ class ATOMBLEND_PT_legend_advanced_settings(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
     bl_parent_id = 'ATOMBLEND_PT_legend'
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
@@ -610,6 +611,7 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
+    bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
