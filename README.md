@@ -2,20 +2,21 @@
 **Display and edit data from atom tips and render images or videos of your science.**
 
 <p float="left">
-  <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/eisenkorngrenze.gif" width="25%" height="25%"/>
-  <img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/iso-surface.gif" width="25%" height="25%"/>
+  <img src="media/eisenkorngrenze.gif" width="25%" height="25%"/>
+  <img src="media/iso-surface.gif" width="25%" height="25%"/>
 </p>
 
 ## Installation of the addon
 Install the addon as explained on [the Blender website](https://docs.blender.org/manual/en/latest/editors/preferences/addons.html).<br/>
-It can be helpful to clone this github repository directly into Blender's addons folder. By doing this you can easily pull updates from git instead of installing the addon on every update. In your Blender working directory AtomBlend-II should be located at [`./scripts/addons/AtomBlend-II/`](https://docs.blender.org/manual/en/latest/advanced/blender_directory_layout.html#path-layout).<br/>
+It can be helpful to clone this GitHub repository directly into Blender's addons folder. By doing this you can easily pull updates from git instead of installing the addon on every update. In your Blender working directory AtomBlend-II should be located at [`./scripts/addons/AtomBlend-II/`](https://docs.blender.org/manual/en/latest/advanced/blender_directory_layout.html#path-layout).<br/>
 Remember that the addon will not be automatically enabled. Enable it as explained [here](https://docs.blender.org/manual/en/latest/editors/preferences/addons.html#installing-add-ons).<br/>
 Restart Blender after installation and enabling.<br/>
 Go to 3D View, press `N` if the sidebar isn't showing yet, then click `AtomBlend-II`.
 
 ## Usage of the addon
 ### File loading
-<img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-file_loading.PNG"/>
+<img src="media/readme-file_loading.PNG">
+
 Click the file browser icon in the first line to load .pos or .epos files and the icon in the second line to load .rng or .rrng files.<br/>
 <b>Depending on your hardware, file loading may take a while! Try not to click anywhere while loading a file as Blender may crash in that case.</b>
 <br/><br/>
