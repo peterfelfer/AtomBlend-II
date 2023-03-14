@@ -21,27 +21,59 @@ Click the file browser icon in the first line to load .pos or .epos files and th
 <b>Depending on your hardware, file loading may take a while! Try not to click anywhere while loading a file as Blender may crash in that case.</b>
 <br/><br/>
 After loading both the .pos/.epos and .rng/.rrng files, your screen should look similar to this:
-<img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-after_file_loading.PNG" width="50%" height="50%"/>
+<img src="media/readme-after_file_loading.PNG" width="50%" height="50%"/>
 
 ### Display settings
+In this menu the appearance of the atom tip can be changed. You can hide specific elements or edit the color or shown percentage of a certain element.
+
 `Point size` - Changes the point size of all the atoms<br/>
 `Total displayed` - Changes the percentage of all the displayed atoms<br/>
 
 <b>The following lines describe the data for every element</b><br/>
 `Hide/Display icon` - Hides or displays the element<br/>
 `Name` - The name of the element (can not be changed)<br/>
-`Charge` - The charge of the element (can not be changed)<br/>
 `Color` - The color of this element<br/>
 `Point size` - The point size of this element<br/>
 `% Displayed` - The displayed percentage of this element<br/>
 `# Displayed` - The amount of displayed atoms of this element (can not be changed)<br/>
 `Export` - Exports this element as separate object in Blender (<b>As we are using point clouds to keep the frame time in the viewport fast, this feature can only be used in the [Blender alpha version (currently 3.5.0 Alpha)](https://builder.blender.org/download/daily/)</b>). Currently, it is not possible to change the color or point size of the exportet object. <br/>
 
+### Scaling Cube
+In this menu you can change the appearance of the scaling cube around the atom tip or disable it completely.
+
+<img src="media/readme-scaling_cube.PNG" width="50%" height="50%"/>
+
+`Scaling Cube` - Disable/Enable the scaling cube<br/>
+`RGB / Uniform` - Color the axes differently (x-axis red, y-axis green, z-axis blue) or choose a uniform color.<br/>
+`Line width` - Change the line width of the scaling cube<br/>
+`Font size` - Change the font size of the measurements of the scaling cube<br/>
+`Align font to axis` - If activated, the font of the scaling cube will be aligned to the axes<br/>
+
+### Legend
+In this menu you can change the appearance of the legend. Either scale the complete legend or make more detailed settings in `Advanced settings`.<br/>
+Open the `Preview` mode to see how the legend will look on your rendering.
+
+<img src="media/readme-legend.PNG" width="50%" height="50%"/>
+
+`Legend`- Disable/Enable the legend<br/>
+`Scale` - Change the scale of the complete legend<br/>
+
+Open the `Advanced settings` to make detailed settings to the appearance of the legend.<br/>
+`x-/y-position` - Change the x- or y-position of the legend<br/>
+`Line spacing` - Change the line spacing between the different elements<br/>
+`Column spacing` - Change the column spacing between the circles showing the color of the element and the element name<br/>
+`Point size` - Change the point size of the circles showing the color of the element<br/>
+`Font size` - Change the font size of the element names<br/>
+`Font color` - Change the font color of the element names<br/>
+`Hide hidden elements in legend` - If activated, the elements you hid in the `Display settings` will also be hidden in the legend<br/>
+
 ### Rendering
+In this menu you can first chose between rendering a picture or a video, make render settings and finally render your science.<br/>
 `Picture / Video` - Select if you want to render a picture or video<br/>
 
 #### Picture
-<img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-picture_rendering.PNG" width="50%" height="50%"/>
+Rendering a picture.<br/>
+<img src="media/readme-picture_rendering.PNG" width="50%" height="50%"/>
 
 `Camera distance` - Change the distance of the camera to the tip<br/>
 `Camera rotation` - Change the rotation of the tip<br/>
@@ -54,7 +86,8 @@ After loading both the .pos/.epos and .rng/.rrng files, your screen should look 
 `Render` - Render a picture of your tip. Currently, only PNG files are supported.<br/>
 
 #### Video
-<img src="https://github.com/peterfelfer/AtomBlend-II/blob/media/media/readme-video_rendering.PNG" width="50%" height="50%"/>
+Render a video<br/>
+<img src="media/readme-video_rendering.PNG" width="50%" height="50%"/>
 
 `Camera distance` - Change the distance of the camera to the tip<br/>
 `Camera rotation` - Change the start of the rotation of the tip<br/>
