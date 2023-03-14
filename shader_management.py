@@ -1,3 +1,5 @@
+import math
+
 import bpy
 import gpu
 import blf
@@ -322,19 +324,19 @@ class ABManagement:
         bounding_box_coords.append((xmax, ymax, zmin))
         bounding_box_coords.append((xmax, ymax, zmin))  # b
         bounding_box_coords.append((xmin, ymax, zmin))
-        bounding_box_coords.append((xmin, ymin, zmin))  # c
-        bounding_box_coords.append((xmin, ymax, zmin))
-        bounding_box_coords.append((xmax, ymin, zmin))  # d
+        bounding_box_coords.append((xmin, ymax, zmin))  # c
         bounding_box_coords.append((xmin, ymin, zmin))
+        bounding_box_coords.append((xmin, ymin, zmin))  # d
+        bounding_box_coords.append((xmax, ymin, zmin))
         # upper square
         bounding_box_coords.append((xmax, ymin, zmax))  # e
         bounding_box_coords.append((xmax, ymax, zmax))
         bounding_box_coords.append((xmax, ymax, zmax))  # f
         bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmin, ymin, zmax))  # g
-        bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmax, ymin, zmax))  # h
+        bounding_box_coords.append((xmin, ymax, zmax))  # g
         bounding_box_coords.append((xmin, ymin, zmax))
+        bounding_box_coords.append((xmin, ymin, zmax))  # h
+        bounding_box_coords.append((xmax, ymin, zmax))
         # lines from lower square to upper
         bounding_box_coords.append((xmax, ymin, zmin))  # i
         bounding_box_coords.append((xmax, ymin, zmax))
@@ -486,16 +488,36 @@ class ABManagement:
             delta_y = b[1] - a[1]
 
             angle = math.atan2(delta_y, delta_x)
-            # if axis == 'x':
-            #     print(angle)
-                # if angle > math.pi/2.0:
-                #     print('angle > x', angle, math.pi)
-                #     print('post angle', angle)
-            # print('angle', angle)
-            # angle = angle + (math.pi) # for some reason this doesnt work...
-            # print('post angle', angle)
+
+            # make sure font is oriented right
+            if a[0] > b[0]:
+                angle += math.pi
 
             return angle
+
+        # calculates position of the scaling cube font (depending on font size it's not exactly (a+b)/2)
+        def calc_pos(a, b):
+            len_vec_a_b = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)  # get length of line
+            font_dim = blf.dimensions(font_id, text)
+            print(font_dim, len_vec_a_b, a, b)
+            font_perc = float(font_dim[0] / len_vec_a_b)
+
+            # print(type(a))
+            a_vec = mathutils.Vector((a[0], a[1]))
+            b_vec = mathutils.Vector((b[0], b[1]))
+            # pos = a_vec + (b_vec * (0.5 - font_perc))
+
+            a_to_b_vec = b - a
+            font_perc = font_dim[0] / a_to_b_vec.length
+
+            if a[0] <= b[0]:
+                pos = a_2d + a_to_b_vec * (0.5 - font_perc * 0.5)
+            else:
+                pos = a_2d - a_to_b_vec * (0.5 - font_perc * 0.5)
+
+            print(len_vec_a_b, font_dim, font_perc, pos)
+
+            return pos
 
         # mapping the 3d point into the camera space
         def img_writing_3d_to_2d(point_3d):
@@ -514,7 +536,7 @@ class ABManagement:
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
-        point_3d = (a + b) / 2.0
+        point_3d = (a + b) * 0.5
         angle = 0
 
         if ABGlobals.currently_writing_img: # write picture
@@ -527,6 +549,9 @@ class ABManagement:
             if bpy.context.scene.atom_blend_addon_settings.scaling_cube_rotate_font:
                 co_2d_a = img_writing_3d_to_2d(a)
                 co_2d_b = img_writing_3d_to_2d(b)
+
+                # pos = calc_pos(co_2d_a, co_2d_b)
+
                 angle = calc_angle(co_2d_a, co_2d_b)
 
             font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
@@ -543,6 +568,12 @@ class ABManagement:
 
                 if a_2d is None or b_2d is None:
                     return
+
+                # pos = calc_pos(a_2d, b_2d)
+
+                # a_to_b_vec = b_2d - a_2d
+                # pos = a_2d + a_to_b_vec * 0.3
+                # perc = blf.dimensions
 
                 angle = calc_angle(a_2d, b_2d)
 
@@ -561,6 +592,7 @@ class ABManagement:
             # point_3d -= mathutils.Vector((text_dim[0], text_dim[1], 0))
 
             point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
+            # point_2d = pos
 
             if point_2d is None:
                 return
