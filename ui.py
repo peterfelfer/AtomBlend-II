@@ -313,8 +313,8 @@ class AB_properties(bpy.types.PropertyGroup):
     )
     scaling_cube_uniform_color: bpy.props.FloatVectorProperty(name='', subtype='COLOR', description='Uniform color for scaling bar', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
     scaling_cube_line_width: bpy.props.FloatProperty(name='Line width', default=1.0, step=1.0, description='Line width of the scaling cube')
-    scaling_cube_font_size: bpy.props.IntProperty(name='Font size', default=50, min=0, soft_min=0, description='Font size of metric')
-    scaling_cube_rotate_font: bpy.props.BoolProperty(name='Rotate font', default=True, description='Rotate the font to align the axes')
+    scaling_cube_font_size: bpy.props.IntProperty(name='Font size', default=30, min=0, soft_min=0, description='Font size of metric')
+    scaling_cube_rotate_font: bpy.props.BoolProperty(name='Align font to axis', default=True, description='Rotate the font to align the axes')
 
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
     legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend', update=update_legend_scale)
@@ -326,6 +326,7 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_point_size: bpy.props.IntProperty(name='Point size', description='Point size of the colored circle', min=0, default=50)
     legend_font_size: bpy.props.IntProperty(name='Font size', description='Font size of the element names', min=0, default=30)
     legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
+
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
