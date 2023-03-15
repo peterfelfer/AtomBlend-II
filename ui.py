@@ -406,6 +406,11 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
         col = load_rrng_file_row.column(align=True)
         col.operator('atom_blend_viewer.load_rrng_file', icon="FILE_FOLDER", text='')
 
+        # unload files button
+        if ABGlobals.FileLoaded_e_pos or ABGlobals.FileLoaded_rrng:
+            unload_files_row = layout.row(align=True)
+            unload_files_row.operator('atom_blend_viewer.unload_files')
+
 # --- display settings ---
 class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_shader_display_settings"  # unique identifier for buttons and menu items to reference.
@@ -883,6 +888,67 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         else:
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
+
+# unload file
+class ATOMBLEND_OT_unload_files(bpy.types.Operator):
+    bl_idname = "atom_blend_viewer.unload_files"
+    bl_label = "Unload .pos/.epos and .rng/.rrng file"
+    bl_description = "Unload the currently loaded files"
+
+    # filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    # filter_glob: bpy.props.StringProperty(
+    #     default='*.epos;*.pos',
+    #     options={'HIDDEN'}
+    # )
+
+    @classmethod
+    def poll(cls, context):
+        return ABGlobals.FileLoaded_e_pos or ABGlobals.FileLoaded_rrng
+
+    def execute(self, context):
+        # clear all data storages
+        ABGlobals.all_elements.clear()
+        ABGlobals.all_elements_by_name.clear()
+        ABGlobals.all_data = []
+        ABGlobals.element_count.clear()
+        ABGlobals.atom_coords.clear()
+        ABGlobals.atom_color_list.clear()
+        ABGlobals.point_size_list.clear()
+
+        # files are not loaded anymore
+        ABGlobals.FileLoaded_e_pos = False
+        ABGlobals.FileLoaded_rrng = False
+
+        # reset file paths
+        bpy.context.scene.atom_blend_addon_settings.e_pos_filepath = ''
+        bpy.context.scene.atom_blend_addon_settings.rrng_filepath = ''
+
+        # delete objects
+        obj = bpy.data.objects['Camera']
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+        obj = bpy.data.objects['Camera path']
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+        obj = bpy.data.objects['Center']
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+        obj = bpy.data.objects['Origin']
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+        obj = bpy.data.objects['Top']
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+        return {'FINISHED'}
+
+    # def invoke(self, context, event):
+    #     path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+    #     if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
+    #         self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+    #         return self.execute(context)
+    #     else:
+    #         context.window_manager.fileselect_add(self)
+    #         return {'RUNNING_MODAL'}
 
 
 # --- buttons for switching between rendering a picture and video ---
