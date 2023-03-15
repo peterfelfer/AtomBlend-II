@@ -319,32 +319,41 @@ class ABManagement:
         zmax = ABGlobals.max_z - bpy.data.objects['Top'].location[2]
         bounding_box_coords = []
 
+        #          6-----------7
+        #         /           /|
+        #       4-----------5  |
+        #       |           |  |
+        #       |           |  |
+        #       |  2        |  3
+        #       |           | /
+        #       0-----------1
+
         # lower square
-        bounding_box_coords.append((xmax, ymin, zmin))  # a
+        bounding_box_coords.append((xmax, ymin, zmin))  # a (0,1)
         bounding_box_coords.append((xmax, ymax, zmin))
-        bounding_box_coords.append((xmax, ymax, zmin))  # b
+        bounding_box_coords.append((xmax, ymax, zmin))  # b (1,3)
         bounding_box_coords.append((xmin, ymax, zmin))
-        bounding_box_coords.append((xmin, ymax, zmin))  # c
+        bounding_box_coords.append((xmin, ymax, zmin))  # c (3,2)
         bounding_box_coords.append((xmin, ymin, zmin))
-        bounding_box_coords.append((xmin, ymin, zmin))  # d
+        bounding_box_coords.append((xmin, ymin, zmin))  # d (2,0)
         bounding_box_coords.append((xmax, ymin, zmin))
         # upper square
-        bounding_box_coords.append((xmax, ymin, zmax))  # e
+        bounding_box_coords.append((xmax, ymin, zmax))  # e (4,5)
         bounding_box_coords.append((xmax, ymax, zmax))
-        bounding_box_coords.append((xmax, ymax, zmax))  # f
+        bounding_box_coords.append((xmax, ymax, zmax))  # f (5,7)
         bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmin, ymax, zmax))  # g
+        bounding_box_coords.append((xmin, ymax, zmax))  # g (7,6)
         bounding_box_coords.append((xmin, ymin, zmax))
-        bounding_box_coords.append((xmin, ymin, zmax))  # h
+        bounding_box_coords.append((xmin, ymin, zmax))  # h (6,4)
         bounding_box_coords.append((xmax, ymin, zmax))
         # lines from lower square to upper
-        bounding_box_coords.append((xmax, ymin, zmin))  # i
+        bounding_box_coords.append((xmax, ymin, zmin))  # i (0,4)
         bounding_box_coords.append((xmax, ymin, zmax))
-        bounding_box_coords.append((xmax, ymax, zmin))  # j
+        bounding_box_coords.append((xmax, ymax, zmin))  # j (1,5)
         bounding_box_coords.append((xmax, ymax, zmax))
-        bounding_box_coords.append((xmin, ymax, zmin))  # k
+        bounding_box_coords.append((xmin, ymax, zmin))  # k (3,7)
         bounding_box_coords.append((xmin, ymax, zmax))
-        bounding_box_coords.append((xmin, ymin, zmin))  # l
+        bounding_box_coords.append((xmin, ymin, zmin))  # l (2,6)
         bounding_box_coords.append((xmin, ymin, zmax))
 
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
