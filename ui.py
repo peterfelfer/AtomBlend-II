@@ -577,9 +577,8 @@ class ATOMBLEND_PT_legend(bpy.types.Panel):
         col = layout.column(align=True)
 
         row = col.row()
+        row.active = context.scene.atom_blend_addon_settings.legend
         row.prop(context.scene.atom_blend_addon_settings, 'legend_scale')
-
-
 
 class ATOMBLEND_PT_legend_advanced_settings(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_legend_advanced_settings"
@@ -599,24 +598,29 @@ class ATOMBLEND_PT_legend_advanced_settings(bpy.types.Panel):
         layout = self.layout
         col = layout.column(align=True)
         row = col.row(align=True)
+        row.active = context.scene.atom_blend_addon_settings.legend
         x_pos = row.column(align=True)
         x_pos.prop(context.scene.atom_blend_addon_settings, 'legend_position_x')
         y_pos = row.column(align=True)
         y_pos.prop(context.scene.atom_blend_addon_settings, 'legend_position_y')
 
         row = col.row(align=True)
+        row.active = context.scene.atom_blend_addon_settings.legend
         row.prop(context.scene.atom_blend_addon_settings, 'legend_line_spacing')
         row.prop(context.scene.atom_blend_addon_settings, 'legend_column_spacing')
 
         col = layout.column(align=True)
         row = col.row(align=True)
+        row.active = context.scene.atom_blend_addon_settings.legend
         row.prop(context.scene.atom_blend_addon_settings, 'legend_point_size')
 
         row = col.row(align=True)
+        row.active = context.scene.atom_blend_addon_settings.legend
         row.prop(context.scene.atom_blend_addon_settings, 'legend_font_size')
 
         col = layout.column(align=True)
         row = col.row()
+        row.active = context.scene.atom_blend_addon_settings.legend
         split = row.split(factor=0.3)
         split.label(text='Font color:')
         split = split.split(factor=1.0)
@@ -624,6 +628,7 @@ class ATOMBLEND_PT_legend_advanced_settings(bpy.types.Panel):
 
         col = layout.column(align=True)
         row = col.row()
+        row.active = context.scene.atom_blend_addon_settings.legend
         row.prop(context.scene.atom_blend_addon_settings, 'legend_hide_hidden_elements')
 
 
@@ -649,19 +654,8 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
 
         col = layout.column()
         row = col.row(align=True)
-        # if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'RGB':
-        #
-        # else:
-        #     f = [0.3, 0.3, 0.4]
+        row.active = context.scene.atom_blend_addon_settings.scaling_cube
         perc_left = 1.0
-        # col = box.column(align=True)
-        # row = col.row(align=True)
-        # split = row.split(factor=f[0] / perc_left)
-        # split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube')
-        # perc_left -= f[0]
-        # split = split.split(factor=f[1] / perc_left)
-        # split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
-        # perc_left -= f[1]
 
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
         if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
@@ -674,10 +668,15 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
             split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
 
         row = col.row()
+        row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_line_width')
+
         row = col.row()
+        row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_font_size')
+
         row = col.row()
+        row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_font')
 
 # --- render settings ---
