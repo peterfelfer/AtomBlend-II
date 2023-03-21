@@ -188,6 +188,20 @@ class AB_properties(bpy.types.PropertyGroup):
         offset = self.camera_rotation
         bpy.data.objects["Camera"].constraints["Follow Path"].offset = offset
 
+    def update_camera_track_to_center(self, context):
+        if self.camera_track_to_center:
+            top_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
+            top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
+            bpy.data.objects['Center'].location = (top_x, top_y, 0)
+
+    def update_camera_pos_x(self, context):
+        if not self.camera_track_to_center:
+            bpy.data.objects['Center'].location[0] = self.camera_pos_x
+
+    def update_camera_pos_z(self, context):
+        if not self.camera_track_to_center:
+            bpy.data.objects['Center'].location[2] = self.camera_pos_z
+
     def update_frame_amount(self, context):
         # set frame amount in path settings
         bpy.context.view_layer.objects.active = bpy.data.objects['Camera path']
@@ -273,7 +287,6 @@ class AB_properties(bpy.types.PropertyGroup):
         context.scene.atom_blend_addon_settings.legend_point_size = int(default_point_size * scale)
         context.scene.atom_blend_addon_settings.legend_font_size = int(default_font_size * scale)
 
-
     # only accept values that are in a acceptable range
     def set_legend_position_x(self, value):
         if 0 <= value <= bpy.data.scenes["Scene"].render.resolution_x:
@@ -297,10 +310,15 @@ class AB_properties(bpy.types.PropertyGroup):
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Changes the point size of all the atoms', update=update_point_size)
     display_all_elements: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.update_display_all_elements)
     background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
+
     transparent_background: bpy.props.BoolProperty(name='Transparent Background', description='Only available for .png and .tiff file format and image rendering', default=False, update=update_transparent_background)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
     camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, step=50, description='Edit the camera elevation', update=update_camera_elevation)
+    camera_track_to_center: bpy.props.BoolProperty(name='Track camera to center of atom tip', description='If enabled, the camera is always tracked to the center of the atom tip', default=True, update=update_camera_track_to_center)
+    camera_pos_x: bpy.props.FloatProperty(name='x-position', description='If the camera is not tracked to the atom tip\s center, the camera position can be edited', default=3.0, update=update_camera_pos_x)
+    camera_pos_z: bpy.props.FloatProperty(name='z-position', description='If the camera is not tracked to the atom tip\s center, the camera position can be edited', default=3.0, update=update_camera_pos_z)
+
     frames: bpy.props.IntProperty(name='Frames', default=5, description='Duration of video', update=update_frame_amount, step=5)
     duration: bpy.props.FloatProperty(name='Duration (seconds)', precision=2, description='Duration of the video', min=0.0, soft_min=0.0, step=0.5, update=update_duration)
     rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, description='Number of rotations', update=update_frame_amount)
@@ -686,15 +704,6 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         render_mode_row.operator('atom_blend.render_frame', depress=ABGlobals.render_frame)
         render_mode_row.operator('atom_blend.render_video', depress=not ABGlobals.render_frame)
 
-        # camera location
-        box = layout.box()
-        col = box.column(align=True)
-        col.prop(context.scene.atom_blend_addon_settings, 'camera_distance')
-        col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
-        col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
-
-        # layout.row().separator(factor=0.01)
-
         # background color
         box = layout.box()
         col = box.column()
@@ -800,6 +809,53 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
 
         render_col = row.split()
         render_col.operator('atom_blend.render', icon='RENDER_STILL')
+
+class ATOMBLEND_PT_camera_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_camera_settings"
+    bl_label = "Camera settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
+
+    def draw(self, context):
+        # camera location
+        layout = self.layout
+        col = layout.column(align=True)
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_distance')
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
+
+
+class ATOMBLEND_PT_camera_settings_track_to_center(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_camera_settings_track_to_center"
+    bl_label = "Track camera to center of atom tip"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = 'ATOMBLEND_PT_camera_settings'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.atom_blend_addon_settings, 'camera_track_to_center', text='')
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row()
+        row.active = not context.scene.atom_blend_addon_settings.camera_track_to_center
+        row.prop(context.scene.atom_blend_addon_settings, 'camera_pos_x')
+        row.prop(context.scene.atom_blend_addon_settings, 'camera_pos_z')
 
 
 # --- file loading ---
