@@ -586,14 +586,14 @@ class ABManagement:
 
                 angle = calc_angle(a_2d, b_2d)
 
-                # map font size to viewport
-                if context.space_data.region_3d.view_perspective == 'CAMERA': # camera preview
-                    viewport_camera_measurement = get_viewport_camera_mesaurement()
-                    font_size = in_relation_y(context.scene.atom_blend_addon_settings.scaling_cube_font_size) * viewport_camera_measurement.y
-                    blf.size(font_id, font_size)
-                else:
-                    font_size = int(context.scene.atom_blend_addon_settings.scaling_cube_font_size / 2)
-                    blf.size(font_id, font_size)
+            # map font size to viewport
+            if context.space_data.region_3d.view_perspective == 'CAMERA': # camera preview
+                viewport_camera_measurement = get_viewport_camera_mesaurement()
+                font_size = in_relation_y(context.scene.atom_blend_addon_settings.scaling_cube_font_size) * viewport_camera_measurement.y
+                blf.size(font_id, font_size)
+            else:
+                font_size = int(context.scene.atom_blend_addon_settings.scaling_cube_font_size / 2)
+                blf.size(font_id, font_size)
 
             # text_dim = blf.dimensions(font_id, text)
             # text_dim = mathutils.Vector(text_dim) / 2.0
