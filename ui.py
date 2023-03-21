@@ -287,6 +287,24 @@ class AB_properties(bpy.types.PropertyGroup):
         context.scene.atom_blend_addon_settings.legend_point_size = int(default_point_size * scale)
         context.scene.atom_blend_addon_settings.legend_font_size = int(default_font_size * scale)
 
+    def update_scaling_cube_track_to_center(self, context):
+        if self.scaling_cube_track_to_center:
+            top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
+            bpy.data.objects['Top'].location = (0, 0, top_z)
+
+    def update_scaling_cube_pos_x(self, context):
+        if not self.scaling_cube_track_to_center:
+            bpy.data.objects['Top'].location[0] = self.scaling_cube_pos_x
+
+    def update_scaling_cube_pos_y(self, context):
+        if not self.scaling_cube_track_to_center:
+            bpy.data.objects['Top'].location[1] = self.scaling_cube_pos_y
+
+    def update_scaling_cube_pos_z(self, context):
+        if not self.scaling_cube_track_to_center:
+            top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
+            bpy.data.objects['Top'].location[2] = top_z + self.scaling_cube_pos_z
+
     # only accept values that are in a acceptable range
     def set_legend_position_x(self, value):
         if 0 <= value <= bpy.data.scenes["Scene"].render.resolution_x:
@@ -302,6 +320,7 @@ class AB_properties(bpy.types.PropertyGroup):
 
     def get_legend_position_y(self):
         return self.get('legend_position_y', 50) # if key is not found, return 50 (default)
+
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -333,6 +352,10 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_line_width: bpy.props.FloatProperty(name='Line width', default=1.0, step=1.0, description='Line width of the scaling cube')
     scaling_cube_font_size: bpy.props.IntProperty(name='Font size', default=30, min=0, soft_min=0, description='Font size of metric')
     scaling_cube_rotate_font: bpy.props.BoolProperty(name='Align font to axis', default=True, description='Rotate the font to align the axes')
+    scaling_cube_track_to_center: bpy.props.BoolProperty(name='Track scaling cube to center of atom tip', description='If enabled, the scaling box is tracked to the center of the atom tip', default=True, update=update_scaling_cube_track_to_center)
+    scaling_cube_pos_x: bpy.props.FloatProperty(name='x-position', description='If the scaling cube is not tracked to the atom tip\s center, the scaling cube position can be edited', default=0.0, update=update_scaling_cube_pos_x)
+    scaling_cube_pos_y: bpy.props.FloatProperty(name='y-position', description='If the scaling cube is not tracked to the atom tip\s center, the scaling cube position can be edited', default=0.0, update=update_scaling_cube_pos_y)
+    scaling_cube_pos_z: bpy.props.FloatProperty(name='z-position', description='If the scaling cube is not tracked to the atom tip\s center, the scaling cube position can be edited', default=0.0, update=update_scaling_cube_pos_z)
 
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
     legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend', update=update_legend_scale)
@@ -344,7 +367,6 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_point_size: bpy.props.IntProperty(name='Point size', description='Point size of the colored circle', min=0, default=50)
     legend_font_size: bpy.props.IntProperty(name='Font size', description='Font size of the element names', min=0, default=30)
     legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
-
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -678,6 +700,32 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
         row = col.row()
         row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_font')
+
+class ATOMBLEND_PT_scaling_cube_track_to_center(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_scaling_cube_track_to_center"
+    bl_label = "Track scaling cube to center of atom tip"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+    bl_parent_id = 'ATOMBLEND_PT_scaling_cube'
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        # draw panel as soon as e_pos file is loaded
+        return ABGlobals.FileLoaded_e_pos
+
+    def draw_header(self, context):
+        self.layout.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_track_to_center', text='')
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row()
+        row.active = not context.scene.atom_blend_addon_settings.scaling_cube_track_to_center
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_pos_x')
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_pos_y')
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_pos_z')
 
 # --- render settings ---
 class ATOMBLEND_PT_rendering(bpy.types.Panel):

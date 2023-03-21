@@ -311,10 +311,10 @@ class ABManagement:
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
         cache = ABManagement.cache
         line_shader = cache['my_line_shader']
-        xmin = ABGlobals.min_x
-        xmax = ABGlobals.max_x
-        ymin = ABGlobals.min_y
-        ymax = ABGlobals.max_y
+        xmin = ABGlobals.min_x - bpy.data.objects['Top'].location[0]
+        xmax = ABGlobals.max_x - bpy.data.objects['Top'].location[0]
+        ymin = ABGlobals.min_y - bpy.data.objects['Top'].location[1]
+        ymax = ABGlobals.max_y - bpy.data.objects['Top'].location[1]
         zmin = ABGlobals.min_z - bpy.data.objects['Top'].location[2]
         zmax = ABGlobals.max_z - bpy.data.objects['Top'].location[2]
         bounding_box_coords = []
