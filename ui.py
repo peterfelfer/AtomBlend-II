@@ -692,10 +692,15 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
             split = split.split(factor=f[1] / perc_left)
             split.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_uniform_color')
 
-        row = col.row()
+        row = col.row(align=True)
         row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_line_width')
 
+        col = layout.column(align=True)
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_scale')
+
+        col = layout.column(align=True)
         row = col.row()
         row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_font_size')
@@ -708,8 +713,6 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_round')
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_round_digits')
 
-        row = col.row()
-        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_scale')
 
 class ATOMBLEND_PT_scaling_cube_track_to_center(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_scaling_cube_track_to_center"
@@ -1173,7 +1176,6 @@ class ATOMBLEND_OT_preview(bpy.types.Operator):
 
     def execute(self, context):
         # toggle (normal) perspective view and camera view
-        # todo?: doesnt work when pressing numpad+0
         if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
             context.space_data.region_3d.view_perspective = 'CAMERA'
             # background_color = bpy.context.scene.atom_blend_addon_settings.background_color
