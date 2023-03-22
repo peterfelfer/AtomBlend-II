@@ -311,12 +311,17 @@ class ABManagement:
     def create_bounding_box(self, context, proj_matrix=None, object_matrix=None):
         cache = ABManagement.cache
         line_shader = cache['my_line_shader']
-        xmin = ABGlobals.min_x - bpy.data.objects['Top'].location[0]
-        xmax = ABGlobals.max_x - bpy.data.objects['Top'].location[0]
-        ymin = ABGlobals.min_y - bpy.data.objects['Top'].location[1]
-        ymax = ABGlobals.max_y - bpy.data.objects['Top'].location[1]
-        zmin = ABGlobals.min_z - bpy.data.objects['Top'].location[2]
-        zmax = ABGlobals.max_z - bpy.data.objects['Top'].location[2]
+
+        # multiply min and max by the scale of the scaling box. the range of x and y is app. [-x, x] and [-y, y] while the range of z is app. [0, z].
+        scale = context.scene.atom_blend_addon_settings.scaling_cube_scale
+        xmin = ABGlobals.min_x * scale[0] - bpy.data.objects['Top'].location[0]
+        xmax = ABGlobals.max_x * scale[0] - bpy.data.objects['Top'].location[0]
+        ymin = ABGlobals.min_y * scale[1] - bpy.data.objects['Top'].location[1]
+        ymax = ABGlobals.max_y * scale[1] - bpy.data.objects['Top'].location[1]
+        zmin = (ABGlobals.min_z - bpy.data.objects['Top'].location[2]) * scale[2]
+        zmax = (ABGlobals.max_z - bpy.data.objects['Top'].location[2]) * scale[2]
+
+        print('minmaxz', zmin, zmax)
         bounding_box_coords = []
 
         #          6-----------7
@@ -385,6 +390,16 @@ class ABManagement:
         batch.draw(line_shader)
 
     def get_nearest_points_metric(self, context, bbc):
+        def round_width(width):
+            if context.scene.atom_blend_addon_settings.scaling_cube_round:
+                digits = context.scene.atom_blend_addon_settings.scaling_cube_round_digits
+                width = round(width, digits)
+
+                if width % 1 == 0:  # check if the decimal part is 0, if yes cut it off. e.g. 100.0 -> 100
+                    width = int(width)
+
+            return width
+
         # get the view matrix of the current view space view (in order to get the position of the "viewport camera") and calculate the nearest x, y and z axis
         v3d = [a for a in bpy.context.screen.areas if a.type == 'VIEW_3D'][0]
         r3d = v3d.spaces[0].region_3d
@@ -392,6 +407,9 @@ class ABManagement:
         loc, rot, sca = view_mat.decompose()
 
         bbc_v = [mathutils.Vector(x) for x in bbc]
+
+        # scaling box scale
+        scale = context.scene.atom_blend_addon_settings.scaling_cube_scale
 
         # calculate nearest y axis and draw text for y width
         a = bbc_v[0] + bbc_v[1]
@@ -403,7 +421,9 @@ class ABManagement:
         c_len = (loc - c).length
 
         # y
-        y_width = round(ABGlobals.max_y - ABGlobals.min_y)
+        y_width = ABGlobals.max_y - ABGlobals.min_y
+        y_width = round_width(y_width * scale[1])
+
         if a_len <= c_len:
             ABManagement.draw_text(self, context, bbc_v[0], bbc_v[1], str(y_width) + ' nm')
         else:
@@ -419,7 +439,9 @@ class ABManagement:
         d_len = (loc - d).length
 
         #x
-        x_width = round(ABGlobals.max_x - ABGlobals.min_x)
+        x_width = ABGlobals.max_x - ABGlobals.min_x
+        x_width = round_width(x_width * scale[0])
+
         if b_len <= d_len:
             ABManagement.draw_text(self, context, bbc_v[1], bbc_v[3], str(x_width) + ' nm')
         else:
@@ -448,7 +470,9 @@ class ABManagement:
         l_len = (loc - l).length
         z_lenghts.append(l_len)
 
-        z_width = round(ABGlobals.max_z - ABGlobals.min_z)
+        z_width = ABGlobals.max_z - ABGlobals.min_z
+        z_width = round_width(z_width * scale[2])
+
         min_index = z_lenghts.index(min(z_lenghts))
 
         if min_index == 0:
@@ -707,7 +731,8 @@ class ABManagement:
             batch.draw(shader)
 
             # ABManagement.render_metric(self, context)
-            ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
+            if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
+                ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
 
             ABManagement.create_legend(self, context, render_img=True)
 

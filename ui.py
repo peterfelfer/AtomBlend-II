@@ -356,6 +356,9 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_pos_x: bpy.props.FloatProperty(name='x-position', description='If the scaling cube is not tracked to the atom tip\s center, the scaling cube position can be edited', default=0.0, update=update_scaling_cube_pos_x)
     scaling_cube_pos_y: bpy.props.FloatProperty(name='y-position', description='If the scaling cube is not tracked to the atom tip\s center, the scaling cube position can be edited', default=0.0, update=update_scaling_cube_pos_y)
     scaling_cube_pos_z: bpy.props.FloatProperty(name='z-position', description='If the scaling cube is not tracked to the atom tip\s center, the scaling cube position can be edited', default=0.0, update=update_scaling_cube_pos_z)
+    scaling_cube_round: bpy.props.BoolProperty(name='Round', default=True, description='If activated, the size of the atom tip is rounded by the specified number of digits')
+    scaling_cube_round_digits: bpy.props.IntProperty(name='Digits', default=0, soft_min=-4, soft_max=10, description='The number of digits that should be rounded')
+    scaling_cube_scale: bpy.props.FloatVectorProperty(name='Scale', description='Scale the scaling cube', min=0.0, size=3, default=[1.0, 1.0, 1.0])
 
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
     legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend', update=update_legend_scale)
@@ -700,6 +703,13 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
         row = col.row()
         row.active = context.scene.atom_blend_addon_settings.scaling_cube
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_font')
+
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_round')
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_round_digits')
+
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_scale')
 
 class ATOMBLEND_PT_scaling_cube_track_to_center(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_scaling_cube_track_to_center"
