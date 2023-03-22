@@ -599,6 +599,9 @@ class AtomBlendAddon:
         if(ABGlobals.FileLoaded_rrng):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
+        # activate camera preview
+        context.space_data.region_3d.view_perspective = 'CAMERA'
+
         ABManagement.init(self, context)
 
     def load_pos_file(self, context):
@@ -652,5 +655,8 @@ class AtomBlendAddon:
         # if both rrng and (e)pos file are loaded, we combine these two files
         if (ABGlobals.FileLoaded_rrng):
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
+
+        # activate camera preview
+        context.space_data.region_3d.view_perspective = 'CAMERA'
 
         ABManagement.init(self, context)
