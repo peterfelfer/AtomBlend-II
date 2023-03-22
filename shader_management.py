@@ -530,14 +530,14 @@ class ABManagement:
 
         # calculates position of the scaling cube font (depending on font size it's not exactly (a+b)/2)
         def calc_pos(a, b):
-            len_vec_a_b = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)  # get length of line
+            # len_vec_a_b = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)  # get length of line
             font_dim = blf.dimensions(font_id, text)
-            print(font_dim, len_vec_a_b, a, b)
-            font_perc = float(font_dim[0] / len_vec_a_b)
+            # print(font_dim, len_vec_a_b, a, b)
+            # font_perc = float(font_dim[0] / len_vec_a_b)
 
             # print(type(a))
-            a_vec = mathutils.Vector((a[0], a[1]))
-            b_vec = mathutils.Vector((b[0], b[1]))
+            # a_vec = mathutils.Vector((a[0], a[1]))
+            # b_vec = mathutils.Vector((b[0], b[1]))
             # pos = a_vec + (b_vec * (0.5 - font_perc))
 
             a_to_b_vec = b - a
@@ -545,12 +545,18 @@ class ABManagement:
 
             if a[0] <= b[0]:
                 pos = a_2d + a_to_b_vec * (0.5 - font_perc * 0.5)
+                # pos = a_2d + a_to_b_vec * (font_perc * 0.5)
+                col = (1,0,0,1)
             else:
-                pos = a_2d - a_to_b_vec * (0.5 - font_perc * 0.5)
+                pos = b_2d - a_to_b_vec * (0.5 - font_perc * 0.5)
+                # pos = a_2d - a_to_b_vec * (font_perc * 0.5)
+                col = (0,1,0,1)
 
-            print(len_vec_a_b, font_dim, font_perc, pos)
 
-            return pos
+
+            # print(len_vec_a_b, font_dim, font_perc, pos)
+
+            return pos, col
 
         # mapping the 3d point into the camera space
         def img_writing_3d_to_2d(point_3d):
@@ -602,11 +608,12 @@ class ABManagement:
                 if a_2d is None or b_2d is None:
                     return
 
-                # pos = calc_pos(a_2d, b_2d)
+                pos, col = calc_pos(a_2d, b_2d)
 
                 # a_to_b_vec = b_2d - a_2d
                 # pos = a_2d + a_to_b_vec * 0.3
                 # perc = blf.dimensions
+                blf.color(font_id, col[0], col[1], col[2], 1)
 
                 angle = calc_angle(a_2d, b_2d)
 
@@ -625,7 +632,7 @@ class ABManagement:
             # point_3d -= mathutils.Vector((text_dim[0], text_dim[1], 0))
 
             point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
-            # point_2d = pos
+            point_2d = pos
 
             if point_2d is None:
                 return
