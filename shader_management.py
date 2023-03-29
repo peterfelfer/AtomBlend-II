@@ -546,17 +546,13 @@ class ABManagement:
             if a[0] <= b[0]:
                 pos = a_2d + a_to_b_vec * (0.5 - font_perc * 0.5)
                 # pos = a_2d + a_to_b_vec * (font_perc * 0.5)
-                col = (1,0,0,1)
             else:
                 pos = b_2d - a_to_b_vec * (0.5 - font_perc * 0.5)
                 # pos = a_2d - a_to_b_vec * (font_perc * 0.5)
-                col = (0,1,0,1)
-
-
 
             # print(len_vec_a_b, font_dim, font_perc, pos)
 
-            return pos, col
+            return pos
 
         # mapping the 3d point into the camera space
         def img_writing_3d_to_2d(point_3d):
@@ -570,7 +566,8 @@ class ABManagement:
             x_pos = round(co_2d.x * render_size[0])  # / render_size[0]
             y_pos = round(co_2d.y * render_size[1])  # / render_size[1]
 
-            return [x_pos, y_pos]
+            # return [x_pos, y_pos]
+            return mathutils.Vector((x_pos, y_pos))
 
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
@@ -583,20 +580,21 @@ class ABManagement:
             cam = scene.camera
 
             # mapping the 3d point into the camera space
-            x_pos, y_pos = img_writing_3d_to_2d(point_3d)
-
             if bpy.context.scene.atom_blend_addon_settings.scaling_cube_rotate_font:
-                co_2d_a = img_writing_3d_to_2d(a)
-                co_2d_b = img_writing_3d_to_2d(b)
+                a_2d = img_writing_3d_to_2d(a)
+                b_2d = img_writing_3d_to_2d(b)
 
-                # pos = calc_pos(co_2d_a, co_2d_b)
+                pos = calc_pos(a_2d, b_2d)
 
-                angle = calc_angle(co_2d_a, co_2d_b)
+                angle = calc_angle(a_2d, b_2d)
+            else:
+                pos = img_writing_3d_to_2d(point_3d)
 
             font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
             blf.size(font_id, font_size)
 
-            point_2d = [x_pos, y_pos]
+            # point_2d = [x_pos, y_pos]
+            point_2d = [pos[0], pos[1]]
 
             # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
             # ui_scale = bpy.context.preferences.system.ui_scale
@@ -608,14 +606,16 @@ class ABManagement:
                 if a_2d is None or b_2d is None:
                     return
 
-                pos, col = calc_pos(a_2d, b_2d)
+                pos = calc_pos(a_2d, b_2d)
 
                 # a_to_b_vec = b_2d - a_2d
                 # pos = a_2d + a_to_b_vec * 0.3
                 # perc = blf.dimensions
-                blf.color(font_id, col[0], col[1], col[2], 1)
 
                 angle = calc_angle(a_2d, b_2d)
+            else:
+                # pos = img_writing_3d_to_2d(point_3d)
+                pos = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
 
             # map font size to viewport
             if context.space_data.region_3d.view_perspective == 'CAMERA': # camera preview
