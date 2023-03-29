@@ -20,8 +20,10 @@ Go to 3D View, press `N` if the sidebar isn't showing yet, then click `AtomBlend
 Click the file browser icon in the first line to load .pos or .epos files and the icon in the second line to load .rng or .rrng files.<br/>
 <b>Depending on your hardware, file loading may take a while! Try not to click anywhere while loading a file as Blender may crash in that case.</b>
 <br/><br/>
-After loading both the .pos/.epos and .rng/.rrng files, your screen should look similar to this:
+After loading both the .pos/.epos and .rng/.rrng files, your screen should look similar to this:<br/>
 <img src="media/readme-after_file_loading.PNG" width="50%" height="50%"/>
+
+Click `Unload .pos/.epos and .rng/.rrng file` to unload both files.
 
 ### Display settings
 In this menu the appearance of the atom tip can be changed. You can hide specific elements or edit the color or shown percentage of a certain element.
@@ -46,8 +48,12 @@ In this menu you can change the appearance of the scaling cube around the atom t
 `Scaling Cube` - Disable/Enable the scaling cube<br/>
 `RGB / Uniform` - Color the axes differently (x-axis red, y-axis green, z-axis blue) or choose a uniform color.<br/>
 `Line width` - Change the line width of the scaling cube<br/>
+`Scale` - Change the size of the scaling cube regarding the x, y or z axis<br/>
 `Font size` - Change the font size of the measurements of the scaling cube<br/>
 `Align font to axis` - If activated, the font of the scaling cube will be aligned to the axes<br/>
+`Round` - If enabled the measurements of the scaling cube will be rounded by the specified number of `Digits`<br/>
+`Track scaling cube to center of atom tip` - If enabled, the scaling cube is tracked to the center of the atom tip<br/>
+`x/y/z-position` - If the scaling cube is not tracked to the center of the atom tip, the scaling cube can be moved along a certain axis<br/>
 
 ### Legend
 In this menu you can change the appearance of the legend. Either scale the complete legend or make more detailed settings in `Advanced settings`.<br/>
@@ -67,17 +73,23 @@ Open the `Advanced settings` to make detailed settings to the appearance of the 
 `Font color` - Change the font color of the element names<br/>
 `Hide hidden elements in legend` - If activated, the elements you hid in the `Display settings` will also be hidden in the legend<br/>
 
+### Camera settings
+Make camera settings<br/>
+<img src="media/readme-camera_settings.PNG" width="50%" height="50%"/>
+`Camera distance` - Change the distance of the camera to the tip<br/>
+`Camera rotation` - Change the rotation of the tip<br/>
+`Camera elevation` - Change the elevation of the camera<br/>
+`Track camera to center of atom tip` - If enabled, the camera is always tracked to the center of the atom tip<br/>
+`x/z-position` - If the camera is not tracked to the center of the atom tip, the camera position can be moved.
+
 ### Rendering
 In this menu you can first chose between rendering a picture or a video, make render settings and finally render your science.<br/>
 `Picture / Video` - Select if you want to render a picture or video<br/>
 
 #### Picture
-Rendering a picture.<br/>
+Rendering a picture<br/>
 <img src="media/readme-picture_rendering.PNG" width="50%" height="50%"/>
 
-`Camera distance` - Change the distance of the camera to the tip<br/>
-`Camera rotation` - Change the rotation of the tip<br/>
-`Camera elevation` - Change the elevation of the camera<br/>
 `Background color` - Change the background color of the rendering<br/>
 `Transparent Background` - Enable a transparent background. Only available for PNG and TIFF images as JPG images don't support transparency<br/> 
 `File Format` - Select the file format of your rendering. Currently, you can select between PNG, JPG and TIFF<br/>

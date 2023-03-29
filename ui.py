@@ -581,8 +581,8 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
 
 
 # --- legend ---
-class ATOMBLEND_PT_legend(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_legend"
+class ATOMBLEND_PT_legend_basic(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_legend_basic"
     bl_label = "Legend"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -611,7 +611,7 @@ class ATOMBLEND_PT_legend_advanced_settings(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    bl_parent_id = 'ATOMBLEND_PT_legend'
+    bl_parent_id = 'ATOMBLEND_PT_legend_basic'
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
