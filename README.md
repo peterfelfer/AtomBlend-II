@@ -1,4 +1,4 @@
-# AtomBlend-II: A visualization addon for Blender (3.0+)
+# AtomBlend-II: A visualization addon for Blender (3.5+)
 **Display and edit data from atom tips and render images or videos of your science.**
 
 <p float="left">
@@ -38,7 +38,7 @@ In this menu the appearance of the atom tip can be changed. You can hide specifi
 `Point size` - The point size of this element<br/>
 `% Displayed` - The displayed percentage of this element<br/>
 `# Displayed` - The amount of displayed atoms of this element (can not be changed)<br/>
-`Export` - Exports this element as separate object in Blender (<b>As we are using point clouds to keep the frame time in the viewport fast, this feature can only be used in the [Blender alpha version (currently 3.5.0 Alpha)](https://builder.blender.org/download/daily/)</b>). Currently, it is not possible to change the color or point size of the exportet object. <br/>
+`Export` - Exports this element as separate object in Blender (<b>As we are using point clouds to keep the frame time in the viewport fast, this feature can only be used in the [Blender alpha version (currently 3.6.0 Alpha)](https://builder.blender.org/download/daily/)</b>). Currently, it is not possible to change the color or point size of the exported object. <br/>
 
 ### Scaling Cube
 In this menu you can change the appearance of the scaling cube around the atom tip or disable it completely.
