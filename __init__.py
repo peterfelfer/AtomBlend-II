@@ -3,7 +3,7 @@ bl_info = {
     "name": "AtomBlend-II",
     "author": "Juliane Reithmeier",
     "version": (1, 0, 0),
-    "blender": (3, 0, 1),
+    "blender": (3, 5, 0),
     "description": "Display and edit data from atom tips and render images or videos of your science",
     "category": "View",
     "warning": "",
