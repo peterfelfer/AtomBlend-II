@@ -394,10 +394,10 @@ class AB_properties(bpy.types.PropertyGroup):
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
-        items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01', 'Eisenkorngrenze', 'Eisenkorngrenze'),
+        items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05', 'Eisenkorngrenze', 'Eisenkorngrenze'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
-        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01',
+        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05',
         # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 

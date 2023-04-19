@@ -33,7 +33,7 @@ In this menu the appearance of the atom tip can be changed. You can hide specifi
 
 <b>The following lines describe the data for every element</b><br/>
 `Hide/Display icon` - Hides or displays the element<br/>
-`Name` - The name of the element (can not be changed)<br/>
+`Name` - The name of the element<br/>
 `Color` - The color of this element<br/>
 `Point size` - The point size of this element<br/>
 `% Displayed` - The displayed percentage of this element<br/>
