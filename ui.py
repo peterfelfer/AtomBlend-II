@@ -160,7 +160,8 @@ class DisplaySettings(bpy.types.PropertyGroup):
         # deselect object
         bpy.data.objects[self.name].select_set(False)
 
-    name: bpy.props.StringProperty(name="Test Property", default="Unknown")
+    name: bpy.props.StringProperty(name="name", default="Unknown")
+    display_name: bpy.props.StringProperty(name="name", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
@@ -349,7 +350,7 @@ class AB_properties(bpy.types.PropertyGroup):
         default='RGB',
     )
     scaling_cube_uniform_color: bpy.props.FloatVectorProperty(name='', subtype='COLOR', description='Uniform color for scaling bar', min=0.0, max=1.0, size=4, default=[0.0, 0.0, 0.0, 1.0])
-    scaling_cube_line_width: bpy.props.FloatProperty(name='Line width', default=1.0, step=1.0, description='Line width of the scaling cube')
+    scaling_cube_line_width: bpy.props.IntProperty(name='Line width', default=1, step=1, min=1, soft_min=1, description='Line width of the scaling cube')
     scaling_cube_font_size: bpy.props.IntProperty(name='Font size', default=30, min=0, soft_min=0, description='Font size of metric')
     scaling_cube_rotate_font: bpy.props.BoolProperty(name='Align font to axis', default=True, description='Rotate the font to align the axes')
     scaling_cube_track_to_center: bpy.props.BoolProperty(name='Track scaling cube to center of atom tip', description='If enabled, the scaling box is tracked to the center of the atom tip', default=True, update=update_scaling_cube_track_to_center)
@@ -491,7 +492,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         display_col = split.column(align=True)
         perc_left -= f[0]
         split = split.split(factor=f[1] / perc_left)
-        name_col = split.column(align=True)
+        display_name_col = split.column(align=True)
         perc_left -= f[1]
         # split = split.split(factor=f[2] / perc_left)
         # charge_col = split.column(align=True)
@@ -516,15 +517,15 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         prop = context.scene.atom_blend_addon_settings
         display_col.prop(prop, 'display_all_elements', icon_only=True, icon='HIDE_OFF' if prop.display_all_elements else 'HIDE_ON')
         # display_col.label(text='')
-        name_col.label(text='Name')
+        display_name_col.label(text='Name')
         color_col.label(text='Color')
         point_size_col.label(text='Point size')
         displayed_col.label(text='% Displayed')
         amount_col.label(text='# Displayed')
         export_col.label(text='Export')
 
-        # export feature is only available if (currently) version 3.4. alpha is used
-        if bpy.app.version < (3, 5, 0):
+        # export feature is only available if (currently) version 3.6 alpha is used
+        if bpy.app.version < (3, 6, 0):
             export_col.enabled = False
 
         display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
@@ -532,11 +533,12 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         for prop in bpy.context.scene.color_settings:
             if prop.name == ABGlobals.unknown_label:  # add unknown atoms in the last row
                 continue
-
-            elem_name_charge = prop.name
+            elem_name_charge = prop.display_name
+            print(elem_name_charge)
             elem_name = elem_name_charge.split('_')[0]
             display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
-            name_col.label(text=elem_name)
+            # name_col.label(text=elem_name)
+            display_name_col.prop(prop, 'display_name', text='')
             color_col.prop(prop, 'color')
             point_size_col.prop(prop, 'point_size')
             displayed_col.prop(prop, 'perc_displayed')
@@ -550,7 +552,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         elem_name_charge = prop.name
         elem_name = elem_name_charge.split('_')[0]
         display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
-        name_col.label(text=elem_name)
+        display_name_col.prop(prop, 'display_name', text='')
         color_col.prop(prop, 'color')
         point_size_col.prop(prop, 'point_size')
         displayed_col.prop(prop, 'perc_displayed')

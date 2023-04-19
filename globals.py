@@ -31,7 +31,7 @@ class ABGlobals:
     #atomic_numbers = []
     element_count = {}  # counts the amount of each element to pass the correct amount of colors to the shader later
     atom_coords = []
-    unknown_label = 'n/a_n/a'
+    unknown_label = 'n/a'
     max_x = 0
     min_x = 0
     max_y = 0

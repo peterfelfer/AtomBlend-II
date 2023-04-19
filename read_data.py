@@ -65,6 +65,7 @@ class AtomBlendAddon:
         # add the unknown element to color structures
         element_color_settings = bpy.context.scene.color_settings.add()
         element_color_settings.name = ABGlobals.unknown_label
+        element_color_settings.display_name = ABGlobals.unknown_label
         element_color_settings.color = (0.4, 0.4, 0.4, 1.0)
         # element_color_settings.color = (1.0, 0.0, 0.0, 1.0)
 
@@ -183,7 +184,8 @@ class AtomBlendAddon:
             # print('READ DATA', elem)
             bpy.context.scene.color_settings[elem].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
 
-
+        # disable the unknown atoms by default
+        bpy.context.scene.color_settings[ABGlobals.unknown_label].display = False
 
         '''
         # build atom color list
@@ -313,6 +315,7 @@ class AtomBlendAddon:
                 if elem_name not in bpy.context.scene.color_settings:
                     element_color_settings = bpy.context.scene.color_settings.add()
                     element_color_settings.name = elem_name
+                    element_color_settings.display_name = elem_name
                     element_color_settings.point_size = general_point_size
                     element_color_settings.color = this_elem['color']
                     # element_color_settings.point_size = 5.0
@@ -400,6 +403,7 @@ class AtomBlendAddon:
             if elem_name not in bpy.context.scene.color_settings:
                 element_color_settings = bpy.context.scene.color_settings.add()
                 element_color_settings.name = elem_name
+                element_color_settings.display_name = elem_name
                 element_color_settings.point_size = general_point_size
                 element_color_settings.color = this_elem['color']
                 # element_color_settings.point_size = 5.0
@@ -499,6 +503,7 @@ class AtomBlendAddon:
                 if elem_name not in bpy.context.scene.color_settings:
                     element_color_settings = bpy.context.scene.color_settings.add()
                     element_color_settings.name = elem_name
+                    element_color_settings.display_name = elem_name
                     element_color_settings.point_size = general_point_size
                     element_color_settings.color = this_element['color']
                     # element_color_settings.point_size = 5.0
