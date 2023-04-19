@@ -35,27 +35,20 @@ class ABManagement:
 
         # shader input
         ABGlobals.atom_color_list = []
+
+        # init point sizes
+        ABGlobals.point_size_list = []
+
         for elem_name in ABGlobals.all_elements_by_name:
-            # print(elem_name, ABGlobals.all_elements_by_name[elem_name]['num_displayed'])
-            # elem_amount = len(ABGlobals.all_elements_by_name[elem_name]['coordinates'])
-            # col_struct = bpy.context.scene.color_settings[elem_name].color
-            # col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            # ABGlobals.atom_color_list.append([col] * elem_amount)
+            num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
+            point_size = bpy.context.scene.color_settings[elem_name].point_size
+            ABGlobals.point_size_list.append([point_size] * num_displayed)
 
-            # init point sizes
-            ABGlobals.point_size_list = []
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
+            ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-            for elem_name in ABGlobals.all_elements_by_name:
-                num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
-                point_size = bpy.context.scene.color_settings[elem_name].point_size
-                ABGlobals.point_size_list.append([point_size] * num_displayed)
-                # print(elem_name, point_size, num_displayed, len(ABGlobals.point_size_list))
-
-            # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-            if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
-                ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
-            bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
+        bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
         '''
         # check if we have a list for each element for the atom coords and atom color list
         # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
@@ -221,8 +214,6 @@ class ABManagement:
             return
 
         viewport_camera_measurement = mathutils.Vector((lower_right_viewport.x - lower_left_viewport.x, upper_left_viewport.y - lower_left_viewport.y))
-        print('lower left', lower_left_viewport)
-        print('vp cam mesurement', viewport_camera_measurement)
 
         legend_point_size = in_relation_x(context.scene.atom_blend_addon_settings.legend_point_size) * viewport_camera_measurement.x
         line_spacing = context.scene.atom_blend_addon_settings.legend_line_spacing
@@ -233,7 +224,6 @@ class ABManagement:
         legend_start_pos = mathutils.Vector((context.scene.atom_blend_addon_settings.legend_position_x, context.scene.atom_blend_addon_settings.legend_position_y))
 
         legend_pos_viewport = lower_left_viewport + in_relation_vec2(legend_start_pos) * viewport_camera_measurement
-        print('lp vp', legend_pos_viewport)
         # legend_pos_viewport = lower_left_viewport + legend_start_pos # for the viewport the lower left corner of camera can be zoomed in/out with camera wheel
         legend_pos_image = legend_start_pos # for rendered image the lower left corner is just (0,0)
         vertices = []
@@ -252,10 +242,8 @@ class ABManagement:
             prop = bpy.context.scene.color_settings[k]
             if not prop.display and context.scene.atom_blend_addon_settings.legend_hide_hidden_elements:
                 continue
-            if prop.name == ABGlobals.unknown_label:
-                elem_name = 'n/a'
-            else:
-                elem_name = prop.name
+
+            elem_name = prop.display_name
             color = prop.color
 
             if render_img:
@@ -287,20 +275,16 @@ class ABManagement:
                 x_dim, y_dim = blf.dimensions(font_id, elem_name)
                 column_spacing = context.scene.atom_blend_addon_settings.legend_column_spacing
                 blf.position(font_id, legend_pos_image.x + column_spacing + radius, legend_pos_image.y - y_dim / 2.0, 0)
-                print('legend pos image', legend_pos_image)
             else:
                 radius = legend_point_size / 2.0
                 font_size = in_relation_y(context.scene.atom_blend_addon_settings.legend_font_size) * viewport_camera_measurement.y
                 blf.size(font_id, font_size)
                 x_dim, y_dim = blf.dimensions(font_id, elem_name)
-                print('font_dim', x_dim, y_dim)
                 # blf.position(font_id, legend_pos_viewport.x + 20 + radius, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
                 column_spacing = in_relation_x(context.scene.atom_blend_addon_settings.legend_column_spacing) * viewport_camera_measurement.x
                 blf.position(font_id, legend_pos_viewport.x + column_spacing + radius, legend_pos_viewport.y - (y_dim / 2.0), 0)
-                print('legend pos viewport', legend_pos_viewport)
 
             # blf.position(font_id, 100, 100, 0)
-            print('font dim', x_dim, y_dim)
             blf.draw(font_id, elem_name)
 
         shader = cache['legend_shader']
@@ -321,7 +305,6 @@ class ABManagement:
         zmin = (ABGlobals.min_z - bpy.data.objects['Top'].location[2]) * scale[2]
         zmax = (ABGlobals.max_z - bpy.data.objects['Top'].location[2]) * scale[2]
 
-        print('minmaxz', zmin, zmax)
         bounding_box_coords = []
 
         #          6-----------7
