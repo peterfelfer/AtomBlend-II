@@ -77,21 +77,29 @@ class ABManagement:
 
         # --- init other things needed for shader drawing ---
         # create empty to move the atom tip to the center (0,0,0)
-        top_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
-        top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
-        top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
+        center_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
+        center_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
+        center_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
 
-        # print(top_x, top_y, top_z)
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, top_z))
+        # print(center_x, center_y, center_z)
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, ABGlobals.max_z))
         bpy.data.objects['Empty'].name = 'Top'
 
         # create empty representing the approximate center of the atom tip
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(top_x, top_y, 0))
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(center_x, center_y, center_z))
         bpy.data.objects['Empty'].name = 'Center'
 
         # create empty representing the origin (0,0,0)
         bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
         bpy.data.objects['Empty'].name = 'Origin'
+
+        # create empty representing the origin of the scaling cube
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+        bpy.data.objects['Empty'].name = 'Scaling Cube'
+
+        # create empty representing the approximate center of the atom tip
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(center_x, center_y, center_z))
+        bpy.data.objects['Empty'].name = 'Camera Tracker'
 
         # rotate tip 180 degrees around x axis
         bpy.data.objects['Top'].rotation_euler[0] = math.pi
@@ -113,7 +121,7 @@ class ABManagement:
         bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
         bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
         constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
-        constraint.target = bpy.data.objects['Center']
+        constraint.target = bpy.data.objects['Camera Tracker']
         bpy.data.curves['BezierCircle'].path_duration = context.scene.atom_blend_addon_settings.frames
         bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frames
         bpy.data.cameras["Camera"].clip_end = 5000
@@ -145,6 +153,12 @@ class ABManagement:
 
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
+
+        # set default positions for camera sliders
+        center_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
+        center_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
+        context.scene.atom_blend_addon_settings.camera_pos_x = center_x
+        context.scene.atom_blend_addon_settings.camera_pos_z = center_z
 
     def handler(self, context):
         # print('handler!')
@@ -296,14 +310,32 @@ class ABManagement:
         cache = ABManagement.cache
         line_shader = cache['my_line_shader']
 
-        # multiply min and max by the scale of the scaling box. the range of x and y is app. [-x, x] and [-y, y] while the range of z is app. [0, z].
+        # multiply min and max by the scale of the scaling box. the range of x and y is app. [-x, x] and [-y, y] while the range of z is app. [0, z], therefore we need another calculation for z.
         scale = context.scene.atom_blend_addon_settings.scaling_cube_scale
-        xmin = ABGlobals.min_x * scale[0] - bpy.data.objects['Top'].location[0]
-        xmax = ABGlobals.max_x * scale[0] - bpy.data.objects['Top'].location[0]
-        ymin = ABGlobals.min_y * scale[1] - bpy.data.objects['Top'].location[1]
-        ymax = ABGlobals.max_y * scale[1] - bpy.data.objects['Top'].location[1]
-        zmin = (ABGlobals.min_z - bpy.data.objects['Top'].location[2]) * scale[2]
-        zmax = (ABGlobals.max_z - bpy.data.objects['Top'].location[2]) * scale[2]
+        center_z = ABGlobals.max_z / 2.0
+        xmin = bpy.data.objects['Scaling Cube'].location[0] + ABGlobals.min_x * scale[0]
+        xmax = bpy.data.objects['Scaling Cube'].location[0] + ABGlobals.max_x * scale[0]
+        ymin = bpy.data.objects['Scaling Cube'].location[1] + ABGlobals.min_y * scale[1]
+        ymax = bpy.data.objects['Scaling Cube'].location[1] + ABGlobals.max_y * scale[1]
+        zmin = bpy.data.objects['Scaling Cube'].location[2] - (center_z * scale[2]) + center_z
+        zmax = bpy.data.objects['Scaling Cube'].location[2] + (center_z * scale[2]) + center_z
+        # zmin = ABGlobals.min_z
+        # zmax = ABGlobals.max_z
+        # zmin = (ABGlobals.min_z + bpy.data.objects['Center'].location[2]) * scale[2]
+        # zmax = (ABGlobals.max_z + bpy.data.objects['Center'].location[2]) * scale[2]
+
+        print('SCALING CUBE LOC')
+        print(bpy.data.objects['Scaling Cube'].location)
+
+        print('ABGLOBALS')
+        print('x', ABGlobals.min_x, ABGlobals.max_x)
+        print('y', ABGlobals.min_y, ABGlobals.max_y)
+        print('z', ABGlobals.min_z, ABGlobals.max_z)
+
+        print('CBB')
+        print('x', xmin, xmax)
+        print('y', ymin, ymax)
+        print('z', zmin, zmax)
 
         bounding_box_coords = []
 
@@ -468,7 +500,7 @@ class ABManagement:
             ABManagement.draw_text(self, context, bbc_v[22], bbc_v[23], str(z_width) + ' nm')
 
     def draw_text(self, context, a, b, text):
-        def get_viewport_camera_mesaurement():
+        def get_viewport_camera_measurement():
             cam_obj = bpy.context.scene.camera
             cam = cam_obj.data
 
@@ -534,7 +566,6 @@ class ABManagement:
                 # pos = a_2d - a_to_b_vec * (font_perc * 0.5)
 
             # print(len_vec_a_b, font_dim, font_perc, pos)
-
             return pos
 
         # mapping the 3d point into the camera space
@@ -602,7 +633,7 @@ class ABManagement:
 
             # map font size to viewport
             if context.space_data.region_3d.view_perspective == 'CAMERA': # camera preview
-                viewport_camera_measurement = get_viewport_camera_mesaurement()
+                viewport_camera_measurement = get_viewport_camera_measurement()
                 font_size = in_relation_y(context.scene.atom_blend_addon_settings.scaling_cube_font_size) * viewport_camera_measurement.y
                 blf.size(font_id, font_size)
             else:
