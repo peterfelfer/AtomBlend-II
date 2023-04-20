@@ -190,18 +190,27 @@ class AB_properties(bpy.types.PropertyGroup):
         bpy.data.objects["Camera"].constraints["Follow Path"].offset = offset
 
     def update_camera_track_to_center(self, context):
+        center_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
+        center_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
+        center_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
         if self.camera_track_to_center:
-            top_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
-            top_y = (ABGlobals.max_y + ABGlobals.min_y) / 2
-            bpy.data.objects['Center'].location = (top_x, top_y, 0)
+            bpy.data.objects['Camera Tracker'].location = (center_x, center_y, center_z)
+        else:
+            bpy.data.objects['Camera Tracker'].location = (self.camera_pos_x, center_y, self.camera_pos_z)
 
     def update_camera_pos_x(self, context):
-        if not self.camera_track_to_center:
-            bpy.data.objects['Center'].location[0] = self.camera_pos_x
+        if not self.camera_track_to_center or True:
+            bpy.data.objects['Camera Tracker'].location[0] = self.camera_pos_x
+            bpy.data.objects['Camera path'].location[0] = self.camera_pos_x
 
     def update_camera_pos_z(self, context):
-        if not self.camera_track_to_center:
-            bpy.data.objects['Center'].location[2] = self.camera_pos_z
+        if not self.camera_track_to_center or True:
+            # bpy.data.objects['Camera Tracker'].location[2] = self.camera_pos_z
+
+            # the camera should be parallel to the tip. otherwise the x and y axis would not be parallel anymore
+            bpy.data.objects['Camera Tracker'].location[2] = self.camera_pos_z
+            bpy.data.objects['Camera path'].location[2] = self.camera_pos_z
+
 
     def update_frame_amount(self, context):
         # set frame amount in path settings
@@ -290,21 +299,23 @@ class AB_properties(bpy.types.PropertyGroup):
 
     def update_scaling_cube_track_to_center(self, context):
         if self.scaling_cube_track_to_center:
-            top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
-            bpy.data.objects['Top'].location = (0, 0, top_z)
+            bpy.data.objects['Scaling Cube'].location = (0, 0, 0)
+        else:
+            bpy.data.objects['Scaling Cube'].location = (self.scaling_cube_pos_x, self.scaling_cube_pos_y, self.scaling_cube_pos_z)
 
     def update_scaling_cube_pos_x(self, context):
         if not self.scaling_cube_track_to_center:
-            bpy.data.objects['Top'].location[0] = self.scaling_cube_pos_x
+            bpy.data.objects['Scaling Cube'].location[0] = self.scaling_cube_pos_x
 
     def update_scaling_cube_pos_y(self, context):
         if not self.scaling_cube_track_to_center:
-            bpy.data.objects['Top'].location[1] = self.scaling_cube_pos_y
+            bpy.data.objects['Scaling Cube'].location[1] = self.scaling_cube_pos_y
 
     def update_scaling_cube_pos_z(self, context):
         if not self.scaling_cube_track_to_center:
-            top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
-            bpy.data.objects['Top'].location[2] = top_z + self.scaling_cube_pos_z
+            # top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
+            # bpy.data.objects['Scaling Cube'].location[2] = top_z + self.scaling_cube_pos_z
+            bpy.data.objects['Scaling Cube'].location[2] = self.scaling_cube_pos_z
 
     # only accept values that are in a acceptable range
     def set_legend_position_x(self, value):
@@ -391,7 +402,7 @@ class AB_properties(bpy.types.PropertyGroup):
 
     # for developing purposes
     dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05', 'Eisenkorngrenze', 'Eisenkorngrenze'),

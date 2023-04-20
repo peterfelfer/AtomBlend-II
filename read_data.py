@@ -210,7 +210,6 @@ class AtomBlendAddon:
         if isinstance(ABGlobals.atom_coords[0], list):
             ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-
         # f = open(r'\tmp/unknown_coords.txt', 'w')
         # coords = ABGlobals.all_elements_by_name[ABGlobals.unknown_label]['coordinates']
         # for i in range(len(coords)):
