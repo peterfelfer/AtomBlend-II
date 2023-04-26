@@ -1010,9 +1010,10 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+        path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.RNG'
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
             self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.RNG'
+            print(context.scene.atom_blend_addon_settings.dev_dataset_selection.name)
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)

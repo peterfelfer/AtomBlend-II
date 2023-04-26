@@ -145,11 +145,13 @@ class ABManagement:
         bpy.data.objects['Camera path'].scale = (3.0, 3.0, 3.0)
 
         # hide objects in viewport
-        bpy.data.objects['Camera'].hide_viewport = True
-        bpy.data.objects['Camera path'].hide_viewport = True
-        bpy.data.objects['Center'].hide_viewport = True
-        bpy.data.objects['Top'].hide_viewport = True
-        bpy.data.objects['Origin'].hide_viewport = True
+        bpy.data.objects['Camera'].hide_set(True)
+        bpy.data.objects['Camera path'].hide_set(True)
+        bpy.data.objects['Center'].hide_set(True)
+        bpy.data.objects['Top'].hide_set(True)
+        bpy.data.objects['Origin'].hide_set(True)
+        bpy.data.objects['Scaling Cube'].hide_set(True)
+        bpy.data.objects['Camera Tracker'].hide_set(True)
 
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
@@ -283,7 +285,7 @@ class ABManagement:
             color = context.scene.atom_blend_addon_settings.legend_font_color
             blf.color(font_id, color[0], color[1], color[2], color[3])
             if render_img:
-                radius = legend_point_size / 2.0
+                radius = context.scene.atom_blend_addon_settings.legend_point_size / 2.0
                 font_size = context.scene.atom_blend_addon_settings.legend_font_size
                 blf.size(font_id, font_size)
                 x_dim, y_dim = blf.dimensions(font_id, elem_name)
@@ -323,19 +325,6 @@ class ABManagement:
         # zmax = ABGlobals.max_z
         # zmin = (ABGlobals.min_z + bpy.data.objects['Center'].location[2]) * scale[2]
         # zmax = (ABGlobals.max_z + bpy.data.objects['Center'].location[2]) * scale[2]
-
-        print('SCALING CUBE LOC')
-        print(bpy.data.objects['Scaling Cube'].location)
-
-        print('ABGLOBALS')
-        print('x', ABGlobals.min_x, ABGlobals.max_x)
-        print('y', ABGlobals.min_y, ABGlobals.max_y)
-        print('z', ABGlobals.min_z, ABGlobals.max_z)
-
-        print('CBB')
-        print('x', xmin, xmax)
-        print('y', ymin, ymax)
-        print('z', zmin, zmax)
 
         bounding_box_coords = []
 
