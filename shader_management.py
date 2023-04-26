@@ -125,6 +125,8 @@ class ABManagement:
         bpy.data.curves['BezierCircle'].path_duration = context.scene.atom_blend_addon_settings.frames
         bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frames
         bpy.data.cameras["Camera"].clip_end = 5000
+        bpy.data.objects['Camera'].location[1] = bpy.data.objects['Center'].location[1] + 300
+        bpy.data.objects['Camera'].location[2] = bpy.data.objects['Center'].location[2]
 
         # init point sizes
         # num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
@@ -145,11 +147,13 @@ class ABManagement:
         bpy.data.objects['Camera path'].scale = (3.0, 3.0, 3.0)
 
         # hide objects in viewport
-        bpy.data.objects['Camera'].hide_viewport = True
-        bpy.data.objects['Camera path'].hide_viewport = True
-        bpy.data.objects['Center'].hide_viewport = True
-        bpy.data.objects['Top'].hide_viewport = True
-        bpy.data.objects['Origin'].hide_viewport = True
+        bpy.data.objects['Camera'].hide_set(True)
+        bpy.data.objects['Camera path'].hide_set(True)
+        bpy.data.objects['Center'].hide_set(True)
+        bpy.data.objects['Top'].hide_set(True)
+        bpy.data.objects['Origin'].hide_set(True)
+        bpy.data.objects['Scaling Cube'].hide_set(True)
+        bpy.data.objects['Camera Tracker'].hide_set(True)
 
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
@@ -184,6 +188,9 @@ class ABManagement:
         ABManagement.create_legend(self, context)
 
         gpu.state.depth_mask_set(False)
+
+    def handler_frame_change(self, context):
+        print('frame change')
 
     def create_legend(self, context, render_img=False):
         # functions to set a value/vec2 into relation with the render resolution to map it into the viewport
@@ -323,19 +330,6 @@ class ABManagement:
         # zmax = ABGlobals.max_z
         # zmin = (ABGlobals.min_z + bpy.data.objects['Center'].location[2]) * scale[2]
         # zmax = (ABGlobals.max_z + bpy.data.objects['Center'].location[2]) * scale[2]
-
-        print('SCALING CUBE LOC')
-        print(bpy.data.objects['Scaling Cube'].location)
-
-        print('ABGLOBALS')
-        print('x', ABGlobals.min_x, ABGlobals.max_x)
-        print('y', ABGlobals.min_y, ABGlobals.max_y)
-        print('z', ABGlobals.min_z, ABGlobals.max_z)
-
-        print('CBB')
-        print('x', xmin, xmax)
-        print('y', ymin, ymax)
-        print('z', zmin, zmax)
 
         bounding_box_coords = []
 

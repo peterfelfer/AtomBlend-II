@@ -82,6 +82,7 @@ def register():
     bpy.app.handlers.load_post.append(atom_blend_addon_init_handler)
     #bpy.app.handlers.frame_change_pre.append(ABManagement.frame_change_handler)
     bpy.app.handlers.render_pre.append(ABManagement.handler)
+    bpy.app.handlers.frame_change_pre.append(ABManagement.handler_frame_change)
 
     bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=DisplaySettings)
 
