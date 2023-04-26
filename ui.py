@@ -1147,7 +1147,16 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.sequencer.delete()
 
             print('Starting animation rendering...')
+            angle_per_frame = (2 * math.pi) / context.scene.atom_blend_addon_settings.frames
+
             for i in range(1, context.scene.atom_blend_addon_settings.frames+1):
+                bpy.data.objects['Top'].rotation_euler[2] += angle_per_frame
+                bpy.data.objects['Top'].rotation_euler[2] %= (2 * math.pi)
+                bpy.data.objects['Scaling Cube'].rotation_euler[2] += angle_per_frame
+                bpy.data.objects['Scaling Cube'].rotation_euler[2] %= (2 * math.pi)
+                print('angle per frame', angle_per_frame)
+                print('rotation euler', bpy.data.objects['Top'].rotation_euler)
+
                 bpy.context.scene.frame_set(i)
 
                 # write file
