@@ -402,7 +402,7 @@ class AB_properties(bpy.types.PropertyGroup):
 
     # for developing purposes
     dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05', 'Eisenkorngrenze', 'Eisenkorngrenze'),
