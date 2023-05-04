@@ -212,6 +212,7 @@ class AB_properties(bpy.types.PropertyGroup):
         # delete old keyframes
         bpy.data.objects['Top'].animation_data_clear()
         bpy.data.objects['Camera'].animation_data_clear()
+        bpy.data.objects['Scaling Cube'].animation_data_clear()
 
         # set total amount of frames
         bpy.data.scenes["Scene"].frame_end = self.frames
@@ -220,6 +221,10 @@ class AB_properties(bpy.types.PropertyGroup):
         for i in range(0, self.frames+1, self.frames // self.rotation_amount):
             context.scene.objects['Top'].keyframe_insert(data_path="rotation_euler", index=2, frame=i)
             context.scene.objects['Top'].rotation_euler[2] += 2 * math.pi
+
+            if context.scene.atom_blend_addon_settings.scaling_cube_rotate_with_tip:
+                context.scene.objects['Scaling Cube'].keyframe_insert(data_path="rotation_euler", index=2, frame=i)
+                context.scene.objects['Scaling Cube'].rotation_euler[2] += 2 * math.pi
 
         if self.animation_mode == 'Spiral around tip':
             center_loc = context.scene.objects['Center'].location
@@ -1157,14 +1162,8 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.sequencer.delete()
 
             print('Starting animation rendering...')
-            angle_per_frame = (2 * math.pi) / context.scene.atom_blend_addon_settings.frames
 
             for i in range(1, context.scene.atom_blend_addon_settings.frames+1):
-                bpy.data.objects['Top'].rotation_euler[2] += angle_per_frame
-                bpy.data.objects['Top'].rotation_euler[2] %= (2 * math.pi)
-                bpy.data.objects['Scaling Cube'].rotation_euler[2] += angle_per_frame
-                bpy.data.objects['Scaling Cube'].rotation_euler[2] %= (2 * math.pi)
-
                 bpy.context.scene.frame_set(i)
 
                 # write file
