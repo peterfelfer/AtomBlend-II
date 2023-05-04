@@ -111,25 +111,17 @@ class ABManagement:
             bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
             # TODO: disable for viewport
 
-        # preparations for video rendering
-        bpy.ops.curve.primitive_bezier_circle_add(radius=100, location=bpy.data.objects['Center'].location)
-        bpy.data.objects['BezierCircle'].name = 'Camera path'
-        # constraint = bpy.data.objects['Camera'].constraints.new('COPY_LOCATION')
-        # constraint.target = bpy.data.objects['Origin']
-        constraint = bpy.data.objects['Camera'].constraints.new('FOLLOW_PATH')
-        constraint.target = bpy.data.objects['Camera path']
-        bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
-        bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
+        # track camera to camera tracker (atom tip)
         constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
         constraint.target = bpy.data.objects['Camera Tracker']
-        bpy.data.curves['BezierCircle'].path_duration = context.scene.atom_blend_addon_settings.frames
-        bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frames
-        bpy.data.cameras["Camera"].clip_end = 5000
 
-        # init point sizes
-        # num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
-        # point_size = bpy.context.scene.color_settings[elem_name].point_size
-        # ABGlobals.point_size_list = [point_size] * num_displayed
+        bpy.data.cameras["Camera"].clip_end = 5000
+        bpy.data.objects['Camera'].location[1] = bpy.data.objects['Center'].location[1] + 300
+        bpy.data.objects['Camera'].location[2] = bpy.data.objects['Center'].location[2]
+
+        # set frames of timeline
+        bpy.data.scenes["Scene"].frame_end = context.scene.atom_blend_addon_settings.frames
+        context.scene.atom_blend_addon_settings.frames = 50
 
         # save in cache
         cache = ABManagement.cache
@@ -141,12 +133,8 @@ class ABManagement:
         # set background color
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = [1.0, 1.0, 1.0, 1.0]
 
-        # init camera distance (-> camera path scale)
-        bpy.data.objects['Camera path'].scale = (3.0, 3.0, 3.0)
-
         # hide objects in viewport
         bpy.data.objects['Camera'].hide_set(True)
-        bpy.data.objects['Camera path'].hide_set(True)
         bpy.data.objects['Center'].hide_set(True)
         bpy.data.objects['Top'].hide_set(True)
         bpy.data.objects['Origin'].hide_set(True)

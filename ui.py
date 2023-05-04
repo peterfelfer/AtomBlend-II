@@ -178,16 +178,14 @@ class AB_properties(bpy.types.PropertyGroup):
             bpy.context.scene.color_settings[elem_name].point_size = general_point_size
 
     def update_camera_distance(self, context):
-        dist = self.camera_distance
-        bpy.data.objects['Camera path'].scale = (dist, dist, dist)
+        bpy.data.objects['Camera'].location[1] = self.camera_distance
 
     def update_camera_elevation(self, context):
-        angle = self.camera_elevation
-        bpy.data.objects['Camera path'].location[2] = angle
+        center_loc = bpy.data.objects['Center'].location
+        bpy.data.objects['Camera'].location[2] = center_loc[2] + self.camera_elevation
 
     def update_camera_rotation(self, context):
-        offset = self.camera_rotation
-        bpy.data.objects["Camera"].constraints["Follow Path"].offset = offset
+        bpy.data.objects['Top'].rotation_euler[2] = self.camera_rotation
 
     def update_camera_track_to_center(self, context):
         center_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
@@ -200,29 +198,44 @@ class AB_properties(bpy.types.PropertyGroup):
 
     def update_camera_pos_x(self, context):
         if not self.camera_track_to_center or True:
+            # the camera should be parallel to the tip. otherwise the x and y axis would not be parallel anymore
             bpy.data.objects['Camera Tracker'].location[0] = self.camera_pos_x
-            bpy.data.objects['Camera path'].location[0] = self.camera_pos_x
+            bpy.data.objects['Camera'].location[0] = self.camera_pos_x
 
     def update_camera_pos_z(self, context):
         if not self.camera_track_to_center or True:
-            # bpy.data.objects['Camera Tracker'].location[2] = self.camera_pos_z
-
             # the camera should be parallel to the tip. otherwise the x and y axis would not be parallel anymore
             bpy.data.objects['Camera Tracker'].location[2] = self.camera_pos_z
-            bpy.data.objects['Camera path'].location[2] = self.camera_pos_z
-
+            bpy.data.objects['Camera'].location[2] = self.camera_pos_z
 
     def update_frame_amount(self, context):
-        # set frame amount in path settings
-        bpy.context.view_layer.objects.active = bpy.data.objects['Camera path']
-        bpy.data.curves['BezierCircle'].path_duration = int(self.frames / self.rotation_amount)
-
-        # animate path
-        # bpy.context.view_layer.objects.active = bpy.data.objects['Camera']
-        # bpy.ops.constraint.followpath_path_animate(constraint='Follow Path')
+        # delete old keyframes
+        bpy.data.objects['Top'].animation_data_clear()
+        bpy.data.objects['Camera'].animation_data_clear()
 
         # set total amount of frames
         bpy.data.scenes["Scene"].frame_end = self.frames
+
+        # set keyframes according to frames and rotation amount
+        for i in range(0, self.frames+1, self.frames // self.rotation_amount):
+            context.scene.objects['Top'].keyframe_insert(data_path="rotation_euler", index=2, frame=i)
+            context.scene.objects['Top'].rotation_euler[2] += 2 * math.pi
+
+        if self.animation_mode == 'Spiral around tip':
+            center_loc = context.scene.objects['Center'].location
+
+            # set keyframe for frame 1
+            context.scene.objects['Camera'].location[2] = center_loc[2] + 50
+            context.scene.objects['Camera'].keyframe_insert(data_path="location", index=2, frame=1)
+
+            # set keyframe for last frame
+            context.scene.objects['Camera'].location[2] = center_loc[2] - 50
+            context.scene.objects['Camera'].keyframe_insert(data_path="location", index=2, frame=self.frames)
+
+        # make keyframes interpolation linear
+        bpy.data.objects['Top'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
+        bpy.data.objects['Top'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
+        # keyframe.interpolation = 'LINEAR'
 
         # set duration value of property
         duration = self.frames / 24
@@ -236,22 +249,19 @@ class AB_properties(bpy.types.PropertyGroup):
             context.scene.atom_blend_addon_settings.frames = int(frames)
 
     def update_animation_mode(self, context):
-        if self.animation_mode == 'Circle around tip':
-            # clear the keyframes in the first and last frame
-            cam_path = bpy.data.objects['Camera path']
-            cam_path.keyframe_delete(data_path='location', index=2, frame=1)
-            cam_path.keyframe_delete(data_path='location', index=2, frame=context.scene.atom_blend_addon_settings.frames)
+        # delete camera keyframes
+        bpy.data.objects['Camera'].animation_data_clear()
 
-        elif self.animation_mode == 'Spiral around tip':
-            cam_path = bpy.data.objects['Camera path']
+        if self.animation_mode == 'Spiral around tip':
+            center_loc = context.scene.objects['Center'].location
+
             # set keyframe for frame 1
-            cam_path.location[2] = 50
-            cam_path.keyframe_insert(data_path="location", index=2, frame=1)
+            context.scene.objects['Camera'].location[2] = center_loc[2] + 50
+            context.scene.objects['Camera'].keyframe_insert(data_path="location", index=2, frame=1)
 
             # set keyframe for last frame
-            frames = self.frames
-            cam_path.location[2] = -50
-            cam_path.keyframe_insert(data_path="location", index=2, frame=frames)
+            context.scene.objects['Camera'].location[2] = center_loc[2] - 50
+            context.scene.objects['Camera'].keyframe_insert(data_path="location", index=2, frame=self.frames)
 
     def update_background_color(self, context):
         # if context.space_data.region_3d.view_perspective == 'CAMERA':
@@ -343,14 +353,14 @@ class AB_properties(bpy.types.PropertyGroup):
     background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
 
     transparent_background: bpy.props.BoolProperty(name='Transparent Background', description='Only available for .png and .tiff file format and image rendering', default=False, update=update_transparent_background)
-    camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=3.0, description='Edit the camera distance to the tip', update=update_camera_distance)
-    camera_rotation: bpy.props.FloatProperty(name='Camera rotation', default=0.0, description='Rotate the camera around the tip', update=update_camera_rotation)
+    camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=300.0, description='Edit the camera distance to the tip', update=update_camera_distance)
     camera_elevation: bpy.props.FloatProperty(name='Camera elevation', default=0.0, step=50, description='Edit the camera elevation', update=update_camera_elevation)
+    camera_rotation: bpy.props.FloatProperty(name='Atom tip rotation', default=0.0, subtype='ANGLE', step=50.0, description='Rotate the atom tip', update=update_camera_rotation)
     camera_track_to_center: bpy.props.BoolProperty(name='Track camera to center of atom tip', description='If enabled, the camera is always tracked to the center of the atom tip', default=True, update=update_camera_track_to_center)
     camera_pos_x: bpy.props.FloatProperty(name='x-position', description='If the camera is not tracked to the atom tip\s center, the camera position can be edited', default=3.0, update=update_camera_pos_x)
     camera_pos_z: bpy.props.FloatProperty(name='z-position', description='If the camera is not tracked to the atom tip\s center, the camera position can be edited', default=3.0, update=update_camera_pos_z)
 
-    frames: bpy.props.IntProperty(name='Frames', default=5, description='Duration of video', update=update_frame_amount, step=5)
+    frames: bpy.props.IntProperty(name='Frames', default=50, description='Duration of video', update=update_frame_amount, step=5)
     duration: bpy.props.FloatProperty(name='Duration (seconds)', precision=2, description='Duration of the video', min=0.0, soft_min=0.0, step=0.5, update=update_duration)
     rotation_amount: bpy.props.IntProperty(name='Number of rotations', default=1, description='Number of rotations', update=update_frame_amount)
     scaling_cube: bpy.props.BoolProperty(name='Scaling bar', default=True, description='Display the scaling bar')
@@ -371,6 +381,7 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_round: bpy.props.BoolProperty(name='Round', default=True, description='If activated, the size of the atom tip is rounded by the specified number of digits')
     scaling_cube_round_digits: bpy.props.IntProperty(name='Digits', default=0, soft_min=-4, soft_max=10, description='The number of digits that should be rounded')
     scaling_cube_scale: bpy.props.FloatVectorProperty(name='Scale', description='Scale the scaling cube', min=0.0, size=3, default=[1.0, 1.0, 1.0])
+    scaling_cube_rotate_with_tip: bpy.props.BoolProperty(name='Rotate scaling cube', default=False, description='If activated, the scaling cube is rotated with the atom tip')
 
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
     legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend', update=update_legend_scale)
@@ -405,10 +416,11 @@ class AB_properties(bpy.types.PropertyGroup):
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
-        items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05', 'Eisenkorngrenze', 'Eisenkorngrenze'),
+        items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05.epos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG', 'Eisenkorngrenze', 'Eisenkorngrenze'),
+               ('T:\Heller\AtomBlendII\EisenKorngrenze\FeGB_small.pos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG', 'Eisenkorngrenze-small', 'Eisenkorngrenze-small'),
                ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
         ],
-        default='T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05',
+        default='T:\Heller\AtomBlendII\EisenKorngrenze\FeGB_small.pos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG',
         # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 
@@ -883,9 +895,9 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         render_col = row.split()
         render_col.operator('atom_blend.render', icon='RENDER_STILL')
 
-class ATOMBLEND_PT_camera_settings(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_camera_settings"
-    bl_label = "Camera settings"
+class ATOMBLEND_PT_placement_settings(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_placement_settings"
+    bl_label = "Placement settings"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
@@ -901,9 +913,10 @@ class ATOMBLEND_PT_camera_settings(bpy.types.Panel):
         layout = self.layout
         col = layout.column(align=True)
         col.prop(context.scene.atom_blend_addon_settings, 'camera_distance')
-        col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
         col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
-
+        col.separator()
+        col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
+        col.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_with_tip')
 
 class ATOMBLEND_PT_camera_settings_track_to_center(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_camera_settings_track_to_center"
@@ -911,7 +924,7 @@ class ATOMBLEND_PT_camera_settings_track_to_center(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    bl_parent_id = 'ATOMBLEND_PT_camera_settings'
+    bl_parent_id = 'ATOMBLEND_PT_placement_settings'
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -969,9 +982,9 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+        path = context.scene.atom_blend_addon_settings.dev_dataset_selection.split('?')[0]
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
-            self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
+            self.filepath = path
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
@@ -1010,10 +1023,9 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.RNG'
+        path = context.scene.atom_blend_addon_settings.dev_dataset_selection.split('?')[1]
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
-            self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.RNG'
-            print(context.scene.atom_blend_addon_settings.dev_dataset_selection.name)
+            self.filepath = path
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
@@ -1055,9 +1067,6 @@ class ATOMBLEND_OT_unload_files(bpy.types.Operator):
 
         # delete objects
         obj = bpy.data.objects['Camera']
-        bpy.data.objects.remove(obj, do_unlink=True)
-
-        obj = bpy.data.objects['Camera path']
         bpy.data.objects.remove(obj, do_unlink=True)
 
         obj = bpy.data.objects['Center']
@@ -1148,7 +1157,14 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.ops.sequencer.delete()
 
             print('Starting animation rendering...')
+            angle_per_frame = (2 * math.pi) / context.scene.atom_blend_addon_settings.frames
+
             for i in range(1, context.scene.atom_blend_addon_settings.frames+1):
+                bpy.data.objects['Top'].rotation_euler[2] += angle_per_frame
+                bpy.data.objects['Top'].rotation_euler[2] %= (2 * math.pi)
+                bpy.data.objects['Scaling Cube'].rotation_euler[2] += angle_per_frame
+                bpy.data.objects['Scaling Cube'].rotation_euler[2] %= (2 * math.pi)
+
                 bpy.context.scene.frame_set(i)
 
                 # write file
