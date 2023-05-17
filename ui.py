@@ -218,6 +218,8 @@ class AB_properties(bpy.types.PropertyGroup):
         bpy.data.scenes["Scene"].frame_end = self.frames
 
         # set keyframes according to frames and rotation amount
+        context.scene.objects['Top'].rotation_euler[2] = 0
+        context.scene.objects['Scaling Cube'].rotation_euler[2] = 0
         for i in range(0, self.frames+1, self.frames // self.rotation_amount):
             context.scene.objects['Top'].keyframe_insert(data_path="rotation_euler", index=2, frame=i)
             context.scene.objects['Top'].rotation_euler[2] += 2 * math.pi
@@ -386,7 +388,7 @@ class AB_properties(bpy.types.PropertyGroup):
     scaling_cube_round: bpy.props.BoolProperty(name='Round', default=True, description='If activated, the size of the atom tip is rounded by the specified number of digits')
     scaling_cube_round_digits: bpy.props.IntProperty(name='Digits', default=0, soft_min=-4, soft_max=10, description='The number of digits that should be rounded')
     scaling_cube_scale: bpy.props.FloatVectorProperty(name='Scale', description='Scale the scaling cube', min=0.0, size=3, default=[1.0, 1.0, 1.0])
-    scaling_cube_rotate_with_tip: bpy.props.BoolProperty(name='Rotate scaling cube', default=False, description='If activated, the scaling cube is rotated with the atom tip')
+    scaling_cube_rotate_with_tip: bpy.props.BoolProperty(name='Rotate scaling cube', default=False, description='If activated, the scaling cube is rotated with the atom tip', update=update_frame_amount)
 
     legend: bpy.props.BoolProperty(name='Legend', default=True, description='Display the legend')
     legend_scale: bpy.props.FloatProperty(name='Scale', default=1.0, min=0.0, soft_min=0.0, description='Scale of legend', update=update_legend_scale)
@@ -418,7 +420,7 @@ class AB_properties(bpy.types.PropertyGroup):
 
     # for developing purposes
     dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05.epos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG', 'Eisenkorngrenze', 'Eisenkorngrenze'),
@@ -714,7 +716,6 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
 
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_mode')
         if context.scene.atom_blend_addon_settings.scaling_cube_mode == 'Uniform Color':
-
             f = [0.5, 0.5]
             split = row.split(factor=f[0] - perc_left)
             perc_left -= f[0]
