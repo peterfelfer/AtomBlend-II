@@ -74,12 +74,13 @@ Open the `Advanced settings` to make detailed settings to the appearance of the 
 `Font color` - Change the font color of the element names<br/>
 `Hide hidden elements in legend` - If activated, the elements you hid in the `Display settings` will also be hidden in the legend<br/>
 
-### Camera settings
+### Placement settings
 Make camera settings<br/>
 <img src="media/readme-camera_settings.PNG" width="50%" height="50%"/>
 `Camera distance` - Change the distance of the camera to the tip<br/>
-`Camera rotation` - Change the rotation of the tip<br/>
 `Camera elevation` - Change the elevation of the camera<br/>
+`Atom tip rotation` - Change the rotation of the tip<br/>
+`Rotate scaling cube` - If activated, the scaling cube is also rotated<br/>
 `Track camera to center of atom tip` - If enabled, the camera is always tracked to the center of the atom tip<br/>
 `x/z-position` - If the camera is not tracked to the center of the atom tip, the camera position can be moved.
 
@@ -109,8 +110,8 @@ Render a video<br/>
 `Frames` - Total frame of your video, the approximal duration of the video is also shown<br/>
 `Number of rotations` - Change the number of rotations in your video<br/>
 `Animation mode` - Change the animation of your video. You can select between:
-  - Circle around tip: Camera moves around the tip but stays at the same height<br/>
-  - Spiral around tip: Camera moves spirally around the tip from top to bottom<br/>
+  - Static camera: Camera stays at the same height<br/>
+  - Top to bottom: Camera moves from top to bottom<br/>
 
 `File Format` - The file format of your rendering will be AVI. But first, all the frames will be rendered separately and will be converted to a video later. Here, you can choose the file format for these frames. You can select between PNG, JPG and TIFF<br/>
 `Output Path` - Select the output path of your rendering<br/>

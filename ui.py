@@ -228,7 +228,7 @@ class AB_properties(bpy.types.PropertyGroup):
                 context.scene.objects['Scaling Cube'].keyframe_insert(data_path="rotation_euler", index=2, frame=i)
                 context.scene.objects['Scaling Cube'].rotation_euler[2] += 2 * math.pi
 
-        if self.animation_mode == 'Spiral around tip':
+        if self.animation_mode == 'Top to bottom':
             center_loc = context.scene.objects['Center'].location
 
             # set keyframe for frame 1
@@ -259,7 +259,7 @@ class AB_properties(bpy.types.PropertyGroup):
         # delete camera keyframes
         bpy.data.objects['Camera'].animation_data_clear()
 
-        if self.animation_mode == 'Spiral around tip':
+        if self.animation_mode == 'Top to bottom':
             center_loc = context.scene.objects['Center'].location
 
             # set keyframe for frame 1
@@ -269,6 +269,9 @@ class AB_properties(bpy.types.PropertyGroup):
             # set keyframe for last frame
             context.scene.objects['Camera'].location[2] = center_loc[2] - 50
             context.scene.objects['Camera'].keyframe_insert(data_path="location", index=2, frame=self.frames)
+
+        if self.animation_mode == 'Static camera':
+            context.scene.objects['Camera'].location[2] = bpy.data.objects['Center'].location[2]
 
     def update_background_color(self, context):
         # if context.space_data.region_3d.view_perspective == 'CAMERA':
@@ -403,10 +406,10 @@ class AB_properties(bpy.types.PropertyGroup):
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
-        items=[('Circle around tip', 'Circle around tip', 'Circle around tip'),
-               ('Spiral around tip', 'Spiral around tip', 'Spiral around tip')
+        items=[('Static camera', 'Static camera', 'Static camera'),
+               ('Top to bottom', 'Top to bottom', 'Top to bottom')
                ],
-        default='Circle around tip',
+        default='Static camera',
         update=update_animation_mode
     )
     file_format: bpy.props.EnumProperty(
