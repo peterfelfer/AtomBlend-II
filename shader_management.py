@@ -370,7 +370,8 @@ class ABManagement:
         if proj_matrix == None:
             proj_matrix = bpy.context.region_data.perspective_matrix
         if object_matrix == None:
-            object_matrix = bpy.data.objects['Origin'].matrix_world
+            # object_matrix = bpy.data.objects['Origin'].matrix_world
+            object_matrix = bpy.data.objects['Scaling Cube'].matrix_world
 
         ABManagement.get_nearest_points_metric(self, context, bounding_box_coords)
 
