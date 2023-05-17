@@ -2,6 +2,7 @@
 **Display and edit data from atom tips and render images or videos of your science.**
 
 <p float="left">
+  <img src="media/R56_03446-v05.png" width="25%" height="25%"/>
   <img src="media/eisenkorngrenze.gif" width="25%" height="25%"/>
   <img src="media/iso-surface.gif" width="25%" height="25%"/>
 </p>
