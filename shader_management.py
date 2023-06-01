@@ -561,6 +561,11 @@ class ABManagement:
             # return [x_pos, y_pos]
             return mathutils.Vector((x_pos, y_pos))
 
+        # font should rotate with scaling cube
+        obj_mat = bpy.data.objects['Scaling Cube'].matrix_world
+        a = obj_mat @ a
+        b = obj_mat @ b
+
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
         font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
@@ -597,6 +602,7 @@ class ABManagement:
 
                 if a_2d is None or b_2d is None:
                     return
+
 
                 pos = calc_pos(a_2d, b_2d)
 

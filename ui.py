@@ -242,6 +242,8 @@ class AB_properties(bpy.types.PropertyGroup):
         # make keyframes interpolation linear
         bpy.data.objects['Top'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
         bpy.data.objects['Top'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
+        bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
+        bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
         # keyframe.interpolation = 'LINEAR'
 
         # set duration value of property
