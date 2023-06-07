@@ -33,14 +33,14 @@ class AtomData:
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class AtomBlendAddon:
-    @persistent
-    def load_file_handler(self):
-        e_pos_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
-        if len(e_pos_path) != 0:
-            if e_pos_path.lower().endswith('.epos'):
-                AtomBlendAddon.load_epos_file(self, bpy.context)
-            elif e_pos_path.lower().endswith('.pos'):
-                AtomBlendAddon.load_pos_file(self, bpy.context)
+    # @persistent
+    # def load_file_handler(self):
+    #     e_pos_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
+    #     if len(e_pos_path) != 0:
+    #         if e_pos_path.lower().endswith('.epos'):
+    #             AtomBlendAddon.load_epos_file(self, bpy.context)
+    #         elif e_pos_path.lower().endswith('.pos'):
+    #             AtomBlendAddon.load_pos_file(self, bpy.context)
 
     def setup(self, context):
         # set material mode in layer screen
