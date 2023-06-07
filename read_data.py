@@ -19,7 +19,6 @@ from .globals import ABGlobals
 # Class that contains all relevant information about atoms in range files
 from .shader_management import ABManagement
 
-
 @dataclass
 class AtomData:
     num_of_ion: int = 0
@@ -34,6 +33,15 @@ class AtomData:
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class AtomBlendAddon:
+    @persistent
+    def load_file_handler(self):
+        e_pos_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
+        if len(e_pos_path) != 0:
+            if e_pos_path.lower().endswith('.epos'):
+                AtomBlendAddon.load_epos_file(self, bpy.context)
+            elif e_pos_path.lower().endswith('.pos'):
+                AtomBlendAddon.load_pos_file(self, bpy.context)
+
     def setup(self, context):
         # set material mode in layer screen
         space = bpy.data.screens["Layout"]
@@ -187,23 +195,6 @@ class AtomBlendAddon:
         # disable the unknown atoms by default
         bpy.context.scene.color_settings[ABGlobals.unknown_label].display = False
 
-        '''
-        # build atom color list
-        ABGlobals.atom_color_list = []
-
-        for elem_name in ABGlobals.all_elements_by_name:
-            elem_amount = ABGlobals.all_elements_by_name[elem_name]['num_of_atoms']
-
-            col_struct = bpy.context.scene.color_settings[elem_name].color
-            col = (col_struct[0], col_struct[1], col_struct[2], col_struct[3])
-            ABGlobals.atom_color_list.append([col] * elem_amount)
-            print(elem_name)
-
-        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_color_list[0], list):
-            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-        '''
-
         # # update point size list
         # DisplaySettings.atom_color_update(self, context)
 
@@ -220,7 +211,9 @@ class AtomBlendAddon:
         # f.close()
 
     def load_rng_file(self, context):
-        if ABGlobals.path_rrng == None:
+        file_path = bpy.context.scene.atom_blend_addon_settings.rrng_filepath
+
+        if file_path == None:
             print('No file loaded')
             return
 
@@ -228,7 +221,6 @@ class AtomBlendAddon:
         if not ABGlobals.FileLoaded_e_pos:
             AtomBlendAddon.setup(self, context)
 
-        file_path = ABGlobals.path_rrng
         rrng_file = open(file_path, 'r')
 
         rrng_file.readline()  # first line should be number of elements and ranges; we don't need this
@@ -429,7 +421,9 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
     def load_rrng_file(self, context):
-        if(ABGlobals.path_rrng == None):
+        file_path = bpy.context.scene.atom_blend_addon_settings.rrng_filepath
+
+        if file_path is None:
             print('No file loaded')
             return
 
@@ -437,7 +431,6 @@ class AtomBlendAddon:
         if not ABGlobals.FileLoaded_e_pos:
             AtomBlendAddon.setup(self, context)
 
-        file_path = ABGlobals.path_rrng
         rrng_file = open(file_path, 'r')
 
         for line in rrng_file:
@@ -530,22 +523,27 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
     def load_epos_file(self, context):
-        if (ABGlobals.path == None):
+        file_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
+
+        if (file_path == None):
             print('No file loaded')
             return
+
+        # reset color_settings
+        print('pre', bpy.context.scene.color_settings)
+        # bpy.context.scene.color_settings.clear()
+        print('post', bpy.context.scene.color_settings)
 
         if context.scene.atom_blend_addon_settings.dev_mode:
             bpy.ops.wm.console_toggle()
 
         # set dataset name
-        filename = ABGlobals.path.split(sep='\\')[-1]
+        filename = file_path.split(sep='\\')[-1]
         ABGlobals.dataset_name = filename.split(sep='.')[0]
 
         # if epos file is loaded first, init the unknown element into color structures
         if not ABGlobals.FileLoaded_rrng:
             AtomBlendAddon.setup(self, context)
-
-        file_path = ABGlobals.path
 
         start = time.perf_counter()
 
@@ -604,25 +602,28 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
         # activate camera preview
-        context.space_data.region_3d.view_perspective = 'CAMERA'
+        bpy.context.space_data.region_3d.view_perspective = 'CAMERA'
 
         ABManagement.init(self, context)
 
     def load_pos_file(self, context):
-        start = time.perf_counter()
-        if (ABGlobals.path == None):
+        file_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
+
+        if (file_path == None):
             print('No file loaded')
             return
 
+        # reset color_settings
+        # bpy.context.scene.color_settings.clear()
+
         # set dataset name
-        filename = ABGlobals.path.split(sep='\\')[-1]
+        filename = file_path.split(sep='\\')[-1]
         ABGlobals.dataset_name = filename.split(sep='.')[0]
 
         # if pos file is loaded first, init the unknown element into color structures
         if not ABGlobals.FileLoaded_rrng:
             AtomBlendAddon.setup(self, context)
 
-        file_path = ABGlobals.path
         data_in_bytes = np.fromfile(file_path, dtype='>f')
         data_as_float = data_in_bytes.view()
 
@@ -661,6 +662,6 @@ class AtomBlendAddon:
             AtomBlendAddon.combine_rrng_and_e_pos_file(self, context)
 
         # activate camera preview
-        context.space_data.region_3d.view_perspective = 'CAMERA'
+        bpy.context.space_data.region_3d.view_perspective = 'CAMERA'
 
         ABManagement.init(self, context)

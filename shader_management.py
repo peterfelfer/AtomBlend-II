@@ -49,28 +49,7 @@ class ABManagement:
             ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
         bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
-        '''
-        # check if we have a list for each element for the atom coords and atom color list
-        # -> flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if isinstance(ABGlobals.atom_coords[0], list):
-            ABGlobals.atom_coords = [x for xs in ABGlobals.atom_coords for x in xs] #https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
-        if isinstance(ABGlobals.atom_color_list[0], list):
-            ABGlobals.atom_color_list = [x for xs in ABGlobals.atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
-
-        if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
-            # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
-            # print('ATOM COORDS', ABGlobals.atom_coords)
-            raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
-        # batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
-        vertices = ((0, 0, 1), (1, 0, 1), (0, 1, 1), (1, 1, 1))
-        col_list = ((1,1,1,1), (1,1,1,1),(1,1,1,1), (1,1,1,1,))
-        # indices = ((0, 1, 2), (2, 1, 3))
-        print('coord list', ABGlobals.atom_coords)
-        print('col list', ABGlobals.atom_color_list)
-        batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, })
-        # batch = batch_for_shader(shader, 'POINTS', {'position': vertices, 'color': col_list, })
-        '''
         # add draw handler that will be called every time this region in this space type will be drawn
         # ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
         ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_PIXEL')
@@ -82,24 +61,29 @@ class ABManagement:
         center_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
 
         # print(center_x, center_y, center_z)
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, ABGlobals.max_z))
-        bpy.data.objects['Empty'].name = 'Top'
+        if (bpy.context.scene.objects.get('Top') == None):
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, ABGlobals.max_z))
+            bpy.data.objects['Empty'].name = 'Top'
 
         # create empty representing the approximate center of the atom tip
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(center_x, center_y, center_z))
-        bpy.data.objects['Empty'].name = 'Center'
+        if (bpy.context.scene.objects.get('Center') == None):
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(center_x, center_y, center_z))
+            bpy.data.objects['Empty'].name = 'Center'
 
         # create empty representing the origin (0,0,0)
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-        bpy.data.objects['Empty'].name = 'Origin'
+        if (bpy.context.scene.objects.get('Origin') == None):
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+            bpy.data.objects['Empty'].name = 'Origin'
 
         # create empty representing the origin of the scaling cube
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
-        bpy.data.objects['Empty'].name = 'Scaling Cube'
+        if (bpy.context.scene.objects.get('Scaling Cube') == None):
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(0, 0, 0))
+            bpy.data.objects['Empty'].name = 'Scaling Cube'
 
         # create empty representing the approximate center of the atom tip
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=(center_x, center_y, center_z))
-        bpy.data.objects['Empty'].name = 'Camera Tracker'
+        if (bpy.context.scene.objects.get('Camera Tracker') == None):
+            bpy.ops.object.empty_add(type='PLAIN_AXES', location=(center_x, center_y, center_z))
+            bpy.data.objects['Empty'].name = 'Camera Tracker'
 
         # rotate tip 180 degrees around x axis
         bpy.data.objects['Top'].rotation_euler[0] = math.pi
@@ -109,7 +93,6 @@ class ABManagement:
             # calculate camera position
             bpy.ops.object.camera_add(location=(0, 0, 0))
             bpy.data.objects["Camera"].rotation_euler = (-0.5 * math.pi, 0, 0)
-            # TODO: disable for viewport
 
         # track camera to camera tracker (atom tip)
         constraint = bpy.data.objects['Camera'].constraints.new('TRACK_TO')
@@ -242,7 +225,9 @@ class ABManagement:
         keys.append(ABGlobals.unknown_label)
         keys.reverse() # in place reverse
         # remove the unknown label from its index and add it to the last row
+        # print('----')
         for k in keys:
+            # print('key', k)
             prop = bpy.context.scene.color_settings[k]
             if not prop.display and context.scene.atom_blend_addon_settings.legend_hide_hidden_elements:
                 continue
