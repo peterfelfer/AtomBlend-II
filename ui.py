@@ -220,7 +220,7 @@ class AB_properties(bpy.types.PropertyGroup):
         # set keyframes according to frames and rotation amount
         context.scene.objects['Top'].rotation_euler[2] = 0
         context.scene.objects['Scaling Cube'].rotation_euler[2] = 0
-        for i in range(0, self.frames+1, self.frames // self.rotation_amount):
+        for i in range(1, self.frames+2, self.frames // self.rotation_amount):
             context.scene.objects['Top'].keyframe_insert(data_path="rotation_euler", index=2, frame=i)
             context.scene.objects['Top'].rotation_euler[2] += 2 * math.pi
 
@@ -242,9 +242,11 @@ class AB_properties(bpy.types.PropertyGroup):
         # make keyframes interpolation linear
         bpy.data.objects['Top'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
         bpy.data.objects['Top'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
-        bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
-        bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
-        # keyframe.interpolation = 'LINEAR'
+
+        if context.scene.atom_blend_addon_settings.scaling_cube_rotate_with_tip:
+            bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
+            bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
+            # keyframe.interpolation = 'LINEAR'
 
         # set duration value of property
         duration = self.frames / 24
@@ -749,6 +751,9 @@ class ATOMBLEND_PT_scaling_cube(bpy.types.Panel):
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_round')
         row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_round_digits')
 
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_with_tip')
+
 
 class ATOMBLEND_PT_scaling_cube_track_to_center(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_scaling_cube_track_to_center"
@@ -927,7 +932,6 @@ class ATOMBLEND_PT_placement_settings(bpy.types.Panel):
         col.prop(context.scene.atom_blend_addon_settings, 'camera_elevation')
         col.separator()
         col.prop(context.scene.atom_blend_addon_settings, 'camera_rotation')
-        col.prop(context.scene.atom_blend_addon_settings, 'scaling_cube_rotate_with_tip')
 
 class ATOMBLEND_PT_camera_settings_track_to_center(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_camera_settings_track_to_center"
@@ -972,23 +976,21 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        ABGlobals.path = self.filepath
+        file_path = self.filepath
+        bpy.context.scene.atom_blend_addon_settings.e_pos_filepath = file_path
 
-        # if there's already an object loaded we want to delete it so we can load another object
-        if ABGlobals.FileLoaded_e_pos:
-            obj_to_delete = bpy.data.objects['Top']
-            bpy.data.objects.remove(obj_to_delete, do_unlink=True)
+        # if len(context.scene.atom_blend_addon_settings.e_pos_filepath) != 0:
+        #     ABGlobals.path = context.scene.atom_blend_addon_settings.e_pos_filepath
+        # else:
+        #     ABGlobals.path = self.filepath
 
-        if ABGlobals.path.lower().endswith('.epos'):
+        if file_path.lower().endswith('.epos'):
             AtomBlendAddon.load_epos_file(self, context)
-        elif ABGlobals.path.lower().endswith('.pos'):
+        elif file_path.lower().endswith('.pos'):
             AtomBlendAddon.load_pos_file(self, context)
 
         ABGlobals.FileLoaded_e_pos = True
         print(f"Object Loaded: {ABGlobals.FileLoaded_e_pos}")
-
-        # set filepath to property
-        bpy.context.scene.atom_blend_addon_settings.e_pos_filepath = self.filepath
 
         return {'FINISHED'}
 
@@ -997,6 +999,9 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
             self.filepath = path
             return self.execute(context)
+        # elif len(context.scene.atom_blend_addon_settings.e_pos_filepath) != 0:
+        #     self.filepath = context.scene.atom_blend_addon_settings.e_pos_filepath
+        #     return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}
@@ -1017,18 +1022,24 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         return True  # context.object is not None
 
     def execute(self, context):
-        ABGlobals.path_rrng = self.filepath
+        file_path = self.filepath
+        bpy.context.scene.atom_blend_addon_settings.rrng_filepath = file_path
 
-        if ABGlobals.path_rrng.lower().endswith('.rrng'):
+        # if len(context.scene.atom_blend_addon_settings.rrng_filepath) != 0:
+        #     ABGlobals.path = context.scene.atom_blend_addon_settings.rrng_filepath
+        # else:
+        #     ABGlobals.path = self.filepath
+
+        if file_path.lower().endswith('.rrng'):
             AtomBlendAddon.load_rrng_file(self, context)
-        elif ABGlobals.path_rrng.lower().endswith('.rng'):
+        elif file_path.lower().endswith('.rng'):
             AtomBlendAddon.load_rng_file(self, context)
 
         ABGlobals.FileLoaded_rrng = True
         print(f"Object Loaded: {ABGlobals.FileLoaded_rrng}")
 
         # set filepath to property
-        bpy.context.scene.atom_blend_addon_settings.rrng_filepath = self.filepath
+        # bpy.context.scene.atom_blend_addon_settings.rrng_filepath = self.filepath
 
         # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
         return {'FINISHED'}
@@ -1037,6 +1048,9 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         path = context.scene.atom_blend_addon_settings.dev_dataset_selection.split('?')[1]
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
             self.filepath = path
+            return self.execute(context)
+        elif len(context.scene.atom_blend_addon_settings.rrng_filepath) != 0:
+            self.filepath = context.scene.atom_blend_addon_settings.rrng_filepath
             return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
