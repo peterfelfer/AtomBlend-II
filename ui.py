@@ -999,9 +999,9 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
             self.filepath = path
             return self.execute(context)
-        # elif len(context.scene.atom_blend_addon_settings.e_pos_filepath) != 0:
-        #     self.filepath = context.scene.atom_blend_addon_settings.e_pos_filepath
-        #     return self.execute(context)
+        elif len(context.scene.atom_blend_addon_settings.e_pos_filepath) != 0:
+            self.filepath = context.scene.atom_blend_addon_settings.e_pos_filepath
+            return self.execute(context)
         else:
             context.window_manager.fileselect_add(self)
             return {'RUNNING_MODAL'}

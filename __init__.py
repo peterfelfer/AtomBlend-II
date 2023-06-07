@@ -86,7 +86,7 @@ def register():
 
     #bpy.app.handlers.frame_change_pre.append(ABManagement.frame_change_handler)
     bpy.app.handlers.render_pre.append(ABManagement.handler)
-    bpy.app.handlers.load_post.append(AtomBlendAddon.load_file_handler)
+    # bpy.app.handlers.load_post.append(AtomBlendAddon.load_file_handler)
 
     bpy.types.Scene.color_settings = bpy.props.CollectionProperty(type=DisplaySettings)
     bpy.types.Scene.color_settings_pointer = bpy.props.PointerProperty(type=DisplaySettings)
@@ -100,7 +100,7 @@ def unregister():
 
     # remove initialization helper app handler
     bpy.app.handlers.render_pre.remove(ABManagement.handler)
-    bpy.app.handlers.load_post.remove(AtomBlendAddon.load_file_handler)
+    # bpy.app.handlers.load_post.remove(AtomBlendAddon.load_file_handler)
 
     # UI elements
     for c in reversed(classes):
