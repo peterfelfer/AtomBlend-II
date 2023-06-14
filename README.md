@@ -14,7 +14,15 @@ Remember that the addon will not be automatically enabled. Enable it as explaine
 Restart Blender after installation and enabling.<br/>
 Go to 3D View, press `N` if the sidebar isn't showing yet, then click `AtomBlend-II`.
 
-## Usage of the addon
+## Save work state
+To save a certain work state and your UI settings for later use, you can just [save it as a `.blend` file](https://docs.blender.org/manual/en/latest/files/blend/open_save.html#saving-files).
+
+## Load work state
+To load a certain work state and your UI settings, you can just [open a `.blend` file](https://docs.blender.org/manual/en/latest/files/blend/open_save.html#opening-files).
+After loading the `.blend` file you have to click on the file browser icons next to the .pos/.epos and .rng/.rrng paths again to show your previous work state.
+
+## Usage of the addon UI
+In this section every feature of the UI will be explained.
 ### File loading
 <img src="media/readme-file_loading.PNG">
 
@@ -39,7 +47,7 @@ In this menu the appearance of the atom tip can be changed. You can hide specifi
 `Point size` - The point size of this element<br/>
 `% Displayed` - The displayed percentage of this element<br/>
 `# Displayed` - The amount of displayed atoms of this element (can not be changed)<br/>
-`Export` - Exports this element as separate object in Blender (<b>As we are using point clouds to keep the frame time in the viewport fast, this feature can only be used in the [Blender alpha version (currently 3.6.0 Alpha)](https://builder.blender.org/download/daily/)</b>). Currently, it is not possible to change the color or point size of the exported object. <br/>
+`Export` - Exports this element as separate object in Blender. Currently, this feature can just be used for data analysis and not for rendering or colorful visualization. This will only generate points and no mesh attached to the points.
 
 ### Scaling Cube
 In this menu you can change the appearance of the scaling cube around the atom tip or disable it completely.
