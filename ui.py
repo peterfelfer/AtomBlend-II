@@ -108,57 +108,35 @@ class DisplaySettings(bpy.types.PropertyGroup):
             ABGlobals.point_size_list = [x for xs in ABGlobals.point_size_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
     def export_update(self, context):
-        elem_coords = ABGlobals.all_elements_by_name[self.name]['coordinates']
+        # create mesh and object
+        export_mesh = bpy.data.meshes.new(self.name)
+        export_obj = bpy.data.objects.new(self.name, export_mesh)
 
-        # create mesh
-        elem_mesh = bpy.data.meshes.new(self.name)
-        elem_mesh.from_pydata(elem_coords, [], [])
-        elem_mesh.update()
+        # iterate over atoms and add them to coords list
+        coords = []
 
-        # create object
-        elem_object = bpy.data.objects.new(self.name, elem_mesh)
-        bpy.context.collection.objects.link(elem_object)
+        # only get the current percentage of atoms
+        num_displayed = ABGlobals.all_elements_by_name[self.name]['num_displayed']
+        elem_coords = ABGlobals.all_elements_by_name[self.name]['coordinates'][:num_displayed]
 
-        # transform point cloud to the rest of the atom tip
-        bpy.data.objects[self.name].rotation_euler[0] = math.pi
-        bpy.data.objects[self.name].location[2] = bpy.data.objects['Top'].location[2]
+        for atom in elem_coords:
+            x = atom[0]
+            y = atom[1]
+            z = atom[2]
+            coords.append((x, y, z))
 
-        # transform object to point cloud
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.context.view_layer.objects.active = bpy.context.scene.objects[self.name]
-        obj = bpy.data.objects[self.name]
-        obj.select_set(True)
-        bpy.ops.object.convert(target='POINTCLOUD')
+        # Make a mesh from a list of vertices/edges/faces
+        export_mesh.from_pydata(coords, [], [])
 
-        # add material to the point cloud
-        mat = bpy.data.materials.new(name=self.name)
-        mat.use_nodes = True
-        mat.node_tree.nodes["Principled BSDF"].inputs[0].default_value = bpy.context.scene.color_settings[self.name].color
-        obj.data.materials.append(mat)
+        # update the mesh
+        export_mesh.update()
 
-        # --- add geometry node stuff ---
-        modifier = obj.modifiers.new(self.name, 'NODES')
-        node_group = bpy.data.node_groups.new(type='GeometryNodeTree', name=self.name)
-        modifier.node_group = node_group
+        # get object to correct position and angle
+        export_obj.rotation_euler[0] = bpy.data.objects['Top'].rotation_euler[0]
+        export_obj.location[2] = bpy.data.objects['Top'].location[2]
 
-        # input node
-        group_inputs = node_group.nodes.new('NodeGroupInput')
-
-        # set point radius node
-        set_point_radius = node_group.nodes.new('GeometryNodeSetPointRadius')
-        set_point_radius.location = (400, 0)
-        set_point_radius.inputs[2].default_value = bpy.context.scene.color_settings[self.name].point_size / 16
-
-        # output node
-        group_outputs = node_group.nodes.new('NodeGroupOutput')
-        group_outputs.location = (800, 0)
-
-        # link nodes
-        node_group.links.new(group_inputs.outputs[0], set_point_radius.inputs[0])
-        node_group.links.new(set_point_radius.outputs[0], group_outputs.inputs[0])
-
-        # deselect object
-        bpy.data.objects[self.name].select_set(False)
+        # Link object to the active collection
+        bpy.context.collection.objects.link(export_obj)
 
     name: bpy.props.StringProperty(name="name", default="Unknown")
     display_name: bpy.props.StringProperty(name="name", default="Unknown")
@@ -166,7 +144,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
     perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
-    export: bpy.props.BoolProperty(name='', description='Export this element as an own object. Only available in 3.5.0+ Alpha.', default=False, update=export_update)
+    export: bpy.props.BoolProperty(name='', description='Export this element as an own object', default=False, update=export_update)
 
 # --- properties used for all elements ---
 class AB_properties(bpy.types.PropertyGroup):
@@ -561,9 +539,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         amount_col.label(text='# Displayed')
         export_col.label(text='Export')
 
-        # export feature is only available if (currently) version 3.6 alpha is used
-        if bpy.app.version < (3, 6, 0):
-            export_col.enabled = False
+        export_col.emboss = 'PULLDOWN_MENU' # don't draw export button as "boolean button"
 
         display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
 
