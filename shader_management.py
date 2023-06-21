@@ -127,7 +127,7 @@ class ABManagement:
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
 
-        # set defreault positions for camera sliders
+        # set default positions for camera sliders
         center_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
         center_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
         context.scene.atom_blend_addon_settings.camera_pos_x = center_x
@@ -815,6 +815,7 @@ class ABManagement:
 
         print('Wrote file to ' + render_path)
 
+        gpu.state.depth_test_set('NONE')
         gpu.state.depth_mask_set(False)
         ABGlobals.currently_writing_img = False
         return render_path
