@@ -3,7 +3,6 @@ import math
 import bpy
 
 from .read_data import *
-from .render import *
 
 # ------------------- EXTERNAL MODULES -------------------
 import sys
