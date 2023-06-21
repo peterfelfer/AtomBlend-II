@@ -9,10 +9,6 @@ import sys
 from math import *
 
 import bpy
-from bpy.props import StringProperty
-from bpy.types import PropertyGroup
-
-import numpy as np
 
 from .globals import ABGlobals
 
@@ -24,8 +20,7 @@ sys.path.insert(0, ABGlobals.addon_path)
 class DisplaySettings(bpy.types.PropertyGroup):
     def total_atom_coords_update(self, context):
         total_atoms_perc_displayed = context.scene.atom_blend_addon_settings.vertex_percentage
-        total_atoms_perc_displayed = total_atoms_perc_displayed #/ len(ABGlobals.all_data)
-        # print(total_atoms_perc_displayed, len(ABGlobals.all_data), context.scene.atom_blend_addon_settings.vertex_percentage)
+        total_atoms_perc_displayed = total_atoms_perc_displayed
 
         # update function atom_coords_update gets called as we're editing perc_displayed
         for elem_name in ABGlobals.all_elements_by_name:
@@ -76,7 +71,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
                 bpy.context.scene.color_settings[elem_name].display = True
             else:
                 bpy.context.scene.color_settings[elem_name].display = False
-                # perc_displayed = 0.0
 
     def atom_color_update(self, context):
         # reset color list
@@ -100,7 +94,6 @@ class DisplaySettings(bpy.types.PropertyGroup):
             num_displayed = ABGlobals.all_elements_by_name[elem_name]['num_displayed']
             point_size = bpy.context.scene.color_settings[elem_name].point_size
             ABGlobals.point_size_list.append([point_size] * num_displayed)
-            # print(elem_name, point_size, num_displayed, len(ABGlobals.point_size_list))
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if len(ABGlobals.point_size_list) > 0 and isinstance(ABGlobals.point_size_list[0], list):
@@ -223,7 +216,6 @@ class AB_properties(bpy.types.PropertyGroup):
         if context.scene.atom_blend_addon_settings.scaling_cube_rotate_with_tip:
             bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[0].interpolation = 'LINEAR'
             bpy.data.objects['Scaling Cube'].animation_data.action.fcurves[0].keyframe_points[1].interpolation = 'LINEAR'
-            # keyframe.interpolation = 'LINEAR'
 
         # set duration value of property
         duration = self.frames / 24
@@ -255,7 +247,6 @@ class AB_properties(bpy.types.PropertyGroup):
             context.scene.objects['Camera'].location[2] = bpy.data.objects['Center'].location[2]
 
     def update_background_color(self, context):
-        # if context.space_data.region_3d.view_perspective == 'CAMERA':
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = self.background_color
 
     def update_file_format(self, context):
@@ -313,8 +304,6 @@ class AB_properties(bpy.types.PropertyGroup):
 
     def update_scaling_cube_pos_z(self, context):
         if not self.scaling_cube_track_to_center:
-            # top_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
-            # bpy.data.objects['Scaling Cube'].location[2] = top_z + self.scaling_cube_pos_z
             bpy.data.objects['Scaling Cube'].location[2] = self.scaling_cube_pos_z
 
     # only accept values that are in a acceptable range
@@ -332,7 +321,6 @@ class AB_properties(bpy.types.PropertyGroup):
 
     def get_legend_position_y(self):
         return self.get('legend_position_y', 50) # if key is not found, return 50 (default)
-
 
     # properties
     e_pos_filepath: bpy.props.StringProperty(name='', default='', description='')
@@ -414,16 +402,6 @@ class AB_properties(bpy.types.PropertyGroup):
         # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
     )
 
-class ATOMBLEND_PT_panel_general(bpy.types.Panel):
-    bl_idname = "ATOMBLEND_PT_panel_general"  # unique identifier for buttons and menu items to reference.
-    bl_label = "AtomBlend-II"  # display name in the interface.
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "AtomBlend-II"
-
-    def draw(self, context):
-        layout = self.layout
-
 # --- file loading ---
 class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_idname = "ATOMBLEND_PT_panel_file"  # unique identifier for buttons and menu items to reference.
@@ -431,7 +409,6 @@ class ATOMBLEND_PT_panel_file(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    #bl_parent_id = "ATOMBLEND_PT_panel_general"
 
     # define own poll method to be able to hide / show the panel on demand
     @classmethod
@@ -475,7 +452,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    #bl_parent_id = "ATOMBLEND_PT_panel_general"
 
     @classmethod
     def poll(cls, context):
@@ -495,9 +471,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         vertex_percentage_col = vertex_percentage_row.column(align=True)
         vertex_percentage_col.prop(context.scene.atom_blend_addon_settings, "vertex_percentage")
 
-        # color settings
-        # col = layout.column()
-        # display_col = row.column()
         # displayed, name, charge, color, point size, % displayed, # displayed, export
         f = [0.07, 0.1, 0.1, 0.2, 0.2, 0.23, 0.1]
         perc_left = 1.0
@@ -507,9 +480,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         split = split.split(factor=f[1] / perc_left)
         display_name_col = split.column(align=True)
         perc_left -= f[1]
-        # split = split.split(factor=f[2] / perc_left)
-        # charge_col = split.column(align=True)
-        # perc_left -= f[2]
         split = split.split(factor=f[2] / perc_left)
         color_col = split.column(align=True)
         perc_left -= f[2]
@@ -529,7 +499,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         # label row
         prop = context.scene.atom_blend_addon_settings
         display_col.prop(prop, 'display_all_elements', icon_only=True, icon='HIDE_OFF' if prop.display_all_elements else 'HIDE_ON')
-        # display_col.label(text='')
         display_name_col.label(text='Name')
         color_col.label(text='Color')
         point_size_col.label(text='Point size')
@@ -539,15 +508,10 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
 
         export_col.emboss = 'PULLDOWN_MENU' # don't draw export button as "boolean button"
 
-        display_all_elements = bpy.context.scene.atom_blend_addon_settings.display_all_elements
-
         for prop in bpy.context.scene.color_settings:
             if prop.name == ABGlobals.unknown_label:  # add unknown atoms in the last row
                 continue
-            elem_name_charge = prop.display_name
-            elem_name = elem_name_charge.split('_')[0]
             display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
-            # name_col.label(text=elem_name)
             display_name_col.prop(prop, 'display_name', text='')
             color_col.prop(prop, 'color')
             point_size_col.prop(prop, 'point_size')
@@ -559,8 +523,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
 
         # display unknown atoms in last row
         prop = bpy.context.scene.color_settings[ABGlobals.unknown_label]
-        elem_name_charge = prop.name
-        elem_name = elem_name_charge.split('_')[0]
         display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
         display_name_col.prop(prop, 'display_name', text='')
         color_col.prop(prop, 'color')
@@ -578,12 +540,7 @@ class ATOMBLEND_PT_panel_dev(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    #bl_parent_id = "ATOMBLEND_PT_panel_general"
     bl_options = {'DEFAULT_CLOSED'}
-
-    # @classmethod
-    # def poll(cls, context):
-    #     return True  # context.object is not None
 
     def draw(self, context):
         layout = self.layout
@@ -761,8 +718,6 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "AtomBlend-II"
-    #bl_parent_id = "ATOMBLEND_PT_panel_general"
-    # bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
@@ -813,10 +768,8 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             col = box.column()
             # frame amount
             frame_duration_amount = col.row(align=True)
-            seconds = str('%.1f' % (context.scene.atom_blend_addon_settings.frames / 24))
             frame_duration_amount.prop(context.scene.atom_blend_addon_settings, 'duration')
             frame_duration_amount.prop(context.scene.atom_blend_addon_settings, 'frames')
-            # frame_duration_amount.prop(context.scene.atom_blend_addon_settings, 'frames', text='Frames (approx.' + str(seconds) + ' seconds)')
 
             # rotation amount
             rot_amount = col.row(align=True)
@@ -826,10 +779,8 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
             anim_mode = col.row(align=True)
             anim_mode.prop(bpy.context.scene.atom_blend_addon_settings, 'animation_mode')
 
-        # layout.row().separator(factor=0.01)
 
         # output image resolution
-        # resolution_label = layout.row(align=True)
         box = layout.box()
         col = box.column()
         f = [0.23, 0.385, 0.385]
@@ -849,25 +800,15 @@ class ATOMBLEND_PT_rendering(bpy.types.Panel):
         resolution_xy.prop(bpy.data.scenes["Scene"].render, 'resolution_y', text='Height')
 
         # file format
-        # file_format_col = layout.row(align=True)
         file_format_col = col
         file_format_col.prop(context.scene.atom_blend_addon_settings, 'file_format')
 
         # file path selection
-        # file_path_row = layout.row(align=True)
         file_path_row = col
         file_path_row.prop(bpy.data.scenes["Scene"].render, 'filepath')
 
         # render
         row = layout.row()
-        # preview_col = row.column(align=True)
-        # render_col = row.column(align=True)
-
-        # prev_split = preview_col.split(factor=0.8)
-        # preview_button_col = prev_split.column(align=True)
-        #
-        # preview_split = prev_split.split(factor=1.0)
-        # start_stop_col = preview_split.column(align=True)
 
         preview_col = row.split()
         preview_col = preview_col.split(align=True, factor=1.0 if ABGlobals.render_frame else 0.9)
@@ -952,11 +893,6 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
         file_path = self.filepath
         bpy.context.scene.atom_blend_addon_settings.e_pos_filepath = file_path
 
-        # if len(context.scene.atom_blend_addon_settings.e_pos_filepath) != 0:
-        #     ABGlobals.path = context.scene.atom_blend_addon_settings.e_pos_filepath
-        # else:
-        #     ABGlobals.path = self.filepath
-
         if file_path.lower().endswith('.epos'):
             AtomBlendAddon.load_epos_file(self, context)
         elif file_path.lower().endswith('.pos'):
@@ -998,11 +934,6 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         file_path = self.filepath
         bpy.context.scene.atom_blend_addon_settings.rrng_filepath = file_path
 
-        # if len(context.scene.atom_blend_addon_settings.rrng_filepath) != 0:
-        #     ABGlobals.path = context.scene.atom_blend_addon_settings.rrng_filepath
-        # else:
-        #     ABGlobals.path = self.filepath
-
         if file_path.lower().endswith('.rrng'):
             AtomBlendAddon.load_rrng_file(self, context)
         elif file_path.lower().endswith('.rng'):
@@ -1011,10 +942,6 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
         ABGlobals.FileLoaded_rrng = True
         print(f"Object Loaded: {file_path}")
 
-        # set filepath to property
-        # bpy.context.scene.atom_blend_addon_settings.rrng_filepath = self.filepath
-
-        # https://docs.blender.org/api/current/bpy.types.Operator.html#calling-a-file-selector
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1035,18 +962,12 @@ class ATOMBLEND_OT_unload_files(bpy.types.Operator):
     bl_label = "Unload .pos/.epos and .rng/.rrng file"
     bl_description = "Unload the currently loaded files"
 
-    # filepath: bpy.props.StringProperty(subtype="FILE_PATH")
-    # filter_glob: bpy.props.StringProperty(
-    #     default='*.epos;*.pos',
-    #     options={'HIDDEN'}
-    # )
-
     @classmethod
     def poll(cls, context):
         return ABGlobals.FileLoaded_e_pos or ABGlobals.FileLoaded_rrng
 
     def execute(self, context):
-        # bascially File > New > General
+        # basically File > New > General
         bpy.context.scene.color_settings.clear()
         bpy.ops.wm.read_homefile(app_template="")
 
@@ -1073,16 +994,6 @@ class ATOMBLEND_OT_unload_files(bpy.types.Operator):
         ABGlobals.point_size = 5.0
 
         return {'FINISHED'}
-
-    # def invoke(self, context, event):
-    #     path = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
-    #     if context.scene.atom_blend_addon_settings.dev_automatic_file_loading and os.path.isfile(path):
-    #         self.filepath = context.scene.atom_blend_addon_settings.dev_dataset_selection + '.epos'
-    #         return self.execute(context)
-    #     else:
-    #         context.window_manager.fileselect_add(self)
-    #         return {'RUNNING_MODAL'}
-
 
 # --- buttons for switching between rendering a picture and video ---
 # (maybe there is a better solution for this...)
@@ -1146,6 +1057,7 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             ABManagement.save_image(self, context)
         else:
             out_path = os.path.dirname(bpy.data.scenes['Scene'].render.filepath)
+
             # clear existing frames in video edit before rendering
             bpy.ops.sequencer.select_all(action='SELECT')
             bpy.ops.sequencer.delete()
@@ -1160,8 +1072,6 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
 
                 # add frame to video editor
                 img_name = os.path.split(img_path)[1]
-                # img_path = out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.png'
-                # img_path = r'%s' %img_path
 
                 bpy.context.scene.sequence_editor.sequences.new_image(name=img_name, filepath=img_path, channel=1, frame_start=i)
                 print('Rendered frame ' + str(i) + ' / ' + str(context.scene.atom_blend_addon_settings.frames))
@@ -1171,11 +1081,6 @@ class ATOMBLEND_OT_render(bpy.types.Operator):
             bpy.data.scenes["Scene"].render.image_settings.file_format = 'AVI_JPEG'
             bpy.context.scene.render.filepath = out_path + '\\' + ABGlobals.dataset_name + '.avi'
             bpy.ops.render.render(animation=True)
-
-            # delete all the written frames
-            # file_format = context.scene.atom_blend_addon_settings.file_format.lower()
-            # for i in range(1, context.scene.atom_blend_addon_settings.frames+1):
-            #     os.remove(path=out_path + '\\' + ABGlobals.dataset_name + '_frame_' + str(i) + '.' + file_format)
 
             print('Animation rendering done. Saved video to ' + str(out_path) + '\\' + ABGlobals.dataset_name + '.avi')
 
@@ -1196,12 +1101,10 @@ class ATOMBLEND_OT_preview(bpy.types.Operator):
         # toggle (normal) perspective view and camera view
         if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
             context.space_data.region_3d.view_perspective = 'CAMERA'
-            # background_color = bpy.context.scene.atom_blend_addon_settings.background_color
-            # bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
 
         elif context.space_data.region_3d.view_perspective == 'CAMERA':
             context.space_data.region_3d.view_perspective = 'PERSP'
-            # bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
+
             if ABGlobals.animation_playing and not ABGlobals.render_frame:  # if leaving preview mode and animation is still playing, stop it
                 bpy.ops.screen.animation_play()
                 ABGlobals.animation_playing = not ABGlobals.animation_playing
