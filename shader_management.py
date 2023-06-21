@@ -28,8 +28,6 @@ class ABManagement:
     def init(self, context):
         # --- init shader ---
         shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
-        # line_shader = gpu.shader.from_builtin('3D_POLYLINE_UNIFORM_COLOR')
-        # line_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
         my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
         legend_shader = GPUShader(ABShaders.legend_vertex_shader, ABShaders.legend_fragment_shader)
 
@@ -51,7 +49,6 @@ class ABManagement:
         bpy.context.scene.color_settings[elem_name].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
 
         # add draw handler that will be called every time this region in this space type will be drawn
-        # ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_VIEW')
         ABManagement.handle = bpy.types.SpaceView3D.draw_handler_add(ABManagement.handler, (self, context), 'WINDOW', 'POST_PIXEL')
 
         # --- init other things needed for shader drawing ---
@@ -146,15 +143,12 @@ class ABManagement:
 
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
-        # gpu.state.depth_mask_set(False)
-        # gpu.state.depth_test_set('ALWAYS')
         gpu.state.depth_test_set('LESS_EQUAL')
         gpu.state.depth_mask_set(True)
 
         # render frame
         ABManagement.render(self, context)
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
-            # ABManagement.render_metric(self, context)
             ABManagement.create_bounding_box(self, context)
 
         ABManagement.create_legend(self, context)
@@ -214,7 +208,6 @@ class ABManagement:
         legend_start_pos = mathutils.Vector((context.scene.atom_blend_addon_settings.legend_position_x, context.scene.atom_blend_addon_settings.legend_position_y))
 
         legend_pos_viewport = lower_left_viewport + in_relation_vec2(legend_start_pos) * viewport_camera_measurement
-        # legend_pos_viewport = lower_left_viewport + legend_start_pos # for the viewport the lower left corner of camera can be zoomed in/out with camera wheel
         legend_pos_image = legend_start_pos # for rendered image the lower left corner is just (0,0)
         vertices = []
         colors = []
@@ -226,11 +219,10 @@ class ABManagement:
         keys = context.scene.color_settings.keys()
         keys.remove(ABGlobals.unknown_label)
         keys.append(ABGlobals.unknown_label)
-        keys.reverse() # in place reverse
+        keys.reverse()  # in place reverse
         # remove the unknown label from its index and add it to the last row
         # print('----')
         for k in keys:
-            # print('key', k)
             prop = bpy.context.scene.color_settings[k]
             if not prop.display and context.scene.atom_blend_addon_settings.legend_hide_hidden_elements:
                 continue
@@ -272,11 +264,9 @@ class ABManagement:
                 font_size = in_relation_y(context.scene.atom_blend_addon_settings.legend_font_size) * viewport_camera_measurement.y
                 blf.size(font_id, font_size)
                 x_dim, y_dim = blf.dimensions(font_id, elem_name)
-                # blf.position(font_id, legend_pos_viewport.x + 20 + radius, legend_pos_viewport.y - font_dim[1] / 2.0, 0)
                 column_spacing = in_relation_x(context.scene.atom_blend_addon_settings.legend_column_spacing) * viewport_camera_measurement.x
                 blf.position(font_id, legend_pos_viewport.x + column_spacing + radius, legend_pos_viewport.y - (y_dim / 2.0), 0)
 
-            # blf.position(font_id, 100, 100, 0)
             blf.draw(font_id, elem_name)
 
         shader = cache['legend_shader']
@@ -297,10 +287,6 @@ class ABManagement:
         ymax = bpy.data.objects['Scaling Cube'].location[1] + ABGlobals.max_y * scale[1]
         zmin = bpy.data.objects['Scaling Cube'].location[2] - (center_z * scale[2]) + center_z
         zmax = bpy.data.objects['Scaling Cube'].location[2] + (center_z * scale[2]) + center_z
-        # zmin = ABGlobals.min_z
-        # zmax = ABGlobals.max_z
-        # zmin = (ABGlobals.min_z + bpy.data.objects['Center'].location[2]) * scale[2]
-        # zmax = (ABGlobals.max_z + bpy.data.objects['Center'].location[2]) * scale[2]
 
         bounding_box_coords = []
 
@@ -358,7 +344,6 @@ class ABManagement:
         if proj_matrix == None:
             proj_matrix = bpy.context.region_data.perspective_matrix
         if object_matrix == None:
-            # object_matrix = bpy.data.objects['Origin'].matrix_world
             object_matrix = bpy.data.objects['Scaling Cube'].matrix_world
 
         ABManagement.get_nearest_points_metric(self, context, bounding_box_coords)
@@ -367,7 +352,6 @@ class ABManagement:
         batch = batch_for_shader(line_shader, 'LINES', {"position": bounding_box_coords, "color": color_list})
         line_shader.uniform_float('projection_matrix', proj_matrix)
         line_shader.uniform_float('object_matrix', object_matrix)
-        # line_shader.uniform_float('color', (1,0,0,1))
         batch.draw(line_shader)
 
     def get_nearest_points_metric(self, context, bbc):
@@ -419,7 +403,7 @@ class ABManagement:
         d /= 2.0
         d_len = (loc - d).length
 
-        #x
+        # x
         x_width = ABGlobals.max_x - ABGlobals.min_x
         x_width = round_width(x_width * scale[0])
 
@@ -511,27 +495,16 @@ class ABManagement:
 
         # calculates position of the scaling cube font (depending on font size it's not exactly (a+b)/2)
         def calc_pos(a, b):
-            # len_vec_a_b = math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)  # get length of line
             font_dim = blf.dimensions(font_id, text)
-            # print(font_dim, len_vec_a_b, a, b)
-            # font_perc = float(font_dim[0] / len_vec_a_b)
-
-            # print(type(a))
-            # a_vec = mathutils.Vector((a[0], a[1]))
-            # b_vec = mathutils.Vector((b[0], b[1]))
-            # pos = a_vec + (b_vec * (0.5 - font_perc))
 
             a_to_b_vec = b - a
             font_perc = font_dim[0] / a_to_b_vec.length
 
             if a[0] <= b[0]:
                 pos = a_2d + a_to_b_vec * (0.5 - font_perc * 0.5)
-                # pos = a_2d + a_to_b_vec * (font_perc * 0.5)
             else:
                 pos = b_2d - a_to_b_vec * (0.5 - font_perc * 0.5)
-                # pos = a_2d - a_to_b_vec * (font_perc * 0.5)
 
-            # print(len_vec_a_b, font_dim, font_perc, pos)
             return pos
 
         # mapping the 3d point into the camera space
@@ -546,7 +519,6 @@ class ABManagement:
             x_pos = round(co_2d.x * render_size[0])  # / render_size[0]
             y_pos = round(co_2d.y * render_size[1])  # / render_size[1]
 
-            # return [x_pos, y_pos]
             return mathutils.Vector((x_pos, y_pos))
 
         # font should rotate with scaling cube
@@ -556,13 +528,11 @@ class ABManagement:
 
         font_id = 0
         blf.color(font_id, 0, 0, 0, 1)
-        font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
         point_3d = (a + b) * 0.5
         angle = 0
 
         if ABGlobals.currently_writing_img: # write picture
             scene = bpy.context.scene
-            cam = scene.camera
 
             # mapping the 3d point into the camera space
             if bpy.context.scene.atom_blend_addon_settings.scaling_cube_rotate_font:
@@ -578,11 +548,8 @@ class ABManagement:
             font_size = context.scene.atom_blend_addon_settings.scaling_cube_font_size
             blf.size(font_id, font_size)
 
-            # point_2d = [x_pos, y_pos]
             point_2d = [pos[0], pos[1]]
 
-            # point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, tuple_point_3d)
-            # ui_scale = bpy.context.preferences.system.ui_scale
         else:  ### viewport
             if bpy.context.scene.atom_blend_addon_settings.scaling_cube_rotate_font:
                 a_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, a)
@@ -591,16 +558,10 @@ class ABManagement:
                 if a_2d is None or b_2d is None:
                     return
 
-
                 pos = calc_pos(a_2d, b_2d)
-
-                # a_to_b_vec = b_2d - a_2d
-                # pos = a_2d + a_to_b_vec * 0.3
-                # perc = blf.dimensions
-
                 angle = calc_angle(a_2d, b_2d)
+
             else:
-                # pos = img_writing_3d_to_2d(point_3d)
                 pos = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
 
             # map font size to viewport
@@ -612,19 +573,12 @@ class ABManagement:
                 font_size = int(context.scene.atom_blend_addon_settings.scaling_cube_font_size / 2)
                 blf.size(font_id, font_size)
 
-            # text_dim = blf.dimensions(font_id, text)
-            # text_dim = mathutils.Vector(text_dim) / 2.0
-            # point_3d[0] -= text_dim[0]
-            # point_3d -= mathutils.Vector((text_dim[0], text_dim[1], 0))
-
-            point_2d = bpy_extras.view3d_utils.location_3d_to_region_2d(bpy.context.region, bpy.context.space_data.region_3d, point_3d)
             point_2d = pos
 
             if point_2d is None:
                 return
 
         blf.enable(font_id, blf.ROTATION)
-        # blf.size(font_id, 20.0, font_size)
         blf.rotation(font_id, angle)
         blf.position(font_id, point_2d[0], point_2d[1], 0)
         blf.draw(font_id, text)
@@ -635,25 +589,13 @@ class ABManagement:
         shader = cache['shader']
 
         if len(ABGlobals.atom_color_list) != len(ABGlobals.atom_coords):
-            # print('ATOM COLOR LIST', ABGlobals.atom_color_list)
-            # print('ATOM COORDS', ABGlobals.atom_coords)
             raise Exception("len atom cols != len atom coords", len(ABGlobals.atom_color_list), len(ABGlobals.atom_coords))
 
-        # set background color
-        # if context.space_data.region_3d.view_perspective == 'PERSP' or context.space_data.region_3d.view_perspective == 'ORTHO':
-        #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = (0.051, 0.051, 0.051, 1)
-
-        # elif context.space_data.region_3d.view_perspective == 'CAMERA':
-        #     background_color = bpy.context.scene.atom_blend_addon_settings.background_color
-        #     bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[0].default_value = background_color
         if (len(ABGlobals.atom_coords) != len(ABGlobals.atom_color_list)) or (
                 len(ABGlobals.atom_coords) != len(ABGlobals.point_size_list)) or (
                 len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
             print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
 
-        # print('position', ABGlobals.atom_coords)
-        # print('color', ABGlobals.atom_color_list)
-        # print('point size', ABGlobals.point_size_list)
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
         # uniform preparations
@@ -668,8 +610,6 @@ class ABManagement:
 
     def save_image(self, context, cur_frame=''):
         ABGlobals.currently_writing_img = True
-
-        start = time.perf_counter()
 
         cache = ABManagement.cache
         scene = context.scene
@@ -714,8 +654,6 @@ class ABManagement:
             # adapting the point size when writing image because the points are much smaller than in viewport when rendering for some reason
             adapted_point_size = [i * 2.5 for i in ABGlobals.point_size_list]
 
-            # offscreen.draw_view3d(scene, context.view_layer, context.space_data, context.region, view_matrix, proj_matrix, do_color_management=True)
-
             batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': adapted_point_size})
 
             shader.bind()
@@ -723,7 +661,6 @@ class ABManagement:
             shader.uniform_float('object_matrix', object_matrix)
             batch.draw(shader)
 
-            # ABManagement.render_metric(self, context)
             if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
                 ABManagement.create_bounding_box(self, context, proj_matrix=proj_matrix)
 
@@ -745,19 +682,7 @@ class ABManagement:
 
         # actually save image
         path = bpy.data.scenes["Scene"].render.filepath
-
-        # file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
-        # print(ABGlobals.dataset_name, str(cur_frame), file_format.lower())
         filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.png'  # file_format.lower()
-        # if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
-        #     render_path = path
-        #     image.file_format = file_format.upper() #render_path.split('.')[-1].upper()  # 'PNG'
-        # elif path.lower().endswith('.avi'):
-        #     render_path = path
-        #     image.file_format = 'PNG' #file_format.upper()
-        # else:
-        #     render_path = path + '//' + filename
-        #     image.file_format = file_format.upper() # render_path.split('.')[-1].upper()  # 'PNG'
 
         if not ABGlobals.render_frame:
             path = os.path.split(path)[0]
@@ -770,10 +695,7 @@ class ABManagement:
 
         image.file_format = 'PNG'
 
-        render_path = r'%s' % render_path
-
         file_format = context.scene.atom_blend_addon_settings.file_format
-        # file_format = bpy.data.scenes["Scene"].render.image_settings.file_format
         filename = ABGlobals.dataset_name + '_frame_' + str(cur_frame) + '.' + file_format.lower()
 
         if file_format == 'PNG':
@@ -801,16 +723,7 @@ class ABManagement:
             else:
                 render_path = path + filename
 
-        # if path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff')):
-        #     render_path = path
-        # else:
-        #     render_path = path + '//' + filename
-
         image.filepath_raw = render_path
-
-        # if os.path.isfile(image.filepath_raw):
-        #     os.remove(image.filepath_raw)
-
         image.save()
 
         print('Wrote file to ' + render_path)
