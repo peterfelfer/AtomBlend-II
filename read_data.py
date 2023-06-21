@@ -35,12 +35,13 @@ class AtomData:
 class AtomBlendAddon:
     # @persistent
     # def load_file_handler(self):
-    #     e_pos_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
-    #     if len(e_pos_path) != 0:
-    #         if e_pos_path.lower().endswith('.epos'):
-    #             AtomBlendAddon.load_epos_file(self, bpy.context)
-    #         elif e_pos_path.lower().endswith('.pos'):
-    #             AtomBlendAddon.load_pos_file(self, bpy.context)
+    #     register()
+        # e_pos_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
+        # if len(e_pos_path) != 0:
+        #     if e_pos_path.lower().endswith('.epos'):
+        #         AtomBlendAddon.load_epos_file(self, bpy.context)
+        #     elif e_pos_path.lower().endswith('.pos'):
+        #         AtomBlendAddon.load_pos_file(self, bpy.context)
 
     def setup(self, context):
         # set material mode in layer screen
@@ -212,10 +213,6 @@ class AtomBlendAddon:
 
     def load_rng_file(self, context):
         file_path = bpy.context.scene.atom_blend_addon_settings.rrng_filepath
-
-        if file_path == None:
-            print('No file loaded')
-            return
 
         # if rng file is loaded first, init the unknown element into color structures
         if not ABGlobals.FileLoaded_e_pos:
@@ -423,10 +420,6 @@ class AtomBlendAddon:
     def load_rrng_file(self, context):
         file_path = bpy.context.scene.atom_blend_addon_settings.rrng_filepath
 
-        if file_path is None:
-            print('No file loaded')
-            return
-
         # if rrng file is loaded first, init the unknown element into color structures
         if not ABGlobals.FileLoaded_e_pos:
             AtomBlendAddon.setup(self, context)
@@ -525,15 +518,6 @@ class AtomBlendAddon:
     def load_epos_file(self, context):
         file_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
 
-        if (file_path == None):
-            print('No file loaded')
-            return
-
-        # reset color_settings
-        print('pre', bpy.context.scene.color_settings)
-        # bpy.context.scene.color_settings.clear()
-        print('post', bpy.context.scene.color_settings)
-
         if context.scene.atom_blend_addon_settings.dev_mode:
             bpy.ops.wm.console_toggle()
 
@@ -608,10 +592,6 @@ class AtomBlendAddon:
 
     def load_pos_file(self, context):
         file_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
-
-        if (file_path == None):
-            print('No file loaded')
-            return
 
         # reset color_settings
         # bpy.context.scene.color_settings.clear()
