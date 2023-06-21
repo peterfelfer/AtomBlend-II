@@ -288,7 +288,6 @@ class AB_properties(bpy.types.PropertyGroup):
             context.scene.atom_blend_addon_settings.background_color = [bc[0], bc[1], bc[2], 1.0]
 
     def update_legend_scale(self, context):
-        print('update legend scale')
         scale = context.scene.atom_blend_addon_settings.legend_scale
         default_line_spacing = 50
         default_column_spacing = 20
@@ -547,7 +546,6 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
             if prop.name == ABGlobals.unknown_label:  # add unknown atoms in the last row
                 continue
             elem_name_charge = prop.display_name
-            print(elem_name_charge)
             elem_name = elem_name_charge.split('_')[0]
             display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
             # name_col.label(text=elem_name)
@@ -966,7 +964,7 @@ class ATOMBLEND_OT_load_file(bpy.types.Operator):
             AtomBlendAddon.load_pos_file(self, context)
 
         ABGlobals.FileLoaded_e_pos = True
-        print(f"Object Loaded: {ABGlobals.FileLoaded_e_pos}")
+        print(f"Object Loaded: {file_path}")
 
         return {'FINISHED'}
 
@@ -1012,7 +1010,7 @@ class ATOMBLEND_OT_load_rrng_file(bpy.types.Operator):
             AtomBlendAddon.load_rng_file(self, context)
 
         ABGlobals.FileLoaded_rrng = True
-        print(f"Object Loaded: {ABGlobals.FileLoaded_rrng}")
+        print(f"Object Loaded: {file_path}")
 
         # set filepath to property
         # bpy.context.scene.atom_blend_addon_settings.rrng_filepath = self.filepath
@@ -1049,35 +1047,31 @@ class ATOMBLEND_OT_unload_files(bpy.types.Operator):
         return ABGlobals.FileLoaded_e_pos or ABGlobals.FileLoaded_rrng
 
     def execute(self, context):
-        # clear all data storages
-        ABGlobals.all_elements.clear()
-        ABGlobals.all_elements_by_name.clear()
-        ABGlobals.all_data = []
-        ABGlobals.element_count.clear()
-        ABGlobals.atom_coords.clear()
-        ABGlobals.atom_color_list.clear()
-        ABGlobals.point_size_list.clear()
+        # bascially File > New > General
+        bpy.context.scene.color_settings.clear()
+        bpy.ops.wm.read_homefile(app_template="")
 
-        # files are not loaded anymore
-        ABGlobals.FileLoaded_e_pos = False
+        # reset global variables
         ABGlobals.FileLoaded_rrng = False
-
-        # reset file paths
-        bpy.context.scene.atom_blend_addon_settings.e_pos_filepath = ''
-        bpy.context.scene.atom_blend_addon_settings.rrng_filepath = ''
-
-        # delete objects
-        obj = bpy.data.objects['Camera']
-        bpy.data.objects.remove(obj, do_unlink=True)
-
-        obj = bpy.data.objects['Center']
-        bpy.data.objects.remove(obj, do_unlink=True)
-
-        obj = bpy.data.objects['Origin']
-        bpy.data.objects.remove(obj, do_unlink=True)
-
-        obj = bpy.data.objects['Top']
-        bpy.data.objects.remove(obj, do_unlink=True)
+        ABGlobals.FileLoaded_e_pos = False
+        ABGlobals.path = None
+        ABGlobals.path_rrng = None
+        ABGlobals.dataset_name = None
+        ABGlobals.all_elements = []
+        ABGlobals.all_elements_by_name = {}
+        ABGlobals.all_data = []
+        ABGlobals.element_count = {}
+        ABGlobals.atom_coords = []
+        ABGlobals.unknown_label = 'n/a'
+        ABGlobals.max_x = 0
+        ABGlobals.min_x = 0
+        ABGlobals.max_y = 0
+        ABGlobals.min_y = 0
+        ABGlobals.max_z = 0
+        ABGlobals.min_z = 0
+        ABGlobals.atom_color_list = []
+        ABGlobals.point_size_list = []
+        ABGlobals.point_size = 5.0
 
         return {'FINISHED'}
 

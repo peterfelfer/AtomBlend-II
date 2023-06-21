@@ -127,19 +127,22 @@ class ABManagement:
         # set default path
         bpy.data.scenes["Scene"].render.filepath = bpy.data.scenes["Scene"].render.filepath + ABGlobals.dataset_name + '.png'
 
-        # set default positions for camera sliders
+        # set defreault positions for camera sliders
         center_x = (ABGlobals.max_x + ABGlobals.min_x) / 2
         center_z = (ABGlobals.max_z + ABGlobals.min_z) / 2
         context.scene.atom_blend_addon_settings.camera_pos_x = center_x
         context.scene.atom_blend_addon_settings.camera_pos_z = center_z
 
     def handler(self, context):
-        # print('handler!')
+        if not ABGlobals.FileLoaded_e_pos and not ABGlobals.FileLoaded_rrng:
+            return
+
         # update camera position in addon (if the camera is moved via viewport)
-        cam_loc = bpy.data.objects["Camera"].location
-        context.scene.atom_blend_addon_settings.camera_location_x_frame = cam_loc[0]
-        context.scene.atom_blend_addon_settings.camera_location_y_frame = cam_loc[1]
-        context.scene.atom_blend_addon_settings.camera_location_z_frame = cam_loc[2]
+        if bpy.context.scene.camera is not None:
+            cam_loc = bpy.data.objects["Camera"].location
+            context.scene.atom_blend_addon_settings.camera_location_x_frame = cam_loc[0]
+            context.scene.atom_blend_addon_settings.camera_location_y_frame = cam_loc[1]
+            context.scene.atom_blend_addon_settings.camera_location_z_frame = cam_loc[2]
 
         gpu.state.blend_set('ALPHA')
         gpu.state.program_point_size_set(True)
