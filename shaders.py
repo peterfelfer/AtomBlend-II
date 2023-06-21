@@ -1,4 +1,5 @@
 class ABShaders:
+    # shaders for drawing the bounding box / metric
     metric_vertex_shader = '''
         in vec3 position;
         in vec4 color;
@@ -21,6 +22,7 @@ class ABShaders:
         }
     '''
 
+    # shaders for the rendering of the atoms
     vertex_shader_simple = '''
             in vec3 position;
             in vec4 color;
@@ -58,6 +60,7 @@ class ABShaders:
             }
     '''
 
+    # shaders for the rendering of the legend
     legend_vertex_shader = '''
             in vec3 position;
             in vec4 color;
