@@ -1,22 +1,22 @@
 class ABShaders:
     # shaders for drawing the bounding box / metric
     metric_vertex_shader = '''
-        in vec3 position;
-        in vec4 color;
-        uniform mat4 projection_matrix;
-        uniform mat4 object_matrix;
+        //in vec3 position;
+        //in vec4 color;
+        //uniform mat4 projection_matrix;
+        //uniform mat4 object_matrix;
         //uniform mat4 view_matrix;
-        out vec4 f_color;
-        
+        //out vec4 f_color;
+
         void main(){
             gl_Position = projection_matrix * object_matrix * vec4(position, 1.0f);
             f_color = color;
         }
-    
+
     '''
     metric_fragment_shader = '''
-        in vec4 f_color;
-        out vec4 fragColor;
+        //in vec4 f_color;
+        //out vec4 fragColor;
         void main(){
             fragColor = f_color;
         }
@@ -24,13 +24,13 @@ class ABShaders:
 
     # shaders for the rendering of the atoms
     vertex_shader_simple = '''
-            in vec3 position;
-            in vec4 color;
-            in float ps;
-            uniform mat4 projection_matrix;
-            uniform mat4 object_matrix;
-            out vec4 f_color;
-            out float f_alpha_radius;
+            //in vec3 position;
+            //in vec4 color;
+            //in float ps;
+            //uniform mat4 projection_matrix;
+            //uniform mat4 object_matrix;
+            //out vec4 f_color;
+            //out float f_alpha_radius;
             void main()
             {
                 gl_Position = projection_matrix * object_matrix * vec4(position, 1.0f);
@@ -41,9 +41,9 @@ class ABShaders:
     '''
 
     fragment_shader_simple = '''
-            in vec4 f_color;
-            in float f_alpha_radius;
-            out vec4 fragColor;
+            //in vec4 f_color;
+            //in float f_alpha_radius;
+            //out vec4 fragColor;
             void main()
             {
                 float r = 0.0f;
@@ -62,13 +62,13 @@ class ABShaders:
 
     # shaders for the rendering of the legend
     legend_vertex_shader = '''
-            in vec3 position;
-            in vec4 color;
-            in float ps;
+            //in vec3 position;
+            //in vec4 color;
+            //in float ps;
             //uniform mat4 projection_matrix;
             //uniform mat4 object_matrix;
-            out vec4 f_color;
-            out float f_alpha_radius;
+            //out vec4 f_color;
+            //out float f_alpha_radius;
             void main()
             {
                 gl_Position = vec4(position, 1.0f);
@@ -79,9 +79,9 @@ class ABShaders:
     '''
 
     legend_fragment_shader = '''
-            in vec4 f_color;
-            in float f_alpha_radius;
-            out vec4 fragColor;
+            //in vec4 f_color;
+            //in float f_alpha_radius;
+            //out vec4 fragColor;
             void main()
             {
                 float r = 0.0f;

@@ -26,10 +26,56 @@ class ABManagement:
         return point_2d
 
     def init(self, context):
-        # --- init shader ---
-        shader = GPUShader(ABShaders.vertex_shader_simple, ABShaders.fragment_shader_simple)
-        my_line_shader = GPUShader(ABShaders.metric_vertex_shader, ABShaders.metric_fragment_shader)
-        legend_shader = GPUShader(ABShaders.legend_vertex_shader, ABShaders.legend_fragment_shader)
+        # https://blender.stackexchange.com/questions/286919/addon-stopped-working-on-mac-metal-in-v3-5-due-to-shader-compile-error-console
+        # --- init simple shader (atom drawing) ---
+        shader_simple_info = gpu.types.GPUShaderCreateInfo()
+        shader_simple_info.vertex_in(0, 'VEC3', 'position')
+        shader_simple_info.vertex_in(1, 'VEC4', 'color')
+        shader_simple_info.vertex_in(2, 'FLOAT', 'ps')
+        shader_simple_info.push_constant('MAT4', 'projection_matrix')
+        shader_simple_info.push_constant('MAT4', 'object_matrix')
+        shader_simple_interface = gpu.types.GPUStageInterfaceInfo('shader_simple_interface')
+        shader_simple_interface.smooth('VEC4', 'f_color')
+        shader_simple_interface.smooth('FLOAT', 'f_alpha_radius')
+        shader_simple_info.vertex_out(shader_simple_interface)
+
+        shader_simple_info.fragment_out(0, 'VEC4', 'fragColor')
+        shader_simple_info.vertex_source(ABShaders.vertex_shader_simple)
+        shader_simple_info.fragment_source(ABShaders.fragment_shader_simple)
+
+        shader_simple = gpu.shader.create_from_info(shader_simple_info)
+
+        # --- init metric shader (bounding box) ---
+        metric_shader_info = gpu.types.GPUShaderCreateInfo()
+        metric_shader_info.vertex_in(0, 'VEC3', 'position')
+        metric_shader_info.vertex_in(1, 'VEC4', 'color')
+        metric_shader_info.push_constant('MAT4', 'projection_matrix')
+        metric_shader_info.push_constant('MAT4', 'object_matrix')
+        metric_shader_interface = gpu.types.GPUStageInterfaceInfo('metric_shader_interface')
+        metric_shader_interface.smooth('VEC4', 'f_color')
+        metric_shader_info.vertex_out(metric_shader_interface)
+
+        metric_shader_info.fragment_out(0, 'VEC4', 'fragColor')
+        metric_shader_info.vertex_source(ABShaders.metric_vertex_shader)
+        metric_shader_info.fragment_source(ABShaders.metric_fragment_shader)
+
+        metric_shader = gpu.shader.create_from_info(metric_shader_info)
+
+        # --- init legend shader ---
+        legend_shader_info = gpu.types.GPUShaderCreateInfo()
+        legend_shader_info.vertex_in(0, 'VEC3', 'position')
+        legend_shader_info.vertex_in(1, 'VEC4', 'color')
+        legend_shader_info.vertex_in(2, 'FLOAT', 'ps')
+        legend_shader_interface = gpu.types.GPUStageInterfaceInfo('legend_shader_interface')
+        legend_shader_interface.smooth('VEC4', 'f_color')
+        legend_shader_interface.smooth('FLOAT', 'f_alpha_radius')
+        legend_shader_info.vertex_out(legend_shader_interface)
+
+        legend_shader_info.fragment_out(0, 'VEC4', 'fragColor')
+        legend_shader_info.vertex_source(ABShaders.legend_vertex_shader)
+        legend_shader_info.fragment_source(ABShaders.legend_fragment_shader)
+
+        legend_shader = gpu.shader.create_from_info(legend_shader_info)
 
         # shader input
         ABGlobals.atom_color_list = []
@@ -105,8 +151,8 @@ class ABManagement:
 
         # save in cache
         cache = ABManagement.cache
-        cache['shader'] = shader
-        cache['my_line_shader'] = my_line_shader
+        cache['shader'] = shader_simple
+        cache['my_line_shader'] = metric_shader
         cache['camera'] = bpy.context.scene.camera
         cache['legend_shader'] = legend_shader
 
