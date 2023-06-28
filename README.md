@@ -47,7 +47,7 @@ In this menu the appearance of the atom tip can be changed. You can hide specifi
 `Point size` - The point size of this element<br/>
 `% Displayed` - The displayed percentage of this element<br/>
 `# Displayed` - The amount of displayed atoms of this element (can not be changed)<br/>
-`Export` - Exports this element as separate object in Blender. Currently, this feature can just be used for data analysis and not for rendering or colorful visualization. This will only generate points and no mesh attached to the points.
+`Export` - Exports this element as separate object in Blender. Currently, this feature can just be used for data analysis and not for rendering or colorful visualization. This will only generate points and no mesh attached to the points. You can use Geometry Nodes to attach a mesh to the points.
 
 ### Scaling Cube
 In this menu you can change the appearance of the scaling cube around the atom tip or disable it completely.
