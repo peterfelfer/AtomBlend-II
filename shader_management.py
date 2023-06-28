@@ -263,11 +263,12 @@ class ABManagement:
         # go through color_settings in reverse order because legend
         # should be displayed in the same order as in ui (the ui is drawn bottom to top)
         keys = context.scene.color_settings.keys()
+
+        # remove the unknown label from its index and add it to the last row
         keys.remove(ABGlobals.unknown_label)
         keys.append(ABGlobals.unknown_label)
         keys.reverse()  # in place reverse
-        # remove the unknown label from its index and add it to the last row
-        # print('----')
+
         for k in keys:
             prop = bpy.context.scene.color_settings[k]
             if not prop.display and context.scene.atom_blend_addon_settings.legend_hide_hidden_elements:

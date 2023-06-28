@@ -173,7 +173,6 @@ class AtomBlendAddon:
             this_elem_coords = ABGlobals.all_elements_by_name[elem]['coordinates']
             ABGlobals.all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
             ABGlobals.all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
-            bpy.context.scene.color_settings[elem].perc_displayed = bpy.context.scene.atom_blend_addon_settings.vertex_percentage
 
         # disable the unknown atoms by default
         bpy.context.scene.color_settings[ABGlobals.unknown_label].display = False
@@ -475,9 +474,6 @@ class AtomBlendAddon:
 
     def load_epos_file(self, context):
         file_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
-
-        if context.scene.atom_blend_addon_settings.dev_mode:
-            bpy.ops.wm.console_toggle()
 
         # set dataset name
         filename = file_path.split(sep='\\')[-1]
