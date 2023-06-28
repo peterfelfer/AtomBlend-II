@@ -55,7 +55,7 @@ In this menu you can change the appearance of the scaling cube around the atom t
 <img src="media/readme-scaling_cube.PNG" width="50%" height="50%"/>
 
 `Scaling Cube` - Disable/Enable the scaling cube<br/>
-`RGB / Uniform` - Color the axes differently (x-axis red, y-axis green, z-axis blue) or choose a uniform color.<br/>
+`RGB / Uniform` - Color the axes differently (x-axis red, y-axis green, z-axis blue) or choose an uniform color.<br/>
 `Line width` - Change the line width of the scaling cube<br/>
 `Scale` - Change the size of the scaling cube regarding the x, y or z axis<br/>
 `Font size` - Change the font size of the measurements of the scaling cube<br/>

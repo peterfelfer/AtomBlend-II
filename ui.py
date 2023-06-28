@@ -134,7 +134,7 @@ class DisplaySettings(bpy.types.PropertyGroup):
     display_name: bpy.props.StringProperty(name="name", default="Unknown")
     color: bpy.props.FloatVectorProperty(name="", subtype='COLOR', min=0.0, max=1.0, size=4, default=(0.4, 0.4, 0.4, 1.0), update=atom_color_update)
     display: bpy.props.BoolProperty(name="", default=True, update=atom_coords_update)
-    perc_displayed: bpy.props.FloatProperty(name="", default=1.0, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
+    perc_displayed: bpy.props.FloatProperty(name="", default=0.001, min=0.0, soft_min=0.0, soft_max=1.0, step=0.01, precision=4, update=atom_coords_update)
     point_size: bpy.props.FloatProperty(name="", default=5.0, min=0.0, soft_min=0.0, step=0.5, precision=2, update=update_point_size)
     export: bpy.props.BoolProperty(name='', description='Export this element as an own object', default=False, update=export_update)
 
@@ -509,7 +509,7 @@ class ATOMBLEND_PT_shader_display_settings(bpy.types.Panel):
         export_col.emboss = 'PULLDOWN_MENU' # don't draw export button as "boolean button"
 
         for prop in bpy.context.scene.color_settings:
-            if prop.name == ABGlobals.unknown_label:  # add unknown atoms in the last row
+            if prop.name == ABGlobals.unknown_label or not ABGlobals.all_elements_by_name.__contains__(prop.name):  # add unknown atoms in the last row
                 continue
             display_col.prop(prop, 'display', icon_only=True, icon='HIDE_OFF' if prop.display else 'HIDE_ON')
             display_name_col.prop(prop, 'display_name', text='')
