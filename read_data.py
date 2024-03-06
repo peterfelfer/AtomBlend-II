@@ -47,7 +47,8 @@ class AtomBlendAddon:
                 s.spaces[0].shading.type = 'RENDERED'
 
         # set render mode to cycles & GPU rendering
-        bpy.data.scenes["Scene"].render.engine = 'CYCLES'
+        bpy.data.scenes["Scene"].render.engine = 'GAUSSIAN_SPLATTING_RENDERER'
+        # bpy.data.scenes["Scene"].render.engine = 'CYCLES'
         bpy.data.scenes["Scene"].cycles.device = 'GPU'
 
         # change resolution to upright image
