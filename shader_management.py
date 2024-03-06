@@ -193,7 +193,7 @@ class ABManagement:
         gpu.state.depth_mask_set(True)
 
         # render frame
-        ABManagement.render(self, context)
+        #ABManagement.render(self, context)
         if bpy.context.scene.atom_blend_addon_settings.scaling_cube:
             ABManagement.create_bounding_box(self, context)
 

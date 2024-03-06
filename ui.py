@@ -372,6 +372,8 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_font_size: bpy.props.IntProperty(name='Font size', description='Font size of the element names', min=0, default=30)
     legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
 
+    gaussian_splatting: bpy.props.BoolProperty(name='Gaussian Splatting', default=True, description='Activate or deactivate Gaussian Splatting')
+
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
         items=[('Static camera', 'Static camera', 'Static camera'),
@@ -391,15 +393,12 @@ class AB_properties(bpy.types.PropertyGroup):
 
     # for developing purposes
     dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
-        items=[('T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v05.epos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG', 'Eisenkorngrenze', 'Eisenkorngrenze'),
-               ('T:\Heller\AtomBlendII\EisenKorngrenze\FeGB_small.pos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG', 'Eisenkorngrenze-small', 'Eisenkorngrenze-small'),
-               ('T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03', 'IsoSurface', 'IsoSurface')
+        items=[('/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos', 'Voldata', 'Voldata'),
         ],
-        default='T:\Heller\AtomBlendII\EisenKorngrenze\FeGB_small.pos?T:\Heller\AtomBlendII\EisenKorngrenze\R56_03446-v01.RRNG',
-        # default='T:\Heller\AtomBlendII\Data for iso-surface\R56_02476-v03',
+        default='/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos',
     )
 
 # --- file loading ---
@@ -871,6 +870,19 @@ class ATOMBLEND_PT_camera_settings_track_to_center(bpy.types.Panel):
         row.active = not context.scene.atom_blend_addon_settings.camera_track_to_center
         row.prop(context.scene.atom_blend_addon_settings, 'camera_pos_x')
         row.prop(context.scene.atom_blend_addon_settings, 'camera_pos_z')
+
+class ATOMBLEND_PT_gaussian_splatting(bpy.types.Panel):
+    bl_idname = "ATOMBLEND_PT_gaussian_splatting"
+    bl_label = "Gaussian Splatting Settings"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "AtomBlend-II"
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column(align=True)
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'gaussian_splatting')
 
 
 # --- file loading ---
