@@ -65,7 +65,7 @@ def unregister():
     for c in classes:
         bpy.utils.unregister_class(c)
 
-    bpy.app.handlers.render_pre.remove(ABManagement.handler)
+    #bpy.app.handlers.render_pre.remove(ABManagement.handler)
 
     # UI elements
     for c in reversed(classes):
