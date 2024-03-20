@@ -64,7 +64,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # This is the method called by Blender for both final renders (F12) and
     # small preview for materials, world and lights.
     def render(self, depsgraph):
-        render.render_view_blender()
+        render.render_view_blender(ABGlobals.atom_coords)
         print('hi')
 
     # For viewport renders, this method gets called once at the start and
