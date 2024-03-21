@@ -49,7 +49,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
         if not skip_test:
              render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background)
 
-def render_view_blender(atom_coords):
+def render_view_blender(atom_coords, camera_specs):
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=False, data_device='cuda', debug=False, eval=False,
@@ -85,9 +85,9 @@ def render_view_blender(atom_coords):
     colmad_id = 1
     R = np.asarray([[1., 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     # T = np.asarray([-2.6, 300, 40])
-    T = np.asarray([0, 0, 0])
-    FoVx = 0.2981429851225105
-    FoVy = 0.2896360505522676
+    T = np.asarray(camera_specs['T'])
+    FoVx = camera_specs['FoVx']
+    FoVy = camera_specs['FoVy']
     # FoVx = 0.0001
     # FoVy = 0.0001
     uid = 0

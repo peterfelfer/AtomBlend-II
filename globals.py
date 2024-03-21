@@ -1,6 +1,9 @@
 import bpy
 import os
 
+import numpy as np
+
+
 class ABGlobals:
     # addon name
     name = None
