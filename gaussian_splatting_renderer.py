@@ -64,15 +64,23 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # This is the method called by Blender for both final renders (F12) and
     # small preview for materials, world and lights.
     def render(self, depsgraph):
-        render.render_view_blender(ABGlobals.atom_coords)
-        print('hi')
+        camera_specs = {
+            "colmap_id": 1,
+            "R": np.zeros,
+            "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
+            "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
+            "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
+            "uid": 0
+        }
+
+        render.render_view_blender(ABGlobals.atom_coords, camera_specs)
+
 
     # For viewport renders, this method gets called once at the start and
     # whenever the scene or 3D viewport changes. This method is where data
     # should be read from Blender in the same thread. Typically a render
     # thread will be started to do the work while keeping Blender responsive.
     def view_update(self, context, depsgraph):
-
         region = context.region
         view3d = context.space_data
         scene = depsgraph.scene
