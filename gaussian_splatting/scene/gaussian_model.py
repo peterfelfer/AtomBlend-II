@@ -255,7 +255,6 @@ class GaussianModel:
 
         vec = np.array([0.0, 0.0, 0.0, 0.0])
         rots = np.tile(vec, (self.xyz.shape[0], 1))
-        print('rots', rots)
 
         # ???????
         plydata = PlyData.read(path)

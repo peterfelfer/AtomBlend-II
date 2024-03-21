@@ -8,7 +8,7 @@
 #
 # For inquiries contact  george.drettakis@inria.fr
 #
-
+import numpy as np
 import torch
 from gaussian_splatting.scene import Scene
 import os
@@ -20,6 +20,7 @@ from gaussian_splatting.utils.general_utils import safe_state
 from argparse import ArgumentParser
 from gaussian_splatting.arguments import ModelParams, PipelineParams, get_combined_args
 from gaussian_splatting.gaussian_renderer import GaussianModel
+from gaussian_splatting.scene.cameras import Camera
 
 def render_set(model_path, name, iteration, views, gaussians, pipeline, background):
     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
@@ -61,7 +62,8 @@ def render_view_blender(atom_coords):
     dataset = model.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
 
-    gaussians.xyz = torch.tensor([[1.0, 1.0,1.0],[0.0,1.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
+    gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
+    # gaussians.xyz = torch.tensor([[1.0, 1.0,1.0],[0.0,1.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
     gaussians._opacity = torch.tensor([[1.0],[1.0],[1.0]], dtype=torch.float32, device="cuda")
     gaussians._rotation = torch.tensor([[1.0,0.0,0.0],[1.0,0.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
     gaussians._scaling = torch.tensor([[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]], dtype=torch.float32, device="cuda")
@@ -73,7 +75,26 @@ def render_view_blender(atom_coords):
     scene = Scene(dataset, gaussians, load_iteration=-1, shuffle=False)
     view = scene.getTrainCameras()
 
-    rendering = render(view[0], gaussians, pipeline, background)["render"]
+
+    v = view[0]
+
+    # def __init__(self, colmap_id, R, T, FoVx, FoVy, image, gt_alpha_mask,
+    #              image_name, uid,
+    #              trans=np.array([0.0, 0.0, 0.0]), scale=1.0, data_device = "cuda"
+    #              ):
+    colmad_id = 1
+    R = np.asarray([[1., 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    # T = np.asarray([-2.6, 300, 40])
+    T = np.asarray([0, 0, 0])
+    FoVx = 0.2981429851225105
+    FoVy = 0.2896360505522676
+    # FoVx = 0.0001
+    # FoVy = 0.0001
+    uid = 0
+
+    dummy_cam = Camera(colmad_id, R, T, FoVx, FoVy, None, None, 'bla', uid)
+
+    rendering = render(dummy_cam, gaussians, pipeline, background)["render"]
     render_path = '/harddisk1/home.local/qa43nawu/out/'
     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
 

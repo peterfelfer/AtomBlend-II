@@ -72,7 +72,6 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # should be read from Blender in the same thread. Typically a render
     # thread will be started to do the work while keeping Blender responsive.
     def view_update(self, context, depsgraph):
-        print("RenderEngine.view_update called")
 
         region = context.region
         view3d = context.space_data
@@ -115,7 +114,6 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # Blender will draw overlays for selection and editing on top of the
     # rendered image automatically.
     def view_draw(self, context, depsgraph):
-        print("RenderEngine.view_draw called")
 
         view3d = context.space_data
         r3d = view3d.region_3d
