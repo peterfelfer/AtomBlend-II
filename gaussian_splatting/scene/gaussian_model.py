@@ -44,9 +44,9 @@ class GaussianModel:
     def __init__(self, sh_degree: int):
         self.active_sh_degree = 0
         self.max_sh_degree = sh_degree
-        # self._xyz = torch.empty(0)
-        xyz = torch.tensor([[1, 1, 1], [0, 1, 0], [1, 0, 0]])
-        self._xyz = torch.from_numpy(np.array(xyz))
+        self._xyz = torch.empty(0)
+        # xyz = torch.tensor([[1, 1, 1], [0, 1, 0], [1, 0, 0]])
+        # self._xyz = torch.from_numpy(np.array(xyz))
         self._features_dc = torch.empty(0)
         self._features_rest = torch.empty(0)
         self._scaling = torch.empty(0)
