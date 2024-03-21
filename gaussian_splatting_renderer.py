@@ -116,6 +116,18 @@ class CustomRenderEngine(bpy.types.RenderEngine):
 
                     self.scene_data[ob.name] = DrawData(ob)
 
+
+        camera_specs = {
+            "colmap_id": 1,
+            "R": np.zeros,
+            "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
+            "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
+            "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
+            "uid": 0
+        }
+
+        render.render_view_blender(ABGlobals.atom_coords, camera_specs)
+
     # For viewport renders, this method is called whenever Blender redraws
     # the 3D viewport. The renderer is expected to quickly draw the render
     # with OpenGL, and not perform other expensive work.

@@ -61,6 +61,7 @@ def render_view_blender(atom_coords, camera_specs):
     model = ModelParams(ply_model)
     dataset = model.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
+    # gaussians = GaussianModel(3)
 
     gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
     # gaussians.xyz = torch.tensor([[1.0, 1.0,1.0],[0.0,1.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
@@ -72,11 +73,11 @@ def render_view_blender(atom_coords, camera_specs):
     pipeline = PipelineParams(args)
     bg_color = [1, 1, 1]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
-    scene = Scene(dataset, gaussians, load_iteration=-1, shuffle=False)
-    view = scene.getTrainCameras()
+    # scene = Scene(dataset, gaussians, load_iteration=-1, shuffle=False)
+    # view = scene.getTrainCameras()
 
 
-    v = view[0]
+    # v = view[0]
 
     # def __init__(self, colmap_id, R, T, FoVx, FoVy, image, gt_alpha_mask,
     #              image_name, uid,
