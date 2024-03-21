@@ -52,7 +52,7 @@ def render_view_blender(atom_coords):
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=False, data_device='cuda', debug=False, eval=False,
-              images='images', iteration=-1, model_path='/harddisk1/home.local/qa43nawu/gaussian-splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
+              images='images', iteration=-1, model_path='/harddisk1/home.local/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
               skip_test=False, skip_train=False, source_path='/harddisk1/home.local/qa43nawu/input_files/voldata',
               white_background=False)
 
