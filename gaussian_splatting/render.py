@@ -8,6 +8,7 @@
 #
 # For inquiries contact  george.drettakis@inria.fr
 #
+import numpy
 import numpy as np
 import torch
 from gaussian_splatting.scene import Scene
@@ -49,7 +50,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
         if not skip_test:
              render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background)
 
-def render_view_blender(atom_coords, camera_specs):
+def render_view_blender(atom_coords, props):
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=False, data_device='cuda', debug=False, eval=False,
@@ -63,19 +64,20 @@ def render_view_blender(atom_coords, camera_specs):
     gaussians = GaussianModel(dataset.sh_degree)
     # gaussians = GaussianModel(3)
 
+    atom_coords_numpy = numpy.asarray(atom_coords)
+
     gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
     # gaussians.xyz = torch.tensor([[1.0, 1.0,1.0],[0.0,1.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
-    gaussians._opacity = torch.tensor([[1.0],[1.0],[1.0]], dtype=torch.float32, device="cuda")
-    gaussians._rotation = torch.tensor([[1.0,0.0,0.0],[1.0,0.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
-    gaussians._scaling = torch.tensor([[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]], dtype=torch.float32, device="cuda")
+    # gaussians._opacity = torch.tensor([[1.0],[1.0],[1.0]], dtype=torch.float32, device="cuda")
+    # gaussians._rotation = torch.tensor([[1.0,0.0,0.0],[1.0,0.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
+    # gaussians._scaling = torch.tensor([[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]], dtype=torch.float32, device="cuda")
     # gaussians = GaussianModel(xyz, dataset.sh_degree)
 
     pipeline = PipelineParams(args)
     bg_color = [1, 1, 1]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
-    # scene = Scene(dataset, gaussians, load_iteration=-1, shuffle=False)
+    scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
     # view = scene.getTrainCameras()
-
 
     # v = view[0]
 
@@ -86,9 +88,9 @@ def render_view_blender(atom_coords, camera_specs):
     colmad_id = 1
     R = np.asarray([[1., 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     # T = np.asarray([-2.6, 300, 40])
-    T = np.asarray(camera_specs['T'])
-    FoVx = camera_specs['FoVx']
-    FoVy = camera_specs['FoVy']
+    T = np.asarray(props['T'])
+    FoVx = props['FoVx']
+    FoVy = props['FoVy']
     # FoVx = 0.0001
     # FoVy = 0.0001
     uid = 0
@@ -98,6 +100,8 @@ def render_view_blender(atom_coords, camera_specs):
     rendering = render(dummy_cam, gaussians, pipeline, background)["render"]
     render_path = '/harddisk1/home.local/qa43nawu/out/'
     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
+
+
 
 
     print('done')

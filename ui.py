@@ -373,9 +373,10 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
 
     gaussian_splatting: bpy.props.BoolProperty(name='Gaussian Splatting', default=True, description='Activate or deactivate Gaussian Splatting')
-    gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', min=0.0, size=3, default=[0.0, 0.0, 0.0])
-    gs_fovx: bpy.props.FloatProperty(name='FoVx', default=0.29, min=0.0, soft_min=0.0, description='FoVx')
-    gs_fovy: bpy.props.FloatProperty(name='FoVy', default=0.28, min=0.0, soft_min=0.0, description='FoVy')
+    gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', soft_min=-50.0, size=3, default=[0.0, 0.0, 0.0])
+    gs_fovx: bpy.props.FloatProperty(name='FoVx', default=0.29, soft_min=-50.0, description='FoVx')
+    gs_fovy: bpy.props.FloatProperty(name='FoVy', default=0.28, soft_min=-50.0, description='FoVy')
+    gs_scale: bpy.props.FloatProperty(name='Scale', default=1.0)
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -399,9 +400,9 @@ class AB_properties(bpy.types.PropertyGroup):
     dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
-        items=[('/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos', 'Voldata', 'Voldata'),
+        items=[('/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos?/harddisk1/home.local/qa43nawu/input_files/voldata/rangefile.rrng', 'Voldata', 'Voldata'),
         ],
-        default='/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos',
+        default='/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos?/harddisk1/home.local/qa43nawu/input_files/voldata/rangefile.rrng',
     )
 
 # --- file loading ---
@@ -891,6 +892,8 @@ class ATOMBLEND_PT_gaussian_splatting(bpy.types.Panel):
         row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'gs_fovx')
         row.prop(context.scene.atom_blend_addon_settings, 'gs_fovy')
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'gs_scale')
 
 
 # --- file loading ---

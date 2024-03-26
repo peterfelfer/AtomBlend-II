@@ -1,6 +1,7 @@
 import bpy
 import bgl
 import gpu
+import numpy as np
 from gpu_extras.batch import batch_for_shader
 from mathutils import *
 from .shaders import *
@@ -64,7 +65,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # This is the method called by Blender for both final renders (F12) and
     # small preview for materials, world and lights.
     def render(self, depsgraph):
-        camera_specs = {
+        props = {
             "colmap_id": 1,
             "R": np.zeros,
             "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
@@ -73,7 +74,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
             "uid": 0
         }
 
-        render.render_view_blender(ABGlobals.atom_coords, camera_specs)
+        render.render_view_blender(ABGlobals.atom_coords, props)
 
 
     # For viewport renders, this method gets called once at the start and
@@ -116,17 +117,17 @@ class CustomRenderEngine(bpy.types.RenderEngine):
 
                     self.scene_data[ob.name] = DrawData(ob)
 
-
-        camera_specs = {
+        props = {
             "colmap_id": 1,
             "R": np.zeros,
-            "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
+            "T": np.asarray([0, bpy.context.scene.atom_blend_addon_settings.camera_elevation, bpy.context.scene.atom_blend_addon_settings.camera_distance]),
             "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
             "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
-            "uid": 0
+            "uid": 0,
+            "scale": bpy.context.scene.atom_blend_addon_settings.gs_scale,
         }
 
-        render.render_view_blender(ABGlobals.atom_coords, camera_specs)
+        render.render_view_blender(ABGlobals.atom_coords, props)
 
     # For viewport renders, this method is called whenever Blender redraws
     # the 3D viewport. The renderer is expected to quickly draw the render
@@ -159,11 +160,11 @@ class CustomRenderEngine(bpy.types.RenderEngine):
                 len(ABGlobals.atom_color_list) != len(ABGlobals.point_size_list)):
             print(len(ABGlobals.atom_coords), len(ABGlobals.atom_color_list), len(ABGlobals.point_size_list))
 
-        l = len(ABGlobals.atom_color_list)
-        ABGlobals.atom_color_list = []
-        col = (1, 0, 0, 1)
-        ABGlobals.atom_color_list.append([col] * l)
-        ABGlobals.atom_color_list = ABGlobals.atom_color_list[0]
+        # l = len(ABGlobals.atom_color_list)
+        # ABGlobals.atom_color_list = []
+        # col = (1, 0, 0, 1)
+        # ABGlobals.atom_color_list.append([col] * l)
+        # ABGlobals.atom_color_list = ABGlobals.atom_color_list[0]
 
         batch = batch_for_shader(shader, 'POINTS', {'position': ABGlobals.atom_coords, 'color': ABGlobals.atom_color_list, 'ps': ABGlobals.point_size_list})
 
