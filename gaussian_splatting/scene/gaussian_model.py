@@ -289,7 +289,7 @@ class GaussianModel:
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),
                         np.asarray(atom_coords[:, 2])), axis=1)
-        opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
+        opacities = np.asarray([props['opacity']] * len(atom_coords))[..., np.newaxis]
 
         features_dc = np.zeros((xyz.shape[0], 3, 1))
         # features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"][:len(atom_coords)])

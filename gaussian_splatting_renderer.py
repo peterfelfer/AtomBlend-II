@@ -119,12 +119,13 @@ class CustomRenderEngine(bpy.types.RenderEngine):
 
         props = {
             "colmap_id": 1,
-            "R": np.zeros,
-            "T": np.asarray([0, bpy.context.scene.atom_blend_addon_settings.camera_elevation, bpy.context.scene.atom_blend_addon_settings.camera_distance]),
+            "R": bpy.context.scene.atom_blend_addon_settings.gs_rotation,
+            "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
             "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
             "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
             "uid": 0,
             "scale": bpy.context.scene.atom_blend_addon_settings.gs_scale,
+            "opacity": bpy.context.scene.atom_blend_addon_settings.gs_opacity,
         }
 
         render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, props)

@@ -373,10 +373,12 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
 
     gaussian_splatting: bpy.props.BoolProperty(name='Gaussian Splatting', default=True, description='Activate or deactivate Gaussian Splatting')
-    gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', soft_min=-50.0, size=3, default=[0.0, 0.0, 0.0])
+    gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', soft_min=-50.0, size=3, default=[0.0, 0.0, 800.0])
+    gs_rotation: bpy.props.FloatVectorProperty(name='GS Rotation', description='Gaussian Splatting Camera rotation', soft_min=-50.0, size=3, default=[1.57, 3.14, 0.0])
     gs_fovx: bpy.props.FloatProperty(name='FoVx', default=0.14, soft_min=-50.0, description='FoVx')
     gs_fovy: bpy.props.FloatProperty(name='FoVy', default=0.28, soft_min=-50.0, description='FoVy')
     gs_scale: bpy.props.FloatProperty(name='Scale', default=-2.0)
+    gs_opacity: bpy.props.FloatProperty(name='Opacity', default=1.0)
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',
@@ -890,10 +892,14 @@ class ATOMBLEND_PT_gaussian_splatting(bpy.types.Panel):
         row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'gs_position')
         row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'gs_rotation')
+        row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'gs_fovx')
         row.prop(context.scene.atom_blend_addon_settings, 'gs_fovy')
         row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'gs_scale')
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'gs_opacity')
 
 
 # --- file loading ---
