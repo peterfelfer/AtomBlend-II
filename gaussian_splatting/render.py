@@ -8,6 +8,8 @@
 #
 # For inquiries contact  george.drettakis@inria.fr
 #
+import math
+
 import numpy
 import numpy as np
 import torch
@@ -86,7 +88,20 @@ def render_view_blender(atom_coords, atom_color_list, props):
     #              trans=np.array([0.0, 0.0, 0.0]), scale=1.0, data_device = "cuda"
     #              ):
     colmad_id = 1
-    R = np.asarray([[1., 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+
+    print('matrix world', props['R'])
+    print('matrix world cut', props['R'][0])
+    # R = np.asarray([props['R'][0][:3], props['R'][1][:3], props['R'][2][:3]])
+    # R_old = np.asarray([props['R'][0][:3], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+    a_x = props['R'][0]
+    a_y = props['R'][1]
+    a_z = props['R'][2]
+    R_x = np.asarray([[1.0, 0.0, 0.0], [0.0, math.cos(a_x), -math.sin(a_x)], [0.0, math.sin(a_x), math.cos(a_x)]])
+    R_y = np.asarray([[math.cos(a_y), 0.0, math.sin(a_y)], [0.0, 1.0, 0.0], [-math.sin(a_y), 0.0, math.cos(a_y)]])
+    R_z = np.asarray([[math.cos(a_z), -math.sin(a_z), 0.0], [math.sin(a_z), math.cos(a_z), 0.0], [0.0, 0.0, 1.0]])
+
+    R = np.matmul(np.matmul(R_x, R_y), R_z)
+
     # T = np.asarray([-2.6, 300, 40])
     T = np.asarray(props['T'])
     FoVx = props['FoVx']
