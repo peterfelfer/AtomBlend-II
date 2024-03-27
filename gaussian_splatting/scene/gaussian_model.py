@@ -281,7 +281,7 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def load_ply_ab(self, path, atom_coords, props):
+    def load_ply_ab(self, path, atom_coords, atom_color_list, props):
         plydata = PlyData.read(path)
         print(plydata.elements[0]["x"])
         # print('xyz gauss', gaussians.xyz)
@@ -292,16 +292,24 @@ class GaussianModel:
         opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
 
         features_dc = np.zeros((xyz.shape[0], 3, 1))
-        features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"][:len(atom_coords)])
-        features_dc[:, 1, 0] = np.asarray(plydata.elements[0]["f_dc_1"][:len(atom_coords)])
-        features_dc[:, 2, 0] = np.asarray(plydata.elements[0]["f_dc_2"][:len(atom_coords)])
+        # features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"][:len(atom_coords)])
+        # features_dc[:, 1, 0] = np.asarray(plydata.elements[0]["f_dc_1"][:len(atom_coords)])
+        # features_dc[:, 2, 0] = np.asarray(plydata.elements[0]["f_dc_2"][:len(atom_coords)])
+
+        features_dc[:, 0, 0] = np.asarray(atom_color_list)[:, 0]
+        features_dc[:, 1, 0] = np.asarray(atom_color_list)[:, 1]
+        features_dc[:, 2, 0] = np.asarray(atom_color_list)[:, 2]
+
+        # print('plydata', plydata.elements[0]["f_dc_0"])
+        # print('atom color list', np.asarray(atom_color_list))
+        # print('atom color list', np.asarray(atom_color_list)[:, 0])
 
         extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
         extra_f_names = sorted(extra_f_names, key=lambda x: int(x.split('_')[-1]))
         assert len(extra_f_names) == 3 * (self.max_sh_degree + 1) ** 2 - 3
         features_extra = np.zeros((xyz.shape[0], len(extra_f_names)))
-        for idx, attr_name in enumerate(extra_f_names):
-            features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
+        # for idx, attr_name in enumerate(extra_f_names):
+            # features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
         # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
         features_extra = features_extra.reshape((features_extra.shape[0], 3, (self.max_sh_degree + 1) ** 2 - 1))
 
