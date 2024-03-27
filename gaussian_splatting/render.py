@@ -50,7 +50,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
         if not skip_test:
              render_set(dataset.model_path, "test", scene.loaded_iter, scene.getTestCameras(), gaussians, pipeline, background)
 
-def render_view_blender(atom_coords, props):
+def render_view_blender(atom_coords, atom_color_list, props):
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=False, data_device='cuda', debug=False, eval=False,
@@ -76,7 +76,7 @@ def render_view_blender(atom_coords, props):
     pipeline = PipelineParams(args)
     bg_color = [1, 1, 1]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
-    scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
+    scene = Scene(dataset, gaussians, atom_coords_numpy, atom_color_list, props, load_iteration=-1, shuffle=False)
     # view = scene.getTrainCameras()
 
     # v = view[0]

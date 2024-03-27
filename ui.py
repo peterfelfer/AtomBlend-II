@@ -374,9 +374,9 @@ class AB_properties(bpy.types.PropertyGroup):
 
     gaussian_splatting: bpy.props.BoolProperty(name='Gaussian Splatting', default=True, description='Activate or deactivate Gaussian Splatting')
     gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', soft_min=-50.0, size=3, default=[0.0, 0.0, 0.0])
-    gs_fovx: bpy.props.FloatProperty(name='FoVx', default=0.29, soft_min=-50.0, description='FoVx')
+    gs_fovx: bpy.props.FloatProperty(name='FoVx', default=0.14, soft_min=-50.0, description='FoVx')
     gs_fovy: bpy.props.FloatProperty(name='FoVy', default=0.28, soft_min=-50.0, description='FoVy')
-    gs_scale: bpy.props.FloatProperty(name='Scale', default=1.0)
+    gs_scale: bpy.props.FloatProperty(name='Scale', default=-2.0)
 
     animation_mode: bpy.props.EnumProperty(
         name='Animation mode',

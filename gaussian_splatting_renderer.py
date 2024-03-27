@@ -74,7 +74,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
             "uid": 0
         }
 
-        render.render_view_blender(ABGlobals.atom_coords, props)
+        render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, props)
 
 
     # For viewport renders, this method gets called once at the start and
@@ -127,7 +127,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
             "scale": bpy.context.scene.atom_blend_addon_settings.gs_scale,
         }
 
-        render.render_view_blender(ABGlobals.atom_coords, props)
+        render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, props)
 
     # For viewport renders, this method is called whenever Blender redraws
     # the 3D viewport. The renderer is expected to quickly draw the render
