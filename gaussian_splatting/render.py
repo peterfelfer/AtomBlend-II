@@ -55,7 +55,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
 def render_view_blender(atom_coords, atom_color_list, props):
     from argparse import Namespace
 
-    args = Namespace(compute_cov3D_python=False, convert_SHs_python=False, data_device='cuda', debug=False, eval=False,
+    args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
               images='images', iteration=-1, model_path='/harddisk1/home.local/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
               skip_test=False, skip_train=False, source_path='/harddisk1/home.local/qa43nawu/input_files/voldata',
               white_background=False)
@@ -67,26 +67,13 @@ def render_view_blender(atom_coords, atom_color_list, props):
     # gaussians = GaussianModel(3)
 
     atom_coords_numpy = numpy.asarray(atom_coords)
-
     gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
-    # gaussians.xyz = torch.tensor([[1.0, 1.0,1.0],[0.0,1.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
-    # gaussians._opacity = torch.tensor([[1.0],[1.0],[1.0]], dtype=torch.float32, device="cuda")
-    # gaussians._rotation = torch.tensor([[1.0,0.0,0.0],[1.0,0.0,0.0],[1.0,0.0,0.0]], dtype=torch.float32, device="cuda")
-    # gaussians._scaling = torch.tensor([[1.0,1.0,1.0],[1.0,1.0,1.0],[1.0,1.0,1.0]], dtype=torch.float32, device="cuda")
-    # gaussians = GaussianModel(xyz, dataset.sh_degree)
 
     pipeline = PipelineParams(args)
     bg_color = [1, 1, 1]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
-    scene = Scene(dataset, gaussians, atom_coords_numpy, atom_color_list, props, load_iteration=-1, shuffle=False)
-    # view = scene.getTrainCameras()
+    scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
 
-    # v = view[0]
-
-    # def __init__(self, colmap_id, R, T, FoVx, FoVy, image, gt_alpha_mask,
-    #              image_name, uid,
-    #              trans=np.array([0.0, 0.0, 0.0]), scale=1.0, data_device = "cuda"
-    #              ):
     colmad_id = 1
 
     print('matrix world', props['R'])
@@ -112,12 +99,14 @@ def render_view_blender(atom_coords, atom_color_list, props):
 
     dummy_cam = Camera(colmad_id, R, T, FoVx, FoVy, None, None, 'bla', uid)
 
-    rendering = render(dummy_cam, gaussians, pipeline, background)["render"]
+    # color preparation
+    colors = torch.tensor(np.asarray(atom_color_list)[:, :3], dtype=torch.float32, device="cuda")
+
+    print('colors', colors)
+
+    rendering = render(dummy_cam, gaussians, pipeline, background, override_color=colors)["render"]
     render_path = '/harddisk1/home.local/qa43nawu/out/'
     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
-
-
-
 
     print('done')
 

@@ -75,16 +75,31 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
     shs = None
     colors_precomp = None
     if override_color is None:
-        if pipe.convert_SHs_python:
+        if pipe.convert_SHs_python or True:
             shs_view = pc.get_features.transpose(1, 2).view(-1, 3, (pc.max_sh_degree + 1) ** 2)
             dir_pp = (pc.get_xyz - viewpoint_camera.camera_center.repeat(pc.get_features.shape[0], 1))
             dir_pp_normalized = dir_pp / dir_pp.norm(dim=1, keepdim=True)
             sh2rgb = eval_sh(pc.active_sh_degree, shs_view, dir_pp_normalized)
             colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
+            print('colors precomp PRE', colors_precomp)
+            print('colors precomp shape', colors_precomp.shape)
+
+
+            # colors_precomp = torch.zeros(582, 3, dtype=torch.float32, device="cuda")
+            # colors_precomp[:, 0] = 1.0
+
+            print('colors precomp ONES', colors_precomp)
+            print('colors precomp ONES shape', colors_precomp.shape)
+
+
+
+
         else:
+            print('else')
             shs = pc.get_features
     else:
         colors_precomp = override_color
+
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen).
     rendered_image, radii = rasterizer(
