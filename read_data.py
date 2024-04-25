@@ -536,6 +536,12 @@ class AtomBlendAddon:
 
         ABManagement.init(self, context)
 
+        # f = open("atom_coords.txt", "w")
+        # for atom in coords:
+        #     str_coords = str(atom[0]) + " " + str(atom[1]) + " " + str(atom[2])
+        #     f.write(str_coords + '\n')
+        # f.close()
+
     def load_pos_file(self, context):
         file_path = bpy.context.scene.atom_blend_addon_settings.e_pos_filepath
 

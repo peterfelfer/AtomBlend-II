@@ -11,7 +11,6 @@
 import math
 
 import numpy
-import numpy as np
 import torch
 from gaussian_splatting.scene import Scene
 import os
@@ -24,6 +23,7 @@ from argparse import ArgumentParser
 from gaussian_splatting.arguments import ModelParams, PipelineParams, get_combined_args
 from gaussian_splatting.gaussian_renderer import GaussianModel
 from gaussian_splatting.scene.cameras import Camera
+from ab_utils import *
 
 def render_set(model_path, name, iteration, views, gaussians, pipeline, background):
     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
@@ -70,14 +70,12 @@ def render_view_blender(atom_coords, atom_color_list, props):
     gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
 
     pipeline = PipelineParams(args)
-    bg_color = [1, 1, 1]
+    bg_color = props["background_color"]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
     scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
 
     colmad_id = 1
 
-    print('matrix world', props['R'])
-    print('matrix world cut', props['R'][0])
     # R = np.asarray([props['R'][0][:3], props['R'][1][:3], props['R'][2][:3]])
     # R_old = np.asarray([props['R'][0][:3], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
     a_x = props['R'][0]
@@ -102,13 +100,10 @@ def render_view_blender(atom_coords, atom_color_list, props):
     # color preparation
     colors = torch.tensor(np.asarray(atom_color_list)[:, :3], dtype=torch.float32, device="cuda")
 
-    print('colors', colors)
-
     rendering = render(dummy_cam, gaussians, pipeline, background, override_color=colors)["render"]
     render_path = '/harddisk1/home.local/qa43nawu/out/'
     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
 
-    print('done')
 
 if __name__ == "__main__":
     # Set up command line argument parser
@@ -125,4 +120,6 @@ if __name__ == "__main__":
     # Initialize system state (RNG)
     safe_state(args.quiet)
 
-    render_sets(model.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test)
+    # render_sets(model.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test)
+    atom_coords = read_atom_coords()
+    render_without_blender(atom_coords)

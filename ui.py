@@ -328,7 +328,7 @@ class AB_properties(bpy.types.PropertyGroup):
     vertex_percentage: bpy.props.FloatProperty(name="Total displayed (%)", default=0.001, min=0.000001, max=1.0, soft_min=1, step=0.01, description="Percentage of displayed atoms", precision=4, update=DisplaySettings.total_atom_coords_update)
     point_size: bpy.props.FloatProperty(name='Point size', default=5.0, min=0.0, max=100.0, step=0.5, description='Changes the point size of all the atoms', update=update_point_size)
     display_all_elements: bpy.props.BoolProperty(name='', default=True, description='Display or hide all elements', update=DisplaySettings.update_display_all_elements)
-    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[1.0, 1.0, 1.0, 1.0], update=update_background_color)
+    background_color: bpy.props.FloatVectorProperty(name='Background color', subtype='COLOR', description='Background color for rendering', min=0.0, max=1.0, size=4, default=[0.2, 0.2, 0.2, 1.0], update=update_background_color)
 
     transparent_background: bpy.props.BoolProperty(name='Transparent Background', description='Only available for .png and .tiff file format and image rendering', default=False, update=update_transparent_background)
     camera_distance: bpy.props.FloatProperty(name='Camera distance', min=0.0, default=300.0, description='Edit the camera distance to the tip', update=update_camera_distance)
@@ -373,7 +373,7 @@ class AB_properties(bpy.types.PropertyGroup):
     legend_hide_hidden_elements: bpy.props.BoolProperty(name='Hide hidden elements in legend', default=True, description='Hides elements that were hidden in display settings also in legend')
 
     gaussian_splatting: bpy.props.BoolProperty(name='Gaussian Splatting', default=True, description='Activate or deactivate Gaussian Splatting')
-    gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', soft_min=-50.0, size=3, default=[0.0, 0.0, 800.0])
+    gs_position: bpy.props.FloatVectorProperty(name='GS Position', description='Gaussian Splatting Camera position', soft_min=-50.0, size=3, default=[0.0, -40.0, 600.0])
     gs_rotation: bpy.props.FloatVectorProperty(name='GS Rotation', description='Gaussian Splatting Camera rotation', soft_min=-50.0, size=3, default=[1.57, 3.14, 0.0])
     gs_fovx: bpy.props.FloatProperty(name='FoVx', default=0.14, soft_min=-50.0, description='FoVx')
     gs_fovy: bpy.props.FloatProperty(name='FoVy', default=0.28, soft_min=-50.0, description='FoVy')
@@ -399,7 +399,7 @@ class AB_properties(bpy.types.PropertyGroup):
 
     # for developing purposes
     dev_mode: bpy.props.BoolProperty(name='Dev mode', default=False)
-    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=True)
+    dev_automatic_file_loading: bpy.props.BoolProperty(name='Automatic file loading', default=False)
     dev_dataset_selection: bpy.props.EnumProperty(
         name='Dataset Selection',
         items=[('/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos?/harddisk1/home.local/qa43nawu/input_files/voldata/rangefile.rrng', 'Voldata', 'Voldata'),
@@ -900,6 +900,8 @@ class ATOMBLEND_PT_gaussian_splatting(bpy.types.Panel):
         row.prop(context.scene.atom_blend_addon_settings, 'gs_scale')
         row = col.row()
         row.prop(context.scene.atom_blend_addon_settings, 'gs_opacity')
+        row = col.row()
+        row.prop(context.scene.atom_blend_addon_settings, 'background_color')
 
 
 # --- file loading ---

@@ -283,7 +283,8 @@ class GaussianModel:
 
     def load_ply_ab(self, path, atom_coords, props):
         plydata = PlyData.read(path)
-        print(plydata.elements[0]["x"])
+
+        print(atom_coords)
 
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),
