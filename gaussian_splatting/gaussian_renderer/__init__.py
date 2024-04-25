@@ -81,21 +81,7 @@ def render(viewpoint_camera, pc: GaussianModel, pipe, bg_color: torch.Tensor, sc
             dir_pp_normalized = dir_pp / dir_pp.norm(dim=1, keepdim=True)
             sh2rgb = eval_sh(pc.active_sh_degree, shs_view, dir_pp_normalized)
             colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
-            print('colors precomp PRE', colors_precomp)
-            print('colors precomp shape', colors_precomp.shape)
-
-
-            # colors_precomp = torch.zeros(582, 3, dtype=torch.float32, device="cuda")
-            # colors_precomp[:, 0] = 1.0
-
-            print('colors precomp ONES', colors_precomp)
-            print('colors precomp ONES shape', colors_precomp.shape)
-
-
-
-
         else:
-            print('else')
             shs = pc.get_features
     else:
         colors_precomp = override_color

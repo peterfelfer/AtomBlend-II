@@ -42,6 +42,21 @@ class DrawData:
         batch.draw(shader)
 
 
+def get_props():
+    props = {
+        "colmap_id": 1,
+        "R": bpy.context.scene.atom_blend_addon_settings.gs_rotation,
+        "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
+        "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
+        "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
+        "uid": 0,
+        "scale": bpy.context.scene.atom_blend_addon_settings.gs_scale,
+        "opacity": bpy.context.scene.atom_blend_addon_settings.gs_opacity,
+        "background_color": bpy.context.scene.atom_blend_addon_settings.background_color,
+    }
+
+    return props
+
 class CustomRenderEngine(bpy.types.RenderEngine):
     # These three members are used by blender to set up the
     # RenderEngine; define its internal name, visible name and capabilities.
@@ -65,16 +80,7 @@ class CustomRenderEngine(bpy.types.RenderEngine):
     # This is the method called by Blender for both final renders (F12) and
     # small preview for materials, world and lights.
     def render(self, depsgraph):
-        props = {
-            "colmap_id": 1,
-            "R": np.zeros,
-            "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
-            "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
-            "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
-            "uid": 0
-        }
-
-        render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, props)
+       render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, get_props())
 
 
     # For viewport renders, this method gets called once at the start and
@@ -117,18 +123,8 @@ class CustomRenderEngine(bpy.types.RenderEngine):
 
                     self.scene_data[ob.name] = DrawData(ob)
 
-        props = {
-            "colmap_id": 1,
-            "R": bpy.context.scene.atom_blend_addon_settings.gs_rotation,
-            "T": bpy.context.scene.atom_blend_addon_settings.gs_position,
-            "FoVx": bpy.context.scene.atom_blend_addon_settings.gs_fovx,
-            "FoVy": bpy.context.scene.atom_blend_addon_settings.gs_fovy,
-            "uid": 0,
-            "scale": bpy.context.scene.atom_blend_addon_settings.gs_scale,
-            "opacity": bpy.context.scene.atom_blend_addon_settings.gs_opacity,
-        }
 
-        render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, props)
+        render.render_view_blender(ABGlobals.atom_coords, ABGlobals.atom_color_list, get_props())
 
     # For viewport renders, this method is called whenever Blender redraws
     # the 3D viewport. The renderer is expected to quickly draw the render
