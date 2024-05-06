@@ -304,7 +304,8 @@ class GaussianModel:
         scale_names = sorted(scale_names, key=lambda x: int(x.split('_')[-1]))
         scales = np.zeros((xyz.shape[0], len(scale_names)))
         for idx, attr_name in enumerate(scale_names):
-            scales[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
+            # scales[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
+            scales[:, idx] = np.asarray(props['scale'] * len(atom_coords))
 
         scales = [[props['scale'], props['scale'], props['scale']]] * len(atom_coords)
 
@@ -312,7 +313,8 @@ class GaussianModel:
         rot_names = sorted(rot_names, key=lambda x: int(x.split('_')[-1]))
         rots = np.zeros((xyz.shape[0], len(rot_names)))
         for idx, attr_name in enumerate(rot_names):
-            rots[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
+            # rots[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
+            rots[:, idx] = np.asarray(0.0 * len(atom_coords))
 
         self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
         self._features_rest = nn.Parameter(

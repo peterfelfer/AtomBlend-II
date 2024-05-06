@@ -160,7 +160,8 @@ def load_rrng_file():
     global all_elements
     global all_elements_by_name
 
-    file_path = '/harddisk1/home.local/qa43nawu/input_files/voldata/rangefile.rrng'
+    file_path = '/mnt/data/qa43nawu/input_files/voldata/rangefile.rrng'
+    # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
 
     rrng_file = open(file_path, 'r')
 
@@ -260,8 +261,8 @@ def load_rrng_file():
 
 
 def load_e_pos_file():
-    file_path = '/harddisk1/home.local/qa43nawu/input_files/voldata/voldata.epos'
-
+    file_path = '/mnt/data/qa43nawu/input_files/voldata/voldata.epos'
+    # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.epos'
     # reading the given binary file and store it into a numpy array
     # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
     data_in_bytes_float = np.fromfile(file_path, dtype='>f')
@@ -318,15 +319,60 @@ def load_e_pos_file():
 
     return coords
 
+def load_pos_file():
+    # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
+    file_path = '/home/qa43nawu/Downloads/R14_27263-v01.pos'
+
+    data_in_bytes = np.fromfile(file_path, dtype='>f')
+    data_as_float = data_in_bytes.view()
+
+    # calculating how many atoms we have as input; dividing by 11 because there are 11 features to store
+    num_of_atoms = int(data_as_float.shape[0] / 4)
+    reshaped_data = np.reshape(data_as_float, (num_of_atoms, 4))
+
+    # save the min and max x, y, z positions for camera settings later on
+    # ABGlobals.max_x = reshaped_data[:, 0].max()
+    # ABGlobals.min_x = reshaped_data[:, 0].min()
+    # ABGlobals.max_y = reshaped_data[:, 1].max()
+    # ABGlobals.min_y = reshaped_data[:, 1].min()
+    # ABGlobals.max_z = reshaped_data[:, 2].max()
+    # ABGlobals.min_z = reshaped_data[:, 2].min()
+
+    # shuffling the data as they're kind of sorted by the z value
+    reshaped_data = np.random.permutation(reshaped_data)
+
+    # sort atoms by ['m/n']
+    global all_elems_sorted_by_mn
+    sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
+    all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
+
+    coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
+
+    # add unknown element to the list
+    global atom_coords
+    unknown_element_dict = {}
+    unknown_element_dict['element_name'] = 'Unknown'
+    unknown_element_dict['color'] = (1.0, 0.0, 0.0, 1.0)
+    unknown_element_dict['coordinates'] = []
+    unknown_element_dict['num_of_atoms'] = len(atom_coords)
+    unknown_element_dict['num_displayed'] = len(atom_coords)
+    all_elements_by_name[unknown_label] = unknown_element_dict
+
+    atom_coords = coords
+    all_elements_by_name[unknown_label]['coordinates'] = atom_coords
+    all_elements_by_name[unknown_label]['num_of_atoms'] = len(atom_coords)
+
+    return coords
+
 def render_without_blender(atom_coords):
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
-              images='images', iteration=-1, model_path='/harddisk1/home.local/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
-              skip_test=False, skip_train=False, source_path='/harddisk1/home.local/qa43nawu/input_files/voldata',
+              images='images', iteration=-1, model_path='/mnt/data/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
+              skip_test=False, skip_train=False, source_path='/mnt/data/qa43nawu/input_files/voldata',
               white_background=False)
 
-    ply_model = '/harddisk1/home.local/qa43nawu/gaussian_splatting/output/9224d987-c/'
+    ply_model = '/mnt/data/qa43nawu/gaussian_splatting/output/9224d987-c/'
     model = ModelParams(ply_model)
     dataset = model.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
@@ -354,7 +400,7 @@ def render_without_blender(atom_coords):
         "FoVx": 0.14,
         "FoVy": 0.28,
         "uid": 0,
-        "scale": 0.0,
+        "scale": -2.0,
         "opacity": 1.0,
         "background_color": np.asarray([1.0, 1.0, 1.0]),
     }
@@ -379,7 +425,7 @@ def render_without_blender(atom_coords):
     # colors = torch.tensor([1, 0, 0] * len(atom_coords), dtype=torch.float32, device="cuda")
 
     rendering = render(dummy_cam, gaussians, pipeline, background, override_color=colors)["render"]
-    render_path = '/harddisk1/home.local/qa43nawu/out/'
+    render_path = '/mnt/data/qa43nawu/out/'
     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
 
 if __name__ == "__main__":
