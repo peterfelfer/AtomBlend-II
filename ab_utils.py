@@ -14,6 +14,7 @@ from gaussian_splatting.arguments import ModelParams, PipelineParams, get_combin
 from gaussian_splatting.gaussian_renderer import GaussianModel
 from gaussian_splatting.scene.cameras import Camera
 from ab_utils import *
+import time
 
 all_elements = []
 all_elements_by_name = {}  # dict with all the elements, every element has a list with all its ranges
@@ -262,7 +263,6 @@ def load_rrng_file():
 
 def load_e_pos_file():
     file_path = '/mnt/data/qa43nawu/input_files/voldata/voldata.epos'
-    # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.epos'
     # reading the given binary file and store it into a numpy array
     # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
     data_in_bytes_float = np.fromfile(file_path, dtype='>f')
@@ -321,7 +321,7 @@ def load_e_pos_file():
 
 def load_pos_file():
     # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
-    file_path = '/home/qa43nawu/Downloads/R14_27263-v01.pos'
+    # file_path = '/home/qa43nawu/Downloads/R14_27263-v01.pos'
 
     data_in_bytes = np.fromfile(file_path, dtype='>f')
     data_as_float = data_in_bytes.view()
@@ -341,6 +341,11 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
+    debug_nom = 10000
+
+    reshaped_data = reshaped_data[:debug_nom]
+    num_of_atoms = debug_nom
+
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
@@ -349,15 +354,15 @@ def load_pos_file():
     coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
 
     # add unknown element to the list
-    global atom_coords
     unknown_element_dict = {}
     unknown_element_dict['element_name'] = 'Unknown'
     unknown_element_dict['color'] = (1.0, 0.0, 0.0, 1.0)
     unknown_element_dict['coordinates'] = []
-    unknown_element_dict['num_of_atoms'] = len(atom_coords)
-    unknown_element_dict['num_displayed'] = len(atom_coords)
+    unknown_element_dict['num_of_atoms'] = num_of_atoms
+    unknown_element_dict['num_displayed'] = num_of_atoms
     all_elements_by_name[unknown_label] = unknown_element_dict
 
+    global atom_coords
     atom_coords = coords
     all_elements_by_name[unknown_label]['coordinates'] = atom_coords
     all_elements_by_name[unknown_label]['num_of_atoms'] = len(atom_coords)
@@ -389,7 +394,7 @@ def render_without_blender(atom_coords):
     R_z = np.asarray([[math.cos(a_z), -math.sin(a_z), 0.0], [math.sin(a_z), math.cos(a_z), 0.0], [0.0, 0.0, 1.0]])
     R = np.matmul(np.matmul(R_x, R_y), R_z)
 
-    T = np.asarray([0.0, -40.0, 600.0])
+    T = np.asarray([0.0, -40.0, 200.0])
 
     colmap_id = 1
 
@@ -443,9 +448,15 @@ if __name__ == "__main__":
     # Initialize system state (RNG)
     # safe_state(args.quiet)
 
+    start = time.time()
     # render_sets(model.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test)
     atom_coords = load_e_pos_file()
+    print('load epos', time.time() - start)
     load_rrng_file()
+    print('load rrng', time.time() - start)
     combine_rrng_and_e_pos_file()
+    print('combine epos and rrng', time.time() - start)
     set_atom_color_list()
+    print('set colors', time.time() - start)
     render_without_blender(atom_coords)
+    print('render', time.time() - start)
