@@ -54,6 +54,7 @@ uniform sampler2D texSampler;
 void main()
 {
     outputColour = texture(texSampler, texcoords);
+    //outputColour = vec4(1,0,0,1);
 }
 """
 
@@ -141,8 +142,8 @@ class CUDARenderer(GaussianRenderBase):
     def update_vsync(self):
         if wglSwapIntervalEXT is not None:
             wglSwapIntervalEXT(1 if self.reduce_updates else 0)
-        else:
-            print("VSync is not supported")
+        # else:
+        #     print("VSync is not supported")
 
     def update_gaussian_data(self, gaus: util_gau.GaussianData):
         self.need_rerender = True
@@ -235,7 +236,7 @@ class CUDARenderer(GaussianRenderBase):
                 means3D = self.gaussians.xyz,
                 means2D = None,
                 shs = self.gaussians.sh,
-                colors_precomp = None,
+                # colors_precomp = self.gaussians.sh[:, :3],
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,

@@ -96,7 +96,7 @@ def load_ply(path):
 
     # pass activate function
     xyz = xyz.astype(np.float32)
-    rots = rots / np.linalg.norm(rots, axis=-1, keepdims=True)
+    # rots = rots / np.linalg.norm(rots, axis=-1, keepdims=True)
     rots = rots.astype(np.float32)
     scales = np.exp(scales)
     scales = scales.astype(np.float32)
@@ -105,9 +105,11 @@ def load_ply(path):
     shs = np.concatenate([features_dc.reshape(-1, 3), 
                         features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
     shs = shs.astype(np.float32)
+
+    test = shs[:,:3]
     return GaussianData(xyz, rots, scales, opacities, shs)
 
 if __name__ == "__main__":
-    gs = load_ply("C:\\Users\\MSI_NB\\Downloads\\viewers\\models\\train\\point_cloud\\iteration_7000\\point_cloud.ply")
+    gs = load_ply("/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply")
     a = gs.flat()
     print(a.shape)

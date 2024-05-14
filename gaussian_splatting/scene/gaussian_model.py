@@ -220,11 +220,12 @@ class GaussianModel:
             l.append('rot_{}'.format(i))
         return l
 
-    def save_ply(self, path):
+    def save_ply(self, path, colors):
         mkdir_p(os.path.dirname(path))
 
         xyz = self._xyz.detach().cpu().numpy()
         normals = np.zeros_like(xyz)
+        # f_dc = colors
         f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         f_rest = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         opacities = self._opacity.detach().cpu().numpy()
@@ -290,7 +291,7 @@ class GaussianModel:
         opacities = np.asarray([props['opacity']] * len(atom_coords))[..., np.newaxis]
 
         features_dc = np.zeros((xyz.shape[0], 3, 1))
-        features_dc[:, 0, 0] = np.asarray(0.0 * len(atom_coords))
+        features_dc[:, 0, 0] = np.asarray(1.0 * len(atom_coords))
         features_dc[:, 1, 0] = np.asarray(0.0 * len(atom_coords))
         features_dc[:, 2, 0] = np.asarray(0.0 * len(atom_coords))
 

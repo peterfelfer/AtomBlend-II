@@ -29,7 +29,7 @@ class Camera:
         
         self.rot_sensitivity = 0.02
         self.trans_sensitivity = 0.01
-        self.zoom_sensitivity = 0.08
+        self.zoom_sensitivity = 0.16
         self.roll_sensitivity = 0.03
         self.target_dist = 3.
     
@@ -91,6 +91,7 @@ class Camera:
                             np.cos(self.pitch)])
             front = self._global_rot_mat() @ front.reshape(3, 1)
             front = front[:, 0]
+            print(self.position)
             self.position[:] = - front * np.linalg.norm(self.position - self.target) + self.target
             
             self.is_pose_dirty = True
@@ -119,6 +120,20 @@ class Camera:
         right = np.cross(front, self.up)
         new_up = self.up + right * (d * self.roll_sensitivity / np.linalg.norm(right))
         self.up = new_up / np.linalg.norm(new_up)
+        self.is_pose_dirty = True
+
+    def process_move_key(self, dx, dy):
+        front = self.target - self.position
+        front = front / np.linalg.norm(front)
+
+        up = np.array([0, 1, 0])
+        right = np.cross(front, up)
+        right = right / np.linalg.norm(right)
+
+        self.position += right * dx * self.zoom_sensitivity
+        self.position += front * dy * self.zoom_sensitivity
+
+        self.target = self.position + front
         self.is_pose_dirty = True
 
     def flip_ground(self):

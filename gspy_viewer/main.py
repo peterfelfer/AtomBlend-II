@@ -80,6 +80,7 @@ def mouse_button_callback(window, button, action, mod):
 
 def wheel_callback(window, dx, dy):
     g_camera.process_wheel(dx, dy)
+    print('wheel ', dx, dy)
 
 def key_callback(window, key, scancode, action, mods):
     if action == glfw.REPEAT or action == glfw.PRESS:
@@ -87,6 +88,14 @@ def key_callback(window, key, scancode, action, mods):
             g_camera.process_roll_key(1)
         elif key == glfw.KEY_E:
             g_camera.process_roll_key(-1)
+        elif key == glfw.KEY_W:
+            g_camera.process_move_key(0, 1)
+        elif key == glfw.KEY_S:
+            g_camera.process_move_key(0, -1)
+        elif key == glfw.KEY_A:
+            g_camera.process_move_key(1, 0)
+        elif key == glfw.KEY_D:
+            g_camera.process_move_key(-1, 0)
 
 def update_camera_pose_lazy():
     if g_camera.is_pose_dirty:
@@ -194,7 +203,7 @@ def main():
                 imgui.text(f"# of Gaus = {len(gaussians)}")
                 if imgui.button(label='open ply'):
                     file_path = filedialog.askopenfilename(title="open ply",
-                        initialdir="C:\\Users\\MSI_NB\\Downloads\\viewers",
+                        initialdir="/home/qa43nawu/temp/qa43nawu/out/",
                         filetypes=[('ply file', '.ply')]
                         )
                     if file_path:
@@ -209,12 +218,22 @@ def main():
                 changed, g_camera.fovy = imgui.slider_float(
                     "fov", g_camera.fovy, 0.001, np.pi - 0.001, "fov = %.3f"
                 )
+                changed, g_camera.zoom_sensitivity = imgui.slider_float(
+                    "move sensitivity", g_camera.zoom_sensitivity, 0.001, np.pi - 0.001, "zoom_sensitivity = %.3f"
+                )
+                # changed, g_camera.position = imgui.slider_float3(
+                #     "camera position", g_camera.position[0], g_camera.position[1], g_camera.position[2], np.pi - 0.001, 10000.0
+                # )
+                # changed, g_camera.position[2] = imgui.slider_float(
+                #     "campos2", g_camera.position[2], 0.001, np.pi - 0.001, "cam_pos = %.3f"
+                # )
+
                 g_camera.is_intrin_dirty = changed
                 update_camera_intrin_lazy()
                 
                 # scale modifier
                 changed, g_scale_modifier = imgui.slider_float(
-                    "", g_scale_modifier, 0.1, 10, "scale modifier = %.3f"
+                    "", g_scale_modifier, -5, 100, "scale modifier = %.3f"
                 )
                 imgui.same_line()
                 if imgui.button(label="reset"):

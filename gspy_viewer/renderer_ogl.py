@@ -91,7 +91,8 @@ class GaussianRenderBase:
         self.update_vsync()
 
     def update_vsync(self):
-        print("VSync is not supported")
+        # print("VSync is not supported")
+        return
 
     def update_gaussian_data(self, gaus: util_gau.GaussianData):
         raise NotImplementedError()
@@ -152,8 +153,8 @@ class OpenGLRenderer(GaussianRenderBase):
     def update_vsync(self):
         if wglSwapIntervalEXT is not None:
             wglSwapIntervalEXT(1 if self.reduce_updates else 0)
-        else:
-            print("VSync is not supported")
+        # else:
+        #     print("VSync is not supported")
 
     def update_gaussian_data(self, gaus: util_gau.GaussianData):
         self.gaussians = gaus

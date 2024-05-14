@@ -42,6 +42,8 @@ def set_atom_color_list():
     if len(atom_color_list) > 0 and isinstance(atom_color_list[0], list):
         atom_color_list = [x for xs in atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
+    return atom_color_list
+
 
 def combine_rrng_and_e_pos_file():
     all_atoms = all_elems_sorted_by_mn  # all atoms sorted by m/n
@@ -161,8 +163,8 @@ def load_rrng_file():
     global all_elements
     global all_elements_by_name
 
-    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/rangefile.rrng'
-    # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
+    # file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/rangefile.rrng'
+    file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
 
     rrng_file = open(file_path, 'r')
 
@@ -320,7 +322,7 @@ def load_e_pos_file():
     return coords
 
 def load_pos_file():
-    # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
+    file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
     # file_path = '/home/qa43nawu/Downloads/R14_27263-v01.pos'
 
     data_in_bytes = np.fromfile(file_path, dtype='>f')
@@ -341,7 +343,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 10000
+    debug_nom = 1000000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -449,15 +451,18 @@ if __name__ == "__main__":
 
     start = time.time()
     # render_sets(model.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test)
-    atom_coords = load_e_pos_file()
+    atom_coords = load_pos_file()
+    print('load epos', time.time() - start)
     print('load epos', time.time() - start)
     load_rrng_file()
     print('load rrng', time.time() - start)
     combine_rrng_and_e_pos_file()
     print('combine epos and rrng', time.time() - start)
-    set_atom_color_list()
+    atom_color_list = set_atom_color_list()
     print('set colors', time.time() - start)
     render_without_blender(atom_coords, gaussians)
     print('render', time.time() - start)
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply')
+    colors = np.asarray(atom_color_list)[:, :3]
+
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply', colors)
