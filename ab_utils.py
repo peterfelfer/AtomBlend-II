@@ -161,7 +161,7 @@ def load_rrng_file():
     global all_elements
     global all_elements_by_name
 
-    file_path = '/mnt/data/qa43nawu/input_files/voldata/rangefile.rrng'
+    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/rangefile.rrng'
     # file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
 
     rrng_file = open(file_path, 'r')
@@ -262,7 +262,7 @@ def load_rrng_file():
 
 
 def load_e_pos_file():
-    file_path = '/mnt/data/qa43nawu/input_files/voldata/voldata.epos'
+    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/voldata.epos'
     # reading the given binary file and store it into a numpy array
     # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
     data_in_bytes_float = np.fromfile(file_path, dtype='>f')
@@ -369,20 +369,7 @@ def load_pos_file():
 
     return coords
 
-def render_without_blender(atom_coords):
-    from argparse import Namespace
-
-    args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
-              images='images', iteration=-1, model_path='/mnt/data/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
-              skip_test=False, skip_train=False, source_path='/mnt/data/qa43nawu/input_files/voldata',
-              white_background=False)
-
-    ply_model = '/mnt/data/qa43nawu/gaussian_splatting/output/9224d987-c/'
-    model = ModelParams(ply_model)
-    dataset = model.extract(args)
-    gaussians = GaussianModel(dataset.sh_degree)
-    # gaussians = GaussianModel(3)
-
+def render_without_blender(atom_coords, gaussians):
     atom_coords_numpy = np.asarray(atom_coords)
     gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
 
@@ -430,10 +417,22 @@ def render_without_blender(atom_coords):
     # colors = torch.tensor([1, 0, 0] * len(atom_coords), dtype=torch.float32, device="cuda")
 
     rendering = render(dummy_cam, gaussians, pipeline, background, override_color=colors)["render"]
-    render_path = '/mnt/data/qa43nawu/out/'
+    render_path = '/home/qa43nawu/temp/qa43nawu/out/'
     torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
 
 if __name__ == "__main__":
+    from argparse import Namespace
+
+    args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
+              images='images', iteration=-1, model_path='/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
+              skip_test=False, skip_train=False, source_path='/home/qa43nawu/temp/qa43nawu/input_files/voldata',
+              white_background=False)
+
+    ply_model = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/'
+    model = ModelParams(ply_model)
+    dataset = model.extract(args)
+    gaussians = GaussianModel(dataset.sh_degree)
+
     # Set up command line argument parser
     parser = ArgumentParser(description="Testing script parameters")
     model = ModelParams(parser, sentinel=True)
@@ -458,5 +457,7 @@ if __name__ == "__main__":
     print('combine epos and rrng', time.time() - start)
     set_atom_color_list()
     print('set colors', time.time() - start)
-    render_without_blender(atom_coords)
+    render_without_blender(atom_coords, gaussians)
     print('render', time.time() - start)
+
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply')

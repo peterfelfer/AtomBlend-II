@@ -289,6 +289,11 @@ class GaussianModel:
                         np.asarray(atom_coords[:, 2])), axis=1)
         opacities = np.asarray([props['opacity']] * len(atom_coords))[..., np.newaxis]
 
+        features_dc = np.zeros((xyz.shape[0], 3, 1))
+        features_dc[:, 0, 0] = np.asarray(0.0 * len(atom_coords))
+        features_dc[:, 1, 0] = np.asarray(0.0 * len(atom_coords))
+        features_dc[:, 2, 0] = np.asarray(0.0 * len(atom_coords))
+
         extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
         extra_f_names = sorted(extra_f_names, key=lambda x: int(x.split('_')[-1]))
         assert len(extra_f_names) == 3 * (self.max_sh_degree + 1) ** 2 - 3
@@ -315,6 +320,9 @@ class GaussianModel:
             rots[:, idx] = np.asarray(0.0 * len(atom_coords))
 
         self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._features_dc = nn.Parameter(
+            torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
+                True))
         self._features_rest = nn.Parameter(
             torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
                 True))
