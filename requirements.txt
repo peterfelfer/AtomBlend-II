@@ -1,0 +1,7 @@
+glfw
+PyGLM
+imgui
+PyOpenGL
+numpy
+imageio
+plyfile
