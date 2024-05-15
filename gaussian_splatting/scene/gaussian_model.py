@@ -282,8 +282,9 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def load_ply_ab(self, path, atom_coords, props):
+    def load_ply_ab(self, path, atom_coords, atom_color_list, props):
         plydata = PlyData.read(path)
+        print(path)
 
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),
@@ -291,9 +292,11 @@ class GaussianModel:
         opacities = np.asarray([props['opacity']] * len(atom_coords))[..., np.newaxis]
 
         features_dc = np.zeros((xyz.shape[0], 3, 1))
-        features_dc[:, 0, 0] = np.asarray(1.0 * len(atom_coords))
-        features_dc[:, 1, 0] = np.asarray(0.0 * len(atom_coords))
-        features_dc[:, 2, 0] = np.asarray(0.0 * len(atom_coords))
+        # features_dc[:, 0, 0] = np.asarray(1.0 * len(atom_coords))
+        # features_dc[:, 1, 0] = np.asarray(1.0 * len(atom_coords))
+        # features_dc[:, 2, 0] = np.asarray(0.0 * len(atom_coords))
+
+        features_dc[:, :3, 0] = atom_color_list[:, :3]
 
         extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
         extra_f_names = sorted(extra_f_names, key=lambda x: int(x.split('_')[-1]))

@@ -164,7 +164,7 @@ def load_rrng_file():
     global all_elements_by_name
 
     # file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/rangefile.rrng'
-    file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
+    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
 
     rrng_file = open(file_path, 'r')
 
@@ -322,7 +322,7 @@ def load_e_pos_file():
     return coords
 
 def load_pos_file():
-    file_path = '/media/qa43nawu/USB DISK/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
+    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
     # file_path = '/home/qa43nawu/Downloads/R14_27263-v01.pos'
 
     data_in_bytes = np.fromfile(file_path, dtype='>f')
@@ -343,7 +343,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 1000000
+    debug_nom = num_of_atoms
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -371,38 +371,14 @@ def load_pos_file():
 
     return coords
 
-def render_without_blender(atom_coords, gaussians):
+def render_without_blender(atom_coords, gaussians, props):
     atom_coords_numpy = np.asarray(atom_coords)
     gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
-
-    a_x = 1.57
-    a_y = 3.14
-    a_z = 0.0
-    R_x = np.asarray([[1.0, 0.0, 0.0], [0.0, math.cos(a_x), -math.sin(a_x)], [0.0, math.sin(a_x), math.cos(a_x)]])
-    R_y = np.asarray([[math.cos(a_y), 0.0, math.sin(a_y)], [0.0, 1.0, 0.0], [-math.sin(a_y), 0.0, math.cos(a_y)]])
-    R_z = np.asarray([[math.cos(a_z), -math.sin(a_z), 0.0], [math.sin(a_z), math.cos(a_z), 0.0], [0.0, 0.0, 1.0]])
-    R = np.matmul(np.matmul(R_x, R_y), R_z)
-
-    T = np.asarray([0.0, -40.0, 200.0])
-
-    colmap_id = 1
-
-    props = {
-        "colmap_id": colmap_id,
-        "R": R,
-        "T": T,
-        "FoVx": 0.14,
-        "FoVy": 0.28,
-        "uid": 0,
-        "scale": -2.0,
-        "opacity": 1.0,
-        "background_color": np.asarray([1.0, 1.0, 1.0]),
-    }
 
     pipeline = PipelineParams(args)
     bg_color = props["background_color"]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
-    scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
+    # scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
 
 
     R = np.matmul(np.matmul(R_x, R_y), R_z)
@@ -435,6 +411,7 @@ if __name__ == "__main__":
     dataset = model.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
 
+
     # Set up command line argument parser
     parser = ArgumentParser(description="Testing script parameters")
     model = ModelParams(parser, sentinel=True)
@@ -449,10 +426,33 @@ if __name__ == "__main__":
     # Initialize system state (RNG)
     # safe_state(args.quiet)
 
+    colmap_id = 1
+    a_x = 1.57
+    a_y = 3.14
+    a_z = 0.0
+    R_x = np.asarray([[1.0, 0.0, 0.0], [0.0, math.cos(a_x), -math.sin(a_x)], [0.0, math.sin(a_x), math.cos(a_x)]])
+    R_y = np.asarray([[math.cos(a_y), 0.0, math.sin(a_y)], [0.0, 1.0, 0.0], [-math.sin(a_y), 0.0, math.cos(a_y)]])
+    R_z = np.asarray([[math.cos(a_z), -math.sin(a_z), 0.0], [math.sin(a_z), math.cos(a_z), 0.0], [0.0, 0.0, 1.0]])
+    R = np.matmul(np.matmul(R_x, R_y), R_z)
+    T = np.asarray([0.0, -40.0, 200.0])
+
+    props = {
+        "colmap_id": colmap_id,
+        "R": R,
+        "T": T,
+        "FoVx": 0.14,
+        "FoVy": 0.28,
+        "uid": 0,
+        "scale": -2.0,
+        "opacity": 1.0,
+        "background_color": np.asarray([1.0, 1.0, 1.0]),
+    }
+
     start = time.time()
     # render_sets(model.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test)
     atom_coords = load_pos_file()
-    print('load epos', time.time() - start)
+
+
     print('load epos', time.time() - start)
     load_rrng_file()
     print('load rrng', time.time() - start)
@@ -460,7 +460,12 @@ if __name__ == "__main__":
     print('combine epos and rrng', time.time() - start)
     atom_color_list = set_atom_color_list()
     print('set colors', time.time() - start)
-    render_without_blender(atom_coords, gaussians)
+
+    # scene = Scene(dataset, gaussians, np.asarray(atom_coords), props, load_iteration=-1, shuffle=False)
+    path = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply'
+    # TODO path wegmachen
+    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), props)
+    render_without_blender(atom_coords, gaussians, props)
     print('render', time.time() - start)
 
     colors = np.asarray(atom_color_list)[:, :3]
