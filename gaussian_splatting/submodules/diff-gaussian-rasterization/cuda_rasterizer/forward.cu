@@ -350,9 +350,12 @@ renderCUDA(
 				continue;
 			}
 
+			float test = con_o.w * exp(power);
+
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
-				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
+				C[ch] = features[collected_id[j] * CHANNELS + ch]; //* T;
+// 				C[ch] += test;
 
 //             C[0] = 0;
 //             C[1] = 0;
@@ -374,7 +377,9 @@ renderCUDA(
 		final_T[pix_id] = T;
 		n_contrib[pix_id] = last_contributor;
 		for (int ch = 0; ch < CHANNELS; ch++)
-			out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
+			out_color[ch * H * W + pix_id] = C[ch] + bg_color[ch];
+// 			out_color[ch * H * W + pix_id] = T;
+
 	}
 }
 

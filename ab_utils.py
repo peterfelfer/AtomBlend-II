@@ -343,7 +343,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = num_of_atoms
+    debug_nom = 5000000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom

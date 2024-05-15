@@ -91,7 +91,6 @@ class Camera:
                             np.cos(self.pitch)])
             front = self._global_rot_mat() @ front.reshape(3, 1)
             front = front[:, 0]
-            print(self.position)
             self.position[:] = - front * np.linalg.norm(self.position - self.target) + self.target
             
             self.is_pose_dirty = True

@@ -100,7 +100,7 @@ def load_ply(path):
     rots = rots.astype(np.float32)
     scales = np.exp(scales)
     scales = scales.astype(np.float32)
-    opacities = 1/(1 + np.exp(- opacities))  # sigmoid
+    # opacities = 1/(1 + np.exp(- opacities))  # sigmoid
     opacities = opacities.astype(np.float32)
     shs = np.concatenate([features_dc.reshape(-1, 3), 
                         features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)

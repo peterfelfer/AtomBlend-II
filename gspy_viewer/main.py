@@ -80,7 +80,6 @@ def mouse_button_callback(window, button, action, mod):
 
 def wheel_callback(window, dx, dy):
     g_camera.process_wheel(dx, dy)
-    print('wheel ', dx, dy)
 
 def key_callback(window, key, scancode, action, mods):
     if action == glfw.REPEAT or action == glfw.PRESS:

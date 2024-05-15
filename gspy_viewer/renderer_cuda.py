@@ -11,6 +11,10 @@ from renderer_ogl import GaussianRenderBase
 from dataclasses import dataclass
 from cuda import cudart as cu
 from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
+# from ..gaussian_splatting/submodules/diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
+# from ..gaussian_splatting.submodules
+# import importlib
+# diff_gaussian_rasterization = importlib.import_module()
 
 try:
     from OpenGL.raw.WGL.EXT.swap_control import wglSwapIntervalEXT
@@ -235,8 +239,8 @@ class CUDARenderer(GaussianRenderBase):
             img, radii = rasterizer(
                 means3D = self.gaussians.xyz,
                 means2D = None,
-                shs = self.gaussians.sh,
-                # colors_precomp = self.gaussians.sh[:, :3],
+                # shs = self.gaussians.sh,
+                colors_precomp = self.gaussians.sh[:, :3],
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,
