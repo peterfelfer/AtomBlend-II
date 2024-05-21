@@ -185,7 +185,7 @@ CudaRasterizer::BinningState CudaRasterizer::BinningState::fromChunk(char*& chun
 	obtain(chunk, binning.point_list_unsorted, P, 128);
 	obtain(chunk, binning.point_list_keys, P, 128);
 	obtain(chunk, binning.point_list_keys_unsorted, P, 128);
-	cub::DeviceRadixSort::SortPairs(
+	cub::DeviceRadixSort::SortPairsDescending(
 		nullptr, binning.sorting_size,
 		binning.point_list_keys_unsorted, binning.point_list_keys,
 		binning.point_list_unsorted, binning.point_list, P);
@@ -300,7 +300,7 @@ int CudaRasterizer::Rasterizer::forward(
 	int bit = getHigherMsb(tile_grid.x * tile_grid.y);
 
 	// Sort complete list of (duplicated) Gaussian indices by keys
-	CHECK_CUDA(cub::DeviceRadixSort::SortPairs(
+	CHECK_CUDA(cub::DeviceRadixSort::SortPairsDescending(
 		binningState.list_sorting_space,
 		binningState.sorting_size,
 		binningState.point_list_keys_unsorted, binningState.point_list_keys,

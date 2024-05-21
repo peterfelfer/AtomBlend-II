@@ -333,8 +333,8 @@ renderCUDA(
 			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
 			float4 con_o = collected_conic_opacity[j];
 			float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
-			if (power > 0.0f)
-				continue;
+// 			if (power > 0.0f)
+// 				continue;
 
 			// Eq. (2) from 3D Gaussian splatting paper.
 			// Obtain alpha by multiplying with Gaussian opacity
@@ -344,31 +344,40 @@ renderCUDA(
 			if (alpha < 1.0f / 255.0f)
 				continue;
 			float test_T = T * (1 - alpha);
-			if (test_T < 0.0001f)
-			{
-				done = true;
-				continue;
-			}
+// 			if (test_T < 0.0001f)
+// 			{
+// 				done = true;
+// 				continue;
+// 			}
 
 			float test = con_o.w * exp(power);
 
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
-				C[ch] = features[collected_id[j] * CHANNELS + ch]; //* T;
+				C[ch] = features[collected_id[j] * CHANNELS + ch];
+//                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
 //             C[0] = 0;
 //             C[1] = 0;
-//             C[2] = 1;
-//             C[3] = 0;
+//             C[2] = 0;
+//             C[3] = 1;
 
 			T = test_T;
+// 			T = 1.0f - test_T;
 
 			// Keep track of last range entry to update this
 			// pixel.
 			last_contributor = contributor;
 		}
 	}
+
+	float bg_color_2[CHANNELS] = { 0 };
+
+	bg_color_2[0] = 1;
+	bg_color_2[1] = 1;
+	bg_color_2[2] = 1;
+	bg_color_2[3] = 1;
 
 	// All threads that treat valid pixel write out their final
 	// rendering data to the frame and auxiliary buffers.
@@ -379,6 +388,7 @@ renderCUDA(
 		for (int ch = 0; ch < CHANNELS; ch++)
 			out_color[ch * H * W + pix_id] = C[ch] + bg_color[ch];
 // 			out_color[ch * H * W + pix_id] = T;
+//             out_color[ch * H * W + pix_id] = C[ch];
 
 	}
 }

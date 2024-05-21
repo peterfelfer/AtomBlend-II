@@ -200,6 +200,29 @@ def main():
                     )
 
                 imgui.text(f"# of Gaus = {len(gaussians)}")
+
+                if imgui.button(label='open CuAl50_Ni'):
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply'
+
+                    if file_path:
+                        try:
+                            gaussians = util_gau.load_ply(file_path)
+                            g_renderer.update_gaussian_data(gaussians)
+                            g_renderer.sort_and_update(g_camera)
+                        except RuntimeError as e:
+                            pass
+
+                if imgui.button(label='open train'):
+                    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/trained_data/train/point_cloud/iteration_30000/point_cloud.ply'
+
+                    if file_path:
+                        try:
+                            gaussians = util_gau.load_ply(file_path)
+                            g_renderer.update_gaussian_data(gaussians)
+                            g_renderer.sort_and_update(g_camera)
+                        except RuntimeError as e:
+                            pass
+
                 if imgui.button(label='open ply'):
                     file_path = filedialog.askopenfilename(title="open ply",
                         initialdir="/home/qa43nawu/temp/qa43nawu/out/",

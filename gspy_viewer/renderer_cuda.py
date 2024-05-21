@@ -244,8 +244,10 @@ class CUDARenderer(GaussianRenderBase):
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,
-                cov3D_precomp = None
+                cov3D_precomp = None,
             )
+
+        print(self.gaussians.rot)
 
         img = img.permute(1, 2, 0)
         img = torch.concat([img, torch.ones_like(img[..., :1])], dim=-1)
