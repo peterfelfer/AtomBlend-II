@@ -255,7 +255,7 @@ def main():
                 
                 # scale modifier
                 changed, g_scale_modifier = imgui.slider_float(
-                    "", g_scale_modifier, -5, 100, "scale modifier = %.3f"
+                    "", g_scale_modifier, 0, 5, "scale modifier = %.3f"
                 )
                 imgui.same_line()
                 if imgui.button(label="reset"):

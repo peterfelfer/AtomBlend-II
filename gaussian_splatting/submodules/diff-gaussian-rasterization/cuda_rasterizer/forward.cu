@@ -341,6 +341,14 @@ renderCUDA(
 			// and its exponential falloff from mean.
 			// Avoid numerical instabilities (see paper appendix). 
 			float alpha = min(0.99f, con_o.w * exp(power));
+
+// 			if (alpha < 10.0f / 255.0f){
+//                 C[0] = 0;
+//                 C[1] = 1;
+//                 C[2] = 0;
+//                 C[3] = 1;
+// 			}
+
 			if (alpha < 1.0f / 255.0f)
 				continue;
 			float test_T = T * (1 - alpha);
@@ -358,7 +366,7 @@ renderCUDA(
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
-//             C[0] = 0;
+//             C[0] = 1;
 //             C[1] = 0;
 //             C[2] = 0;
 //             C[3] = 1;
@@ -372,13 +380,6 @@ renderCUDA(
 		}
 	}
 
-	float bg_color_2[CHANNELS] = { 0 };
-
-	bg_color_2[0] = 1;
-	bg_color_2[1] = 1;
-	bg_color_2[2] = 1;
-	bg_color_2[3] = 1;
-
 	// All threads that treat valid pixel write out their final
 	// rendering data to the frame and auxiliary buffers.
 	if (inside)
@@ -386,7 +387,7 @@ renderCUDA(
 		final_T[pix_id] = T;
 		n_contrib[pix_id] = last_contributor;
 		for (int ch = 0; ch < CHANNELS; ch++)
-			out_color[ch * H * W + pix_id] = C[ch] + bg_color[ch];
+			out_color[ch * H * W + pix_id] = C[ch]; // + bg_color[ch];
 // 			out_color[ch * H * W + pix_id] = T;
 //             out_color[ch * H * W + pix_id] = C[ch];
 

@@ -127,7 +127,7 @@ class Camera:
 
         up = np.array([0, 1, 0])
         right = np.cross(front, up)
-        right = right / np.linalg.norm(right)
+        right = right / (np.linalg.norm(right) + 1e-8)
 
         self.position += right * dx * self.zoom_sensitivity
         self.position += front * dy * self.zoom_sensitivity

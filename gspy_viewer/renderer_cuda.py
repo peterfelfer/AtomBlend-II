@@ -240,14 +240,16 @@ class CUDARenderer(GaussianRenderBase):
                 means3D = self.gaussians.xyz,
                 means2D = None,
                 # shs = self.gaussians.sh,
-                colors_precomp = self.gaussians.sh[:, :3],
+                colors_precomp = self.gaussians.sh[:, 0],
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,
                 cov3D_precomp = None,
             )
 
-        print(self.gaussians.rot)
+        # print(self.gaussians.sh)
+        # print(self.gaussians.sh[:, 0])
+
 
         img = img.permute(1, 2, 0)
         img = torch.concat([img, torch.ones_like(img[..., :1])], dim=-1)
