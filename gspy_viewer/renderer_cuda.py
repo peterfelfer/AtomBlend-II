@@ -247,8 +247,7 @@ class CUDARenderer(GaussianRenderBase):
                 cov3D_precomp = None,
             )
 
-        # print(self.gaussians.sh)
-        # print(self.gaussians.sh[:, 0])
+
 
 
         img = img.permute(1, 2, 0)

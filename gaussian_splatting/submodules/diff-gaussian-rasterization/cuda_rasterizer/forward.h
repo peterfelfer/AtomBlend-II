@@ -59,6 +59,9 @@ namespace FORWARD
 		float* final_T,
 		uint32_t* n_contrib,
 		const float* bg_color,
+        const float* viewmatrix,
+        const float* projmatrix,
+        const float* orig_points,
 		float* out_color);
 }
 

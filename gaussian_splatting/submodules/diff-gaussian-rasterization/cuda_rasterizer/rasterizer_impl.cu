@@ -330,6 +330,9 @@ int CudaRasterizer::Rasterizer::forward(
 		imgState.accum_alpha,
 		imgState.n_contrib,
 		background,
+		viewmatrix,
+		projmatrix,
+		means3D,
 		out_color), debug)
 
 	return num_rendered;

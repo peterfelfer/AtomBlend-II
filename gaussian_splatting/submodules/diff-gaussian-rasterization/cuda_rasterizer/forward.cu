@@ -13,6 +13,7 @@
 #include "auxiliary.h"
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
+
 namespace cg = cooperative_groups;
 
 // Forward method for converting the input spherical harmonics
@@ -255,6 +256,15 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	tiles_touched[idx] = (rect_max.y - rect_min.y) * (rect_max.x - rect_min.x);
 }
 
+__device__ float3 normalize(const float3 &v) {
+    float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+    return make_float3(v.x / length, v.y / length, v.z / length);
+}
+
+__device__ float dot(const float3 &v1, const float3 &v2) {
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
 // Main rasterization method. Collaboratively works on one tile per
 // block, each thread treats one pixel. Alternates between fetching 
 // and rasterizing data.
@@ -270,6 +280,9 @@ renderCUDA(
 	float* __restrict__ final_T,
 	uint32_t* __restrict__ n_contrib,
 	const float* __restrict__ bg_color,
+    const float* viewmatrix,
+	const float* projmatrix,
+	const float* orig_points,
 	float* __restrict__ out_color)
 {
 	// Identify current tile and associated min/max pixel range.
@@ -360,16 +373,36 @@ renderCUDA(
 
 			float test = con_o.w * exp(power);
 
+            // Calculate the distance from the center of the circle
+            float3 center = { 0, 0, 0 };
+            float dx = d.x - center.x;
+            float dy = d.y - center.y;
+            float dist = sqrtf(dx * dx + dy * dy);
+            float radius = 1.0f;
+
+            // Calculate the normal vector at this point on the sphere
+            float dz = sqrtf(radius * radius - dist * dist);
+            float3 normal = make_float3(dx, dy, dz);
+            normal = normalize(normal);
+
+            // do light stuff
+            float3 light_pos = { 0, 0, 5 };
+            float3 light_dir = {light_pos.x - center.x, light_pos.y - center.y, light_pos.z - center.z};
+            light_dir = normalize(light_dir);
+            float intensity = fmaxf(dot(normal, light_dir), 0.0f);
+
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
-				C[ch] = features[collected_id[j] * CHANNELS + ch];
+				C[ch] = features[collected_id[j] * CHANNELS + ch] * intensity;
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
-//             C[0] = 1;
-//             C[1] = 0;
-//             C[2] = 0;
-//             C[3] = 1;
+
+
+            C[0] = orig_points[collected_id[j]];
+            C[1] = orig_points[collected_id[j] + 1];
+            C[2] = 0;
+            C[3] = 1;
 
 			T = test_T;
 // 			T = 1.0f - test_T;
@@ -388,6 +421,7 @@ renderCUDA(
 		n_contrib[pix_id] = last_contributor;
 		for (int ch = 0; ch < CHANNELS; ch++)
 			out_color[ch * H * W + pix_id] = C[ch]; // + bg_color[ch];
+
 // 			out_color[ch * H * W + pix_id] = T;
 //             out_color[ch * H * W + pix_id] = C[ch];
 
@@ -405,6 +439,9 @@ void FORWARD::render(
 	float* final_T,
 	uint32_t* n_contrib,
 	const float* bg_color,
+    const float* viewmatrix,
+	const float* projmatrix,
+	const float* orig_points,
 	float* out_color)
 {
 	renderCUDA<NUM_CHANNELS> << <grid, block >> > (
@@ -417,6 +454,9 @@ void FORWARD::render(
 		final_T,
 		n_contrib,
 		bg_color,
+		viewmatrix,
+		projmatrix,
+		orig_points,
 		out_color);
 }
 
