@@ -388,6 +388,153 @@ renderCUDA(
 // Main rasterization method. Collaboratively works on one tile per
 // block, each thread treats one pixel. Alternates between fetching
 // and rasterizing data.
+// Render circles without any shading and without gaussian blur
+template <uint32_t CHANNELS>
+__global__ void __launch_bounds__(BLOCK_X * BLOCK_Y)
+render_flatCUDA(
+	const uint2* __restrict__ ranges,
+	const uint32_t* __restrict__ point_list,
+	int W, int H,
+	const float2* __restrict__ points_xy_image,
+	const float* __restrict__ features,
+	const float4* __restrict__ conic_opacity,
+	float* __restrict__ final_T,
+	uint32_t* __restrict__ n_contrib,
+	const float* __restrict__ bg_color,
+    const float* viewmatrix,
+	const float* projmatrix,
+	const float* orig_points,
+	float* __restrict__ out_color)
+{
+	// Identify current tile and associated min/max pixel range.
+	auto block = cg::this_thread_block();
+	uint32_t horizontal_blocks = (W + BLOCK_X - 1) / BLOCK_X;
+	uint2 pix_min = { block.group_index().x * BLOCK_X, block.group_index().y * BLOCK_Y };
+	uint2 pix_max = { min(pix_min.x + BLOCK_X, W), min(pix_min.y + BLOCK_Y , H) };
+	uint2 pix = { pix_min.x + block.thread_index().x, pix_min.y + block.thread_index().y };
+	uint32_t pix_id = W * pix.y + pix.x;
+	float2 pixf = { (float)pix.x, (float)pix.y };
+
+	// Check if this thread is associated with a valid pixel or outside.
+	bool inside = pix.x < W&& pix.y < H;
+	// Done threads can help with fetching, but don't rasterize
+	bool done = !inside;
+
+	// Load start/end range of IDs to process in bit sorted list.
+	uint2 range = ranges[block.group_index().y * horizontal_blocks + block.group_index().x];
+	const int rounds = ((range.y - range.x + BLOCK_SIZE - 1) / BLOCK_SIZE);
+	int toDo = range.y - range.x;
+
+	// Allocate storage for batches of collectively fetched data.
+	__shared__ int collected_id[BLOCK_SIZE];
+	__shared__ float2 collected_xy[BLOCK_SIZE];
+	__shared__ float4 collected_conic_opacity[BLOCK_SIZE];
+
+	// Initialize helper variables
+	float T = 1.0f;
+	uint32_t contributor = 0;
+	uint32_t last_contributor = 0;
+	float C[CHANNELS] = { 0 };
+
+	// Iterate over batches until all done or range is complete
+	for (int i = 0; i < rounds; i++, toDo -= BLOCK_SIZE)
+	{
+		// End if entire block votes that it is done rasterizing
+		int num_done = __syncthreads_count(done);
+		if (num_done == BLOCK_SIZE)
+			break;
+
+		// Collectively fetch per-Gaussian data from global to shared
+		int progress = i * BLOCK_SIZE + block.thread_rank();
+		if (range.x + progress < range.y)
+		{
+			int coll_id = point_list[range.x + progress];
+			collected_id[block.thread_rank()] = coll_id;
+			collected_xy[block.thread_rank()] = points_xy_image[coll_id];
+			collected_conic_opacity[block.thread_rank()] = conic_opacity[coll_id];
+		}
+		block.sync();
+
+		// Iterate over current batch
+		for (int j = 0; !done && j < min(BLOCK_SIZE, toDo); j++)
+		{
+			// Keep track of current position in range
+			contributor++;
+
+			// Resample using conic matrix (cf. "Surface
+			// Splatting" by Zwicker et al., 2001)
+			float2 xy = collected_xy[j];
+			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
+			float4 con_o = collected_conic_opacity[j];
+			float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
+// 			if (power > 0.0f)
+// 				continue;
+
+			// Eq. (2) from 3D Gaussian splatting paper.
+			// Obtain alpha by multiplying with Gaussian opacity
+			// and its exponential falloff from mean.
+			// Avoid numerical instabilities (see paper appendix).
+			float alpha = min(0.99f, con_o.w * exp(power));
+
+// 			if (alpha < 10.0f / 255.0f){
+//                 C[0] = 0;
+//                 C[1] = 1;
+//                 C[2] = 0;
+//                 C[3] = 1;
+// 			}
+
+			if (alpha < 1.0f / 255.0f)
+				continue;
+			float test_T = T * (1 - alpha);
+// 			if (test_T < 0.0001f)
+// 			{
+// 				done = true;
+// 				continue;
+// 			}
+
+			float test = con_o.w * exp(power);
+
+			// Eq. (3) from 3D Gaussian splatting paper.
+			for (int ch = 0; ch < CHANNELS; ch++)
+				C[ch] = features[collected_id[j] * CHANNELS + ch];
+//                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
+// 				C[ch] += test;
+
+
+
+//             C[0] = 1;
+//             C[1] = 0;
+//             C[2] = 0;
+//             C[3] = 1;
+
+			T = test_T;
+// 			T = 1.0f - test_T;
+
+			// Keep track of last range entry to update this
+			// pixel.
+			last_contributor = contributor;
+		}
+	}
+
+	// All threads that treat valid pixel write out their final
+	// rendering data to the frame and auxiliary buffers.
+	if (inside)
+	{
+		final_T[pix_id] = T;
+		n_contrib[pix_id] = last_contributor;
+		for (int ch = 0; ch < CHANNELS; ch++)
+			out_color[ch * H * W + pix_id] = C[ch]; // + bg_color[ch];
+
+// 			out_color[ch * H * W + pix_id] = T;
+//             out_color[ch * H * W + pix_id] = C[ch];
+
+	}
+}
+
+// Main rasterization method. Collaboratively works on one tile per
+// block, each thread treats one pixel. Alternates between fetching
+// and rasterizing data.
+// Render shading
 template <uint32_t CHANNELS>
 __global__ void __launch_bounds__(BLOCK_X * BLOCK_Y)
 render_shadingCUDA(
@@ -519,10 +666,10 @@ render_shadingCUDA(
 
 
 
-            C[0] = 1;
-            C[1] = 0;
-            C[2] = 0;
-            C[3] = 1;
+//             C[0] = 1;
+//             C[1] = 0;
+//             C[2] = 0;
+//             C[3] = 1;
 
 			T = test_T;
 // 			T = 1.0f - test_T;
@@ -566,18 +713,6 @@ void FORWARD::render(
 	float* out_color)
 {
     if (render_mode == 0){
-        renderCUDA<NUM_CHANNELS> << <grid, block >> > (
-            ranges,
-            point_list,
-            W, H,
-            means2D,
-            colors,
-            conic_opacity,
-            final_T,
-            n_contrib,
-            bg_color,
-            out_color);
-    } else {
         render_shadingCUDA<NUM_CHANNELS> << <grid, block >> > (
             ranges,
             point_list,
@@ -593,6 +728,34 @@ void FORWARD::render(
             orig_points,
             out_color
         );
+    } else if (render_mode == 1) {
+        render_flatCUDA<NUM_CHANNELS> << <grid, block >> > (
+            ranges,
+            point_list,
+            W, H,
+            means2D,
+            colors,
+            conic_opacity,
+            final_T,
+            n_contrib,
+            bg_color,
+            viewmatrix,
+            projmatrix,
+            orig_points,
+            out_color
+        );
+    } else {
+        renderCUDA<NUM_CHANNELS> << <grid, block >> > (
+            ranges,
+            point_list,
+            W, H,
+            means2D,
+            colors,
+            conic_opacity,
+            final_T,
+            n_contrib,
+            bg_color,
+            out_color);
     }
 
 
