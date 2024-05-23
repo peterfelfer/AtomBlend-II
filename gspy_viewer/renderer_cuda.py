@@ -121,7 +121,8 @@ class CUDARenderer(GaussianRenderBase):
             "sh_degree": 3,  # ?
             "campos": None,
             "prefiltered": False,
-            "debug": False
+            "debug": False,
+            "render_mode": 0,
         }
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
@@ -162,6 +163,7 @@ class CUDARenderer(GaussianRenderBase):
         self.raster_settings["scale_modifier"] = float(modifier)
 
     def set_render_mod(self, mod: int):
+        self.raster_settings["render_mode"] = mod
         self.need_rerender = True
 
     def set_gl_texture(self, h, w):

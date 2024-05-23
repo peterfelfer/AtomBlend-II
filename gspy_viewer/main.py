@@ -35,8 +35,9 @@ g_auto_sort = False
 g_show_control_win = True
 g_show_help_win = True
 g_show_camera_win = False
-g_render_mode_tables = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3 (default)"]
-g_render_mode = 7
+g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
+g_render_mode_tables_cuda = ["Shading", "SH:0~3"]
+g_render_mode = 0
 
 def impl_glfw_init():
     window_name = "NeUVF editor"
@@ -110,7 +111,10 @@ def update_activated_renderer_state(gaus: util_gau.GaussianData):
     g_renderer.update_gaussian_data(gaus)
     g_renderer.sort_and_update(g_camera)
     g_renderer.set_scale_modifier(g_scale_modifier)
-    g_renderer.set_render_mod(g_render_mode - 3)
+    if g_renderer_idx == 0:  # ogl
+        g_renderer.set_render_mod(g_render_mode - 3)
+    else:  # cuda
+        g_renderer.set_render_mod(g_render_mode)
     g_renderer.update_camera_pose(g_camera)
     g_renderer.update_camera_intrin(g_camera)
     g_renderer.set_render_reso(g_camera.w, g_camera.h)
@@ -123,7 +127,7 @@ def window_resize_callback(window, width, height):
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, \
-        g_render_mode, g_render_mode_tables
+        g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda
         
     imgui.create_context()
     if args.hidpi:
@@ -264,11 +268,18 @@ def main():
                     
                 if changed:
                     g_renderer.set_scale_modifier(g_scale_modifier)
-                
+
                 # render mode
-                changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables)
+                if g_renderer_idx == 0:  # ogl
+                    changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_ogl)
+                else:  # cuda
+                    changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_cuda)
+
                 if changed:
-                    g_renderer.set_render_mod(g_render_mode - 4)
+                    if g_renderer_idx == 0:  # ogl
+                        g_renderer.set_render_mod(g_render_mode - 4)
+                    else:  # cuda
+                        g_renderer.set_render_mod(g_render_mode)
                 
                 # sort button
                 if imgui.button(label='sort Gaussians'):

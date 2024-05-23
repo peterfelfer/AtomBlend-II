@@ -27,7 +27,7 @@ def rasterize_gaussians(
     scales,
     rotations,
     cov3Ds_precomp,
-    raster_settings,
+    raster_settings
 ):
     return _RasterizeGaussians.apply(
         means3D,
@@ -38,7 +38,7 @@ def rasterize_gaussians(
         scales,
         rotations,
         cov3Ds_precomp,
-        raster_settings,
+        raster_settings
     )
 
 class _RasterizeGaussians(torch.autograd.Function):
@@ -53,7 +53,7 @@ class _RasterizeGaussians(torch.autograd.Function):
         scales,
         rotations,
         cov3Ds_precomp,
-        raster_settings,
+        raster_settings
     ):
 
         # Restructure arguments the way that the C++ lib expects them
@@ -76,7 +76,8 @@ class _RasterizeGaussians(torch.autograd.Function):
             raster_settings.sh_degree,
             raster_settings.campos,
             raster_settings.prefiltered,
-            raster_settings.debug
+            raster_settings.debug,
+            raster_settings.render_mode
         )
 
         # Invoke C++/CUDA rasterizer
@@ -167,6 +168,7 @@ class GaussianRasterizationSettings(NamedTuple):
     campos : torch.Tensor
     prefiltered : bool
     debug : bool
+    render_mode : int
 
 class GaussianRasterizer(nn.Module):
     def __init__(self, raster_settings):
@@ -216,6 +218,6 @@ class GaussianRasterizer(nn.Module):
             scales, 
             rotations,
             cov3D_precomp,
-            raster_settings, 
+            raster_settings,
         )
 

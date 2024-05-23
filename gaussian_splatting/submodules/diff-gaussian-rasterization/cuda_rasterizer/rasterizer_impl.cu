@@ -29,6 +29,7 @@ namespace cg = cooperative_groups;
 #include "auxiliary.h"
 #include "forward.h"
 #include "backward.h"
+#include <iostream>
 
 // Helper function to find the next-highest bit of the MSB
 // on the CPU.
@@ -216,8 +217,10 @@ int CudaRasterizer::Rasterizer::forward(
 	const float tan_fovx, float tan_fovy,
 	const bool prefiltered,
 	float* out_color,
+	const int render_mode,
 	int* radii,
-	bool debug)
+	bool debug
+	)
 {
 	const float focal_y = height / (2.0f * tan_fovy);
 	const float focal_x = width / (2.0f * tan_fovx);
@@ -319,21 +322,26 @@ int CudaRasterizer::Rasterizer::forward(
 
 	// Let each tile blend its range of Gaussians independently in parallel
 	const float* feature_ptr = colors_precomp != nullptr ? colors_precomp : geomState.rgb;
-	CHECK_CUDA(FORWARD::render(
-		tile_grid, block,
-		imgState.ranges,
-		binningState.point_list,
-		width, height,
-		geomState.means2D,
-		feature_ptr,
-		geomState.conic_opacity,
-		imgState.accum_alpha,
-		imgState.n_contrib,
-		background,
-		viewmatrix,
-		projmatrix,
-		means3D,
-		out_color), debug)
+
+    std::cout << "render_mode: " << render_mode << std::endl;
+
+    CHECK_CUDA(FORWARD::render(
+        tile_grid, block,
+        imgState.ranges,
+        binningState.point_list,
+        width, height,
+        geomState.means2D,
+        feature_ptr,
+        geomState.conic_opacity,
+        imgState.accum_alpha,
+        imgState.n_contrib,
+        background,
+        viewmatrix,
+        projmatrix,
+        means3D,
+        render_mode,
+        out_color), debug)
+
 
 	return num_rendered;
 }
