@@ -18,6 +18,23 @@
 
 namespace cg = cooperative_groups;
 
+__device__ float3 operator-(const float3& a, const float3& b) {
+    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+
+__device__ float3 operator*(const float3& a, const float& b) {
+    return make_float3(a.x * b, a.y * b, a.z * b);
+}
+
+__device__ float3 operator*(const float& a, const float3& b) {
+    return make_float3(a * b.x, a * b.y, a * b.z);
+}
+
+__device__ float3 operator+(const float3& a, const float3& b) {
+    return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
+}
+
+
 // Forward method for converting the input spherical harmonics
 // coefficients of each Gaussian to a simple RGB color.
 __device__ glm::vec3 computeColorFromSH(int idx, int deg, int max_coeffs, const glm::vec3* means, glm::vec3 campos, const float* shs, bool* clamped)
@@ -638,19 +655,62 @@ render_shadingCUDA(
 // 				continue;
 // 			}
 
+            float3 phong_color;
+            float3 light_position = make_float3(0.0f, 0.0f, 10.0f); // Example position
+            float3 light_color = make_float3(1.0f, 1.0f, 1.0f); // White light
+            float ambient_intensity = 0.1f;
+
+            float3 material_ambient = make_float3(0.1f, 0.1f, 0.1f);
+            float3 material_diffuse = make_float3(0.6f, 0.6f, 0.6f);
+            float3 material_specular = make_float3(0.8f, 0.8f, 0.8f);
+            float shininess = 32.0f;
+
+            float3 world_pos = make_float3(orig_points[collected_id[j] * CHANNELS], orig_points[collected_id[j] * CHANNELS + 1], orig_points[collected_id[j] * CHANNELS + 2]);
+
+            // Calculate the surface normal
+            float dx = pixf.x - W / 2.0f;  // X-distance from the pixel to the sphere center
+            float dy = pixf.y - H / 2.0f;  // Y-distance from the pixel to the sphere center
+            float radius = min(W, H) / 2.0f;  // Radius of the sphere
+            if (dx * dx + dy * dy <= radius * radius) {  // Check if the pixel is inside the sphere
+                float dz = sqrtf(radius * radius - dx * dx - dy * dy);
+                float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
+
+                // View direction (assuming the viewer is along the z-axis at infinity)
+                float3 view_dir = normalize(make_float3(0.0f, 0.0f, 1.0f));
+
+                // Light direction
+                float3 light_dir = normalize(light_position - make_float3(pixf.x, pixf.y, dz));
+
+                // Reflection direction
+                float3 reflect_dir = normalize(2.0f * dot(normal, light_dir) * normal - light_dir);
+
+                // Ambient component
+                float3 ambient = ambient_intensity * material_ambient;
+
+                // Diffuse component
+                float3 diffuse = material_diffuse * max(dot(normal, light_dir), 0.0f);
+
+                // Specular component
+                float3 specular = material_specular * powf(max(dot(view_dir, reflect_dir), 0.0f), shininess);
+
+                // Combine components
+                phong_color = ambient + diffuse + specular;
+            }
+
+
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
 // 				C[ch] = features[collected_id[j] * CHANNELS + ch];
-				C[ch] = orig_points[collected_id[j] * CHANNELS + ch];
+				C[ch] += orig_points[collected_id[j] * CHANNELS + ch];
 
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
 
-//             C[0] = orig_points[3 * idx];
-//             C[1] = orig_points[3 * idx + 1];
-//             C[2] = orig_points[3 * idx + 2];
-//             C[3] = orig_points[3 * idx + 3];
+            C[0] = phong_color.x;
+            C[1] = phong_color.y;
+            C[2] = phong_color.z;
+            C[3] = 1;
 
 			T = test_T;
 // 			T = 1.0f - test_T;
