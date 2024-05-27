@@ -48,24 +48,7 @@ namespace FORWARD
 		bool prefiltered);
 
 	// Main rasterization method.
-	void render(
-		const dim3 grid, dim3 block,
-		const uint2* ranges,
-		const uint32_t* point_list,
-		int W, int H,
-		const float2* points_xy_image,
-		const float* features,
-		const float4* conic_opacity,
-		float* final_T,
-		uint32_t* n_contrib,
-		const float* bg_color,
-        const float* viewmatrix,
-        const float* projmatrix,
-        const float* orig_points,
-        const int render_mode,
-		float* out_color);
-
-    void render_shading(
+	void render(int P,
 		const dim3 grid, dim3 block,
 		const uint2* ranges,
 		const uint32_t* point_list,

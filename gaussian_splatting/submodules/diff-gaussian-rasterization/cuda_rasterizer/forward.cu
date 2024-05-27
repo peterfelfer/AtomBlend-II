@@ -638,38 +638,19 @@ render_shadingCUDA(
 // 				continue;
 // 			}
 
-			float test = con_o.w * exp(power);
-
-            // Calculate the distance from the center of the circle
-            float3 center = { 0, 0, 0 };
-            float dx = d.x - center.x;
-            float dy = d.y - center.y;
-            float dist = sqrtf(dx * dx + dy * dy);
-            float radius = 1.0f;
-
-            // Calculate the normal vector at this point on the sphere
-            float dz = sqrtf(radius * radius - dist * dist);
-            float3 normal = make_float3(dx, dy, dz);
-            normal = normalize(normal);
-
-            // do light stuff
-            float3 light_pos = { 0, 0, 5 };
-            float3 light_dir = {light_pos.x - center.x, light_pos.y - center.y, light_pos.z - center.z};
-            light_dir = normalize(light_dir);
-            float intensity = fmaxf(dot(normal, light_dir), 0.0f);
-
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
-				C[ch] = features[collected_id[j] * CHANNELS + ch] * intensity;
+// 				C[ch] = features[collected_id[j] * CHANNELS + ch];
+				C[ch] = orig_points[collected_id[j] * CHANNELS + ch];
+
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
 
-
-//             C[0] = 1;
-//             C[1] = 0;
-//             C[2] = 0;
-//             C[3] = 1;
+//             C[0] = orig_points[3 * idx];
+//             C[1] = orig_points[3 * idx + 1];
+//             C[2] = orig_points[3 * idx + 2];
+//             C[3] = orig_points[3 * idx + 3];
 
 			T = test_T;
 // 			T = 1.0f - test_T;
@@ -695,7 +676,7 @@ render_shadingCUDA(
 	}
 }
 
-void FORWARD::render(
+void FORWARD::render(int P,
 	const dim3 grid, dim3 block,
 	const uint2* ranges,
 	const uint32_t* point_list,

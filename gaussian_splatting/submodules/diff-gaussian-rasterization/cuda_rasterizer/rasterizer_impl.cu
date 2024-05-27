@@ -343,7 +343,7 @@ int CudaRasterizer::Rasterizer::forward(
 	// Let each tile blend its range of Gaussians independently in parallel
 	const float* feature_ptr = colors_precomp != nullptr ? colors_precomp : geomState.rgb;
 
-    CHECK_CUDA(FORWARD::render(
+    CHECK_CUDA(FORWARD::render(P,
         tile_grid, block,
         imgState.ranges,
         binningState.point_list,
