@@ -696,9 +696,9 @@ render_shadingCUDA(
                 // Combine components
                 phong_color = ambient + diffuse + specular;
 
-                C[0] = normal.x;
-                C[1] = normal.y;
-                C[2] = normal.z;
+                C[0] = d.x / W;
+                C[1] = d.y / H;
+                C[2] = 0;
                 C[3] = 1;
             }
 
