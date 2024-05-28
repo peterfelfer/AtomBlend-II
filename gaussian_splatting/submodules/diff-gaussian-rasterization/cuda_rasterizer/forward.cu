@@ -646,8 +646,8 @@ render_shadingCUDA(
 //                 C[3] = 1;
 // 			}
 
-			if (alpha < 1.0f / 255.0f)
-				continue;
+// 			if (alpha < 1.0f / 255.0f)
+// 				continue;
 			float test_T = T * (1 - alpha);
 // 			if (test_T < 0.0001f)
 // 			{
@@ -668,8 +668,8 @@ render_shadingCUDA(
             float3 world_pos = make_float3(orig_points[collected_id[j] * CHANNELS], orig_points[collected_id[j] * CHANNELS + 1], orig_points[collected_id[j] * CHANNELS + 2]);
 
             // Calculate the surface normal
-            float dx = pixf.x - W / 2.0f;  // X-distance from the pixel to the sphere center
-            float dy = pixf.y - H / 2.0f;  // Y-distance from the pixel to the sphere center
+            float dx = pixf.x - d.x;  // X-distance from the pixel to the sphere center
+            float dy = pixf.y - d.y;  // Y-distance from the pixel to the sphere center
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
             if (dx * dx + dy * dy <= radius * radius) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dx * dx - dy * dy);
@@ -695,22 +695,23 @@ render_shadingCUDA(
 
                 // Combine components
                 phong_color = ambient + diffuse + specular;
+
+                C[0] = normal.x;
+                C[1] = normal.y;
+                C[2] = normal.z;
+                C[3] = 1;
             }
 
 
 			// Eq. (3) from 3D Gaussian splatting paper.
-			for (int ch = 0; ch < CHANNELS; ch++)
+// 			for (int ch = 0; ch < CHANNELS; ch++)
 // 				C[ch] = features[collected_id[j] * CHANNELS + ch];
-				C[ch] += orig_points[collected_id[j] * CHANNELS + ch];
 
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
 
-            C[0] = phong_color.x;
-            C[1] = phong_color.y;
-            C[2] = phong_color.z;
-            C[3] = 1;
+
 
 			T = test_T;
 // 			T = 1.0f - test_T;
