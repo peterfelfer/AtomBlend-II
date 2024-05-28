@@ -671,7 +671,7 @@ render_shadingCUDA(
             float dx = pixf.x - d.x;  // X-distance from the pixel to the sphere center
             float dy = pixf.y - d.y;  // Y-distance from the pixel to the sphere center
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
-            if (dx * dx + dy * dy <= radius * radius) {  // Check if the pixel is inside the sphere
+            if (dx * dx + dy * dy <= radius * radius || true) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dx * dx - dy * dy);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
