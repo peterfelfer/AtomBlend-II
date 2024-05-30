@@ -34,6 +34,9 @@ __device__ float3 operator+(const float3& a, const float3& b) {
     return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
+__device__ float2 operator*(const float2& a, const float& b) {
+    return make_float2(a.x * b, a.y * b);
+}
 
 // Forward method for converting the input spherical harmonics
 // coefficients of each Gaussian to a simple RGB color.
@@ -567,6 +570,7 @@ render_shadingCUDA(
     const float* viewmatrix,
 	const float* projmatrix,
 	const float* orig_points,
+	const float scale_modifier,
 	float* __restrict__ out_color)
 {
 	// Identify current tile and associated min/max pixel range.
@@ -668,10 +672,20 @@ render_shadingCUDA(
             float3 world_pos = make_float3(orig_points[collected_id[j] * CHANNELS], orig_points[collected_id[j] * CHANNELS + 1], orig_points[collected_id[j] * CHANNELS + 2]);
 
             // Calculate the surface normal
-            float dx = pixf.x - d.x;  // X-distance from the pixel to the sphere center
-            float dy = pixf.y - d.y;  // Y-distance from the pixel to the sphere center
+            float dx = pixf.x / W - 0.5;  // X-distance from the pixel to the sphere center
+            float dy = pixf.y / H - 0.5;  // Y-distance from the pixel to the sphere center
+
+//            dx = d.x / W;
+//            dy = d.y / H;
+
+            float2 tc = { (d.x / W) * 2.0f - 1.0f, (d.y / H) * 2.0f - 1.0f }; // "tc" coords in range [-1,1]
+
+            tc = tc * scale_modifier;
+
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
-            if (dx * dx + dy * dy <= radius * radius || true) {  // Check if the pixel is inside the sphere
+//            radius = scale_modifier;
+
+            if (dx * dx + dy * dy <= radius * radius) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dx * dx - dy * dy);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
@@ -696,8 +710,23 @@ render_shadingCUDA(
                 // Combine components
                 phong_color = ambient + diffuse + specular;
 
-                C[0] = d.x / W;
-                C[1] = d.y / H;
+                 C[0] = d.x / W;
+                 C[1] = d.y / H;
+                 C[2] = 0;
+                 C[3] = 1;
+
+//                C[0] = dx;
+//                C[1] = dy;
+//                C[2] = dz;
+//                C[3] = 1;
+
+//                  C[0] = phong_color.x;
+//                  C[1] = phong_color.y;
+//                  C[2] = phong_color.z;
+//                  C[3] = 1;
+            } else {
+                C[0] = 0;
+                C[1] = 1;
                 C[2] = 0;
                 C[3] = 1;
             }
@@ -752,6 +781,7 @@ void FORWARD::render(int P,
 	const float* projmatrix,
 	const float* orig_points,
 	const int render_mode,
+	const float scale_modifier,
 	float* out_color)
 {
     if (render_mode == 0){
@@ -768,6 +798,7 @@ void FORWARD::render(int P,
             viewmatrix,
             projmatrix,
             orig_points,
+            scale_modifier,
             out_color
         );
     } else if (render_mode == 1) {

@@ -358,6 +358,7 @@ int CudaRasterizer::Rasterizer::forward(
         projmatrix,
         means3D,
         render_mode,
+        scale_modifier,
         out_color), debug)
 
 
