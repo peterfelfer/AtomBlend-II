@@ -18,25 +18,72 @@
 
 namespace cg = cooperative_groups;
 
-__device__ float3 operator-(const float3& a, const float3& b) {
-    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
-}
-
 __device__ float3 operator*(const float3& a, const float& b) {
     return make_float3(a.x * b, a.y * b, a.z * b);
 }
-
 __device__ float3 operator*(const float& a, const float3& b) {
     return make_float3(a * b.x, a * b.y, a * b.z);
+}
+__device__ float3 operator*(const float3& a, const float3& b) {
+    return make_float3(a.x * b.x, a.x * b.y, a.x * b.z);
+}
+__device__ float2 operator*(const float2& a, const float& b) {
+    return make_float2(a.x * b, a.y * b);
+}
+__device__ float2 operator*(const float2& a, const int& b) {
+    return make_float2(a.x * float(b), a.y * float(b));
+}
+
+__device__ float3 operator/(const float3& a, const float& b) {
+    return make_float3(a.x / b, a.y / b, a.z / b);
+}
+__device__ float3 operator/(const float& a, const float3& b) {
+    return make_float3(a / b.x, a / b.y, a / b.z);
+}
+__device__ float3 operator/(const float3& a, const float3& b) {
+    return make_float3(a.x / b.x, a.x / b.y, a.x / b.z);
+}
+__device__ float2 operator/(const float2& a, const float& b) {
+    return make_float2(a.x / b, a.y / b);
+}
+
+__device__ float3 operator-(const float3& a, const float3& b) {
+    return make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+}
+__device__ float2 operator-(const float2& a, const float2& b) {
+    return make_float2(a.x - b.x, a.y - b.y);
+}
+__device__ uint2 operator-(const uint2& a, const uint2& b) {
+    return make_uint2(a.x - b.x, a.y - b.x);
+}
+__device__ float3 operator-(const float3& a, const float& b) {
+    return make_float3(a.x - b, a.y - b, a.z - b);
 }
 
 __device__ float3 operator+(const float3& a, const float3& b) {
     return make_float3(a.x + b.x, a.y + b.y, a.z + b.z);
 }
-
-__device__ float2 operator*(const float2& a, const float& b) {
-    return make_float2(a.x * b, a.y * b);
+__device__ float3 operator+(const float3& a, const float& b) {
+    return make_float3(a.x + b, a.y + b, a.z + b);
 }
+
+__device__ float3 normalize(const float3 &v) {
+    float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+    return make_float3(v.x / length, v.y / length, v.z / length);
+}
+__device__ float dot(const float3 &v1, const float3 &v2) {
+    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+__device__ float length(const float3& a) {
+    return sqrtf(dot(a,a));
+}
+__device__ float dot(const float2 &v1, const float2 &v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+}
+__device__ float length(const float2& a) {
+    return sqrtf(dot(a,a));
+}
+
 
 // Forward method for converting the input spherical harmonics
 // coefficients of each Gaussian to a simple RGB color.
@@ -276,15 +323,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// Inverse 2D covariance and opacity neatly pack into one float4
 	conic_opacity[idx] = { conic.x, conic.y, conic.z, opacities[idx] };
 	tiles_touched[idx] = (rect_max.y - rect_min.y) * (rect_max.x - rect_min.x);
-}
-
-__device__ float3 normalize(const float3 &v) {
-    float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
-    return make_float3(v.x / length, v.y / length, v.z / length);
-}
-
-__device__ float dot(const float3 &v1, const float3 &v2) {
-    return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
 // Main rasterization method. Collaboratively works on one tile per
@@ -671,21 +709,66 @@ render_shadingCUDA(
 
             float3 world_pos = make_float3(orig_points[collected_id[j] * CHANNELS], orig_points[collected_id[j] * CHANNELS + 1], orig_points[collected_id[j] * CHANNELS + 2]);
 
+//            printf("%f, %f, %f \n", world_pos.x, world_pos.y, world_pos.z);
+
             // Calculate the surface normal
-            float dx = pixf.x / W - 0.5;  // X-distance from the pixel to the sphere center
-            float dy = pixf.y / H - 0.5;  // Y-distance from the pixel to the sphere center
+            float dx = (d.x / W - 0.5);  // X-distance from the pixel to the sphere center
+            float dy = (d.y / H - 0.5);  // Y-distance from the pixel to the sphere center
 
 //            dx = d.x / W;
 //            dy = d.y / H;
 
-            float2 tc = { (d.x / W) * 2.0f - 1.0f, (d.y / H) * 2.0f - 1.0f }; // "tc" coords in range [-1,1]
+            float2 tc = { d.x / W, d.y / H }; // "tc" coords in range [0,1]
+            float2 reltc = { tc.x * 2.0f - 1.0f, tc.y * 2.0f - 1.0f };
 
-            tc = tc * scale_modifier;
+            reltc = tc * scale_modifier;
+
+            uint2 pix_size = pix_max - pix_min;
+            float2 tc_maybe = { d.x / BLOCK_X , d.y / BLOCK_Y };
+
+            float lensqr = reltc.x * reltc.x + reltc.y * reltc.y;
 
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
 //            radius = scale_modifier;
 
-            if (dx * dx + dy * dy <= radius * radius) {  // Check if the pixel is inside the sphere
+            float4 view_space_pos4 = transformPoint4x4(world_pos, viewmatrix);
+            float3 view_space_pos3 = make_float3(view_space_pos4.x, view_space_pos4.y, view_space_pos4.z);
+
+            float3 corner_point = view_space_pos3 + make_float3(1,1,0);
+            float4 clip_space_corner4 = transformPoint4x4(corner_point, projmatrix);
+            float3 clip_space_corner3 = make_float3(clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z) / (clip_space_corner4.w);
+            float3 screen_space_corner = clip_space_corner3 * 0.5f + 0.5f;
+            float2 img_pos_corner = { screen_space_corner.x * W , screen_space_corner.y * H };
+
+            float4 clip_space_pos4 = transformPoint4x4(view_space_pos3, projmatrix);
+            float3 clip_space_pos3 = make_float3(clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z) / (clip_space_pos4.w);
+            float3 screen_space_pos3 = clip_space_pos3 * 0.5f + 0.5f;
+            float2 img_pos_point = { screen_space_pos3.x * W , screen_space_pos3.y * H };
+
+            float dist_to_corner = length(img_pos_corner - img_pos_point);
+
+            if (isinf(dist_to_corner) && j == 0 && false){
+                printf("view_space_pos4: (%f, %f, %f, %f)\n", view_space_pos4.x, view_space_pos4.y, view_space_pos4.z, view_space_pos4.w);
+                printf("view_space_pos3: (%f, %f, %f)\n", view_space_pos3.x, view_space_pos3.y, view_space_pos3.z);
+                printf("corner_point: (%f, %f, %f)\n", corner_point.x, corner_point.y, corner_point.z);
+                printf("clip_space_corner4: (%f, %f, %f, %f)\n", clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z, clip_space_corner4.w);
+                printf("clip_space_corner3: (%f, %f, %f)\n", clip_space_corner3.x, clip_space_corner3.y, clip_space_corner3.z);
+                printf("screen_space_corner: (%f, %f, %f)\n", screen_space_corner.x, screen_space_corner.y, screen_space_corner.z);
+                printf("img_pos_corner: (%f, %f)\n", img_pos_corner.x, img_pos_corner.y);
+                printf("clip_space_pos4: (%f, %f, %f, %f)\n", clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z, clip_space_pos4.w);
+                printf("clip_space_pos3: (%f, %f, %f)\n", clip_space_pos3.x, clip_space_pos3.y, clip_space_pos3.z);
+                printf("screen_space_pos3: (%f, %f, %f)\n", screen_space_pos3.x, screen_space_pos3.y, screen_space_pos3.z);
+                printf("img_pos_point: (%f, %f)\n", img_pos_point.x, img_pos_point.y);
+                printf("dist_to_corner: %f\n", dist_to_corner);
+
+            }
+
+            printf("clip_space_pos4: (%f, %f, %f, %f)\n", clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z, clip_space_pos4.w);
+            printf("clip_space_corner4: (%f, %f, %f, %f)\n", clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z, clip_space_corner4.w);
+
+
+
+            if (lensqr <= dist_to_corner) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dx * dx - dy * dy);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
@@ -710,23 +793,36 @@ render_shadingCUDA(
                 // Combine components
                 phong_color = ambient + diffuse + specular;
 
-                 C[0] = d.x / W;
-                 C[1] = d.y / H;
-                 C[2] = 0;
-                 C[3] = 1;
+//                 C[0] = normal.x;
+//                 C[1] = normal.y;
+//                 C[2] = normal.z;
+//                 C[3] = 1;
 
-//                C[0] = dx;
-//                C[1] = dy;
-//                C[2] = dz;
+
+
+//                if (d.x < 0.5){
+//                     C[0] = view_space_pos3.x;
+//                     C[1] = view_space_pos3.y;
+//                     C[2] = view_space_pos3.z;
+//                } else {
+//                     C[0] = world_pos.x;
+//                     C[1] = world_pos.y;
+//                     C[2] = world_pos.z;
+//                }
+//                 C[3] = 1;
+
+//                C[0] = d.x / dist_to_corner;
+//                C[1] = d.y / dist_to_corner;
+//                C[2] = 0;
 //                C[3] = 1;
 
-//                  C[0] = phong_color.x;
-//                  C[1] = phong_color.y;
-//                  C[2] = phong_color.z;
-//                  C[3] = 1;
+                  C[0] = dist_to_corner;
+                  C[1] = 0;
+                  C[2] = 0;
+                  C[3] = 1;
             } else {
                 C[0] = 0;
-                C[1] = 1;
+                C[1] = lensqr;
                 C[2] = 0;
                 C[3] = 1;
             }
