@@ -744,7 +744,7 @@ render_shadingCUDA(
             float lensqr = reltc.x * reltc.x + reltc.y * reltc.y;
 
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
-//            radius = scale_modifier;
+            radius = scale_modifier;
 
             float4 view_space_pos4 = transformPoint4x4(world_pos, viewmatrix);
             float3 view_space_pos3 = make_float3(view_space_pos4.x, view_space_pos4.y, view_space_pos4.z);
@@ -762,7 +762,7 @@ render_shadingCUDA(
 
             float dist_to_corner = length(img_pos_corner - img_pos_point);
 
-            if (pix_id == 0 && dist_to_corner >= 500){
+            if (pix_id == 0 && dist_to_corner >= 500 && false){
                 printf("world_space_pos3: (%f, %f, %f)\n", world_pos.x, world_pos.y, world_pos.z);
                 printf("view_space_pos4: (%f, %f, %f, %f)\n", view_space_pos4.x, view_space_pos4.y, view_space_pos4.z, view_space_pos4.w);
                 printf("view_space_pos3: (%f, %f, %f)\n", view_space_pos3.x, view_space_pos3.y, view_space_pos3.z);
@@ -787,8 +787,15 @@ render_shadingCUDA(
 //                printf("%f, ", dist_to_corner);
 //            }
 
-            if (lensqr <= radius / dist_to_corner) {  // Check if the pixel is inside the sphere
-                float dz = sqrtf(radius * radius - dx * dx - dy * dy);
+            float mod = 1.0f;
+			float power_mod = -1.0f * (-0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y);
+
+            if (pix_id == 0){
+                printf("lensqr %f, alpha %f ", lensqr, alpha);
+            }
+
+            if (alpha > 0.8) {  // Check if the pixel is inside the sphere
+                float dz = sqrtf(radius * radius - reltc.x * reltc.x - reltc.y * reltc.y);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
                 // View direction (assuming the viewer is along the z-axis at infinity)
@@ -812,10 +819,10 @@ render_shadingCUDA(
                 // Combine components
                 phong_color = ambient + diffuse + specular;
 
-//                 C[0] = normal.x;
-//                 C[1] = normal.y;
-//                 C[2] = normal.z;
-//                 C[3] = 1;
+                 C[0] = 0;
+                 C[1] = 0;
+                 C[2] = dz;
+                 C[3] = 1;
 
 
 
@@ -830,23 +837,23 @@ render_shadingCUDA(
 //                }
 //                 C[3] = 1;
 
-                if (dist_to_corner >= 500){
-                    C[0] = 1;
-                    C[1] = 1;
-                    C[2] = 1;
-                    C[3] = 1;
-                } else if (isnan(dist_to_corner)) {
-                    C[0] = 0;
-                    C[1] = 0;
-                    C[2] = 1;
-                    C[3] = 1;
-                } else {
-                    C[0] = radius / dist_to_corner;
-                    C[1] = 0;
-                    C[2] = 0;
-                    C[3] = 1;
-
-                }
+//                if (dist_to_corner >= 500){
+//                    C[0] = 1;
+//                    C[1] = 1;
+//                    C[2] = 1;
+//                    C[3] = 1;
+//                } else if (isnan(dist_to_corner)) {
+//                    C[0] = 0;
+//                    C[1] = 0;
+//                    C[2] = 1;
+//                    C[3] = 1;
+//                } else {
+//                    C[0] = radius / dist_to_corner;
+//                    C[1] = 0;
+//                    C[2] = 0;
+//                    C[3] = 1;
+//
+//                }
 
 //                    C[0] = d.x / dist_to_corner;
 //                    C[1] = d.y / dist_to_corner;
@@ -867,7 +874,7 @@ render_shadingCUDA(
 
             } else {
                 C[0] = 0;
-                C[1] = lensqr;
+                C[1] = 1;
                 C[2] = 0;
                 C[3] = 1;
             }
@@ -880,6 +887,25 @@ render_shadingCUDA(
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
+
+//            if (pix_id == 0){
+//                printf("power: %f, con_o: %f, %f, %f \n", power_mod, con_o.x, con_o.y, con_o.z);
+//                printf("alpha: %f \n", alpha);
+//            }
+
+//
+//            if (d.x <= 0.5){
+//
+//                C[0] = alpha;
+//                C[1] = alpha;
+//                C[2] = alpha;
+//                C[3] = 1;
+//            } else {
+//                C[0] = lensqr;
+//                C[1] = lensqr;
+//                C[2] = lensqr;
+//                C[3] = 1;
+//            }
 
 
 
