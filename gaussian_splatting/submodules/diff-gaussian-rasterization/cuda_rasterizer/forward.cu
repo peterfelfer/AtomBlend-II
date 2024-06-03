@@ -11,9 +11,12 @@
 
 #include "forward.h"
 #include "auxiliary.h"
+#include <math_functions.h>
+#include <stdio.h>
 #include <cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
 #include <iostream>
+#include <cuda_runtime.h>
 
 
 namespace cg = cooperative_groups;
@@ -25,7 +28,7 @@ __device__ float3 operator*(const float& a, const float3& b) {
     return make_float3(a * b.x, a * b.y, a * b.z);
 }
 __device__ float3 operator*(const float3& a, const float3& b) {
-    return make_float3(a.x * b.x, a.x * b.y, a.x * b.z);
+    return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 __device__ float2 operator*(const float2& a, const float& b) {
     return make_float2(a.x * b, a.y * b);
@@ -35,15 +38,27 @@ __device__ float2 operator*(const float2& a, const int& b) {
 }
 
 __device__ float3 operator/(const float3& a, const float& b) {
+    if (b == 0){
+//        printf("CUDA ERROR at operator/ 3 1 ");
+    }
     return make_float3(a.x / b, a.y / b, a.z / b);
 }
 __device__ float3 operator/(const float& a, const float3& b) {
+    if (b.x == 0 || b.y == 0 || b.z == 0){
+//        printf("CUDA ERROR at operator/ 1 3 ");
+    }
     return make_float3(a / b.x, a / b.y, a / b.z);
 }
 __device__ float3 operator/(const float3& a, const float3& b) {
-    return make_float3(a.x / b.x, a.x / b.y, a.x / b.z);
+    if (b.x == 0 || b.y == 0 || b.z == 0){
+//        printf("CUDA ERROR at operator/ 3 3 ");
+    }
+    return make_float3(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 __device__ float2 operator/(const float2& a, const float& b) {
+    if (b == 0){
+//        printf("CUDA ERROR at operator/ 2 1 ");
+    }
     return make_float2(a.x / b, a.y / b);
 }
 
@@ -54,7 +69,7 @@ __device__ float2 operator-(const float2& a, const float2& b) {
     return make_float2(a.x - b.x, a.y - b.y);
 }
 __device__ uint2 operator-(const uint2& a, const uint2& b) {
-    return make_uint2(a.x - b.x, a.y - b.x);
+    return make_uint2(a.x - b.x, a.y - b.y);
 }
 __device__ float3 operator-(const float3& a, const float& b) {
     return make_float3(a.x - b, a.y - b, a.z - b);
@@ -68,8 +83,8 @@ __device__ float3 operator+(const float3& a, const float& b) {
 }
 
 __device__ float3 normalize(const float3 &v) {
-    float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
-    return make_float3(v.x / length, v.y / length, v.z / length);
+    float l = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+    return make_float3(v.x / l, v.y / l, v.z / l);
 }
 __device__ float dot(const float3 &v1, const float3 &v2) {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
@@ -747,7 +762,8 @@ render_shadingCUDA(
 
             float dist_to_corner = length(img_pos_corner - img_pos_point);
 
-            if (isinf(dist_to_corner) && j == 0 && false){
+            if (pix_id == 0 && dist_to_corner >= 500){
+                printf("world_space_pos3: (%f, %f, %f)\n", world_pos.x, world_pos.y, world_pos.z);
                 printf("view_space_pos4: (%f, %f, %f, %f)\n", view_space_pos4.x, view_space_pos4.y, view_space_pos4.z, view_space_pos4.w);
                 printf("view_space_pos3: (%f, %f, %f)\n", view_space_pos3.x, view_space_pos3.y, view_space_pos3.z);
                 printf("corner_point: (%f, %f, %f)\n", corner_point.x, corner_point.y, corner_point.z);
@@ -760,15 +776,18 @@ render_shadingCUDA(
                 printf("screen_space_pos3: (%f, %f, %f)\n", screen_space_pos3.x, screen_space_pos3.y, screen_space_pos3.z);
                 printf("img_pos_point: (%f, %f)\n", img_pos_point.x, img_pos_point.y);
                 printf("dist_to_corner: %f\n", dist_to_corner);
-
+                printf("------------------------------------------------------ \n");
             }
 
-            printf("clip_space_pos4: (%f, %f, %f, %f)\n", clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z, clip_space_pos4.w);
-            printf("clip_space_corner4: (%f, %f, %f, %f)\n", clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z, clip_space_corner4.w);
+//            printf("clip_space_pos4: (%f, %f, %f, %f)\n", clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z, clip_space_pos4.w);
+//            printf("clip_space_corner4: (%f, %f, %f, %f)\n", clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z, clip_space_corner4.w);
 
 
+//            if (j == 0  ){
+//                printf("%f, ", dist_to_corner);
+//            }
 
-            if (lensqr <= dist_to_corner) {  // Check if the pixel is inside the sphere
+            if (lensqr <= radius / dist_to_corner) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dx * dx - dy * dy);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
@@ -811,15 +830,41 @@ render_shadingCUDA(
 //                }
 //                 C[3] = 1;
 
-//                C[0] = d.x / dist_to_corner;
-//                C[1] = d.y / dist_to_corner;
-//                C[2] = 0;
-//                C[3] = 1;
+                if (dist_to_corner >= 500){
+                    C[0] = 1;
+                    C[1] = 1;
+                    C[2] = 1;
+                    C[3] = 1;
+                } else if (isnan(dist_to_corner)) {
+                    C[0] = 0;
+                    C[1] = 0;
+                    C[2] = 1;
+                    C[3] = 1;
+                } else {
+                    C[0] = radius / dist_to_corner;
+                    C[1] = 0;
+                    C[2] = 0;
+                    C[3] = 1;
 
-                  C[0] = dist_to_corner;
-                  C[1] = 0;
-                  C[2] = 0;
-                  C[3] = 1;
+                }
+
+//                    C[0] = d.x / dist_to_corner;
+//                    C[1] = d.y / dist_to_corner;
+//                    C[2] = 0;
+//                    C[3] = 1;
+
+//                if(isnan(dist_to_corner)){
+//                    C[0] = dist_to_corner;
+//                    C[1] = 0;
+//                    C[2] = 0;
+//                    C[3] = 1;
+//                } else {
+//                    C[0] = 0;
+//                    C[1] = dist_to_corner;
+//                    C[2] = 0;
+//                    C[3] = 1;
+//                }
+
             } else {
                 C[0] = 0;
                 C[1] = lensqr;

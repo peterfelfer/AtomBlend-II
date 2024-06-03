@@ -249,8 +249,8 @@ class CUDARenderer(GaussianRenderBase):
                 cov3D_precomp = None,
             )
 
-        print(self.gaussians.xyz)
-
+        # print('viewmatrix', raster_settings.viewmatrix)
+        # print('projmatrix', raster_settings.projmatrix)
 
         img = img.permute(1, 2, 0)
         img = torch.concat([img, torch.ones_like(img[..., :1])], dim=-1)
