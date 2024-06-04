@@ -319,54 +319,17 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	uint2 rect_min, rect_max;
 	getRect(point_image, my_radius, rect_min, rect_max, grid);
 
-//    printf("%i \n", idx, P);
-    for (uint32_t y = rect_min.y * 16; y < rect_max.y * 16; ++y) {
-        for (uint32_t x = rect_min.x * 16; x < rect_max.x * 16; ++x) {
-            float2 pixel_pos = { static_cast<float>(x), static_cast<float>(y) };
-            float2 relative_pos = { pixel_pos.x - point_image.x, pixel_pos.y - point_image.y };
-            float2 relative_pos_div = relative_pos / my_radius;
-
-            // Now you can use relative_pos as the coordinates relative to the center of the Gaussian
-            // For example, you might want to process or store these coordinates
-            // You can add your processing code here
-
-            if (idx == 1){
-//                printf("point image %f, %f\n", point_image.x, point_image.y);
-//                printf("rect_min %i %i \n", rect_min.x * 16, rect_min.y * 16);
-//                printf("rect_max %i %i \n", rect_max.x * 16, rect_max.y * 16);
-//                printf("pixel_pos %f %f \n", pixel_pos.x, pixel_pos.y);
-//                printf("relative_pos %f %f \n", relative_pos.x, relative_pos.y);
-//                printf("relative_pos_div %f %f \n", relative_pos_div.x, relative_pos_div.y);
-//                printf("my_radius %f \n", my_radius);
-//                printf("--------------------------------------\n");
-            }
-        }
-    }
-
-//    printf("cov %f, %f, %f\n", cov.x, cov.y, cov.z);
-//    printf("conic %f, %f, %f\n", conic.x, conic.y, conic.z);
-
 	if ((rect_max.x - rect_min.x) * (rect_max.y - rect_min.y) == 0)
 		return;
 
 	// If colors have been precomputed, use them, otherwise convert
 	// spherical harmonics coefficients to RGB color.
-	if (colors_precomp == nullptr || true)
+	if (colors_precomp == nullptr)
 	{
-//		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
-//		rgb[idx * C + 0] = result.x;
-//		rgb[idx * C + 1] = result.y;
-//		rgb[idx * C + 2] = result.z;
-
-        if (idx == 1){
-            rgb[idx * C + 0] = 1;
-            rgb[idx * C + 1] = 0;
-            rgb[idx * C + 2] = 0;
-        } else {
-            rgb[idx * C + 0] = 0;
-            rgb[idx * C + 1] = 1;
-            rgb[idx * C + 2] = 0;
-        }
+		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
+		rgb[idx * C + 0] = result.x;
+		rgb[idx * C + 1] = result.y;
+		rgb[idx * C + 2] = result.z;
 	}
 
 	// Store some useful helper data for the next steps.
@@ -726,8 +689,6 @@ render_shadingCUDA(
 			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
 			float4 con_o = collected_conic_opacity[j];
 			float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
-// 			if (power > 0.0f)
-// 				continue;
 
 			// Eq. (2) from 3D Gaussian splatting paper.
 			// Obtain alpha by multiplying with Gaussian opacity
@@ -735,24 +696,10 @@ render_shadingCUDA(
 			// Avoid numerical instabilities (see paper appendix).
 			float alpha = min(0.99f, con_o.w * exp(power));
 
-// 			if (alpha < 10.0f / 255.0f){
-//                 C[0] = 0;
-//                 C[1] = 1;
-//                 C[2] = 0;
-//                 C[3] = 1;
-// 			}
-
-// 			if (alpha < 1.0f / 255.0f)
-// 				continue;
 			float test_T = T * (1 - alpha);
-// 			if (test_T < 0.0001f)
-// 			{
-// 				done = true;
-// 				continue;
-// 			}
 
             float3 phong_color;
-            float3 light_position = make_float3(0.0f, 0.0f, 10.0f); // Example position
+            float3 light_position = make_float3(0.0f, 0.0f, -10.0f); // Example position
             float3 light_color = make_float3(1.0f, 1.0f, 1.0f); // White light
             float ambient_intensity = 0.1f;
 
@@ -761,84 +708,18 @@ render_shadingCUDA(
             float3 material_specular = make_float3(0.8f, 0.8f, 0.8f);
             float shininess = 32.0f;
 
-            float3 world_pos = make_float3(orig_points[collected_id[j] * CHANNELS], orig_points[collected_id[j] * CHANNELS + 1], orig_points[collected_id[j] * CHANNELS + 2]);
-
-//            printf("%f, %f, %f \n", world_pos.x, world_pos.y, world_pos.z);
-
-            // Calculate the surface normal
-            float dx = (d.x / W - 0.5);  // X-distance from the pixel to the sphere center
-            float dy = (d.y / H - 0.5);  // Y-distance from the pixel to the sphere center
-
-//            dx = d.x / W;
-//            dy = d.y / H;
-
-            float2 tc = { d.x / W, d.y / H }; // "tc" coords in range [0,1]
-            float2 reltc = { tc.x * 2.0f - 1.0f, tc.y * 2.0f - 1.0f };
-
-            reltc = reltc * scale_modifier;
-
-            uint2 pix_size = pix_max - pix_min;
-            float2 tc_maybe = { d.x / BLOCK_X , d.y / BLOCK_Y };
-
-            float lensqr = reltc.x * reltc.x + reltc.y * reltc.y;
-
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
             radius = scale_modifier;
-
-            float4 view_space_pos4 = transformPoint4x4(world_pos, viewmatrix);
-            float3 view_space_pos3 = make_float3(view_space_pos4.x, view_space_pos4.y, view_space_pos4.z);
-
-            float3 corner_point = view_space_pos3 + make_float3(1,1,0);
-            float4 clip_space_corner4 = transformPoint4x4(corner_point, projmatrix);
-            float3 clip_space_corner3 = make_float3(clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z) / (clip_space_corner4.w);
-            float3 screen_space_corner = clip_space_corner3 * 0.5f + 0.5f;
-            float2 img_pos_corner = { screen_space_corner.x * W , screen_space_corner.y * H };
-
-            float4 clip_space_pos4 = transformPoint4x4(view_space_pos3, projmatrix);
-            float3 clip_space_pos3 = make_float3(clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z) / (clip_space_pos4.w);
-            float3 screen_space_pos3 = clip_space_pos3 * 0.5f + 0.5f;
-            float2 img_pos_point = { screen_space_pos3.x * W , screen_space_pos3.y * H };
-
-            float dist_to_corner = length(img_pos_corner - img_pos_point);
-
-            if (pix_id == 0 && dist_to_corner >= 500 && false){
-                printf("world_space_pos3: (%f, %f, %f)\n", world_pos.x, world_pos.y, world_pos.z);
-                printf("view_space_pos4: (%f, %f, %f, %f)\n", view_space_pos4.x, view_space_pos4.y, view_space_pos4.z, view_space_pos4.w);
-                printf("view_space_pos3: (%f, %f, %f)\n", view_space_pos3.x, view_space_pos3.y, view_space_pos3.z);
-                printf("corner_point: (%f, %f, %f)\n", corner_point.x, corner_point.y, corner_point.z);
-                printf("clip_space_corner4: (%f, %f, %f, %f)\n", clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z, clip_space_corner4.w);
-                printf("clip_space_corner3: (%f, %f, %f)\n", clip_space_corner3.x, clip_space_corner3.y, clip_space_corner3.z);
-                printf("screen_space_corner: (%f, %f, %f)\n", screen_space_corner.x, screen_space_corner.y, screen_space_corner.z);
-                printf("img_pos_corner: (%f, %f)\n", img_pos_corner.x, img_pos_corner.y);
-                printf("clip_space_pos4: (%f, %f, %f, %f)\n", clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z, clip_space_pos4.w);
-                printf("clip_space_pos3: (%f, %f, %f)\n", clip_space_pos3.x, clip_space_pos3.y, clip_space_pos3.z);
-                printf("screen_space_pos3: (%f, %f, %f)\n", screen_space_pos3.x, screen_space_pos3.y, screen_space_pos3.z);
-                printf("img_pos_point: (%f, %f)\n", img_pos_point.x, img_pos_point.y);
-                printf("dist_to_corner: %f\n", dist_to_corner);
-                printf("------------------------------------------------------ \n");
-            }
-
-//            printf("clip_space_pos4: (%f, %f, %f, %f)\n", clip_space_pos4.x, clip_space_pos4.y, clip_space_pos4.z, clip_space_pos4.w);
-//            printf("clip_space_corner4: (%f, %f, %f, %f)\n", clip_space_corner4.x, clip_space_corner4.y, clip_space_corner4.z, clip_space_corner4.w);
-
-
-//            if (j == 0  ){
-//                printf("%f, ", dist_to_corner);
-//            }
-
-            float mod = 1.0f;
-			float power_mod = -1.0f * (-0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y);
 
             float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
             float dist_to_center = sqrt(d.x * d.x + d.y * d.y);
             dist_to_center = dist_to_center / r_in_pixels;
 
-
-            dx = d.x / r_in_pixels;
-            dy = d.y / r_in_pixels;
+            // Calculate the surface normal
+            float dx = d.x / r_in_pixels;  // X-distance from the pixel to the sphere center
+            float dy = d.y / r_in_pixels; // Y-distance from the pixel to the sphere center
 
             if (dist_to_center <= 1) {  // Check if the pixel is inside the sphere
-//                float dz = sqrtf(radius * radius - reltc.x * reltc.x - reltc.y * reltc.y);
                 float dz = sqrtf(radius * radius - dist_to_center);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
@@ -860,86 +741,15 @@ render_shadingCUDA(
                 // Specular component
                 float3 specular = material_specular * powf(max(dot(view_dir, reflect_dir), 0.0f), shininess);
 
+                float3 object_color = make_float3(features[collected_id[j] * CHANNELS], features[collected_id[j] * CHANNELS + 1], features[collected_id[j] * CHANNELS + 2]);
+
                 // Combine components
-                phong_color = ambient + diffuse + specular;
+                phong_color = (ambient + diffuse + specular) * object_color;
 
-
-
-                if (pix_id == 0){
-//                    printf("d %f %f \n", d.x, d.y);
-//                    printf("xy %f %f \n", xy.x, xy.y);
-//                    printf("tc %f %f \n", tc.x, tc.y);
-//                    printf("reltc %f, %f \n ", reltc.x, reltc.y);
-//                    printf("dz %f \n", dz);
-//                    printf("%f \n", r);
-
-                }
-
-
-
-                if (pix_id == 0){
-                    printf("d %f %f \n", d.x, d.y);
-                    printf("dist to center %f  \n", dist_to_center);
-                    printf("dtc/r %f  \n", dist_to_center);
-
-                }
-
-                 C[0] = phong_color.x;
-                 C[1] = phong_color.y;
-                 C[2] = phong_color.z;
-                 C[3] = 1;
-
-                 if (pix_id == 0){
-                 }
-
-
-
-
-//                if (d.x < 0.5){
-//                     C[0] = view_space_pos3.x;
-//                     C[1] = view_space_pos3.y;
-//                     C[2] = view_space_pos3.z;
-//                } else {
-//                     C[0] = world_pos.x;
-//                     C[1] = world_pos.y;
-//                     C[2] = world_pos.z;
-//                }
-//                 C[3] = 1;
-
-//                if (dist_to_corner >= 500){
-//                    C[0] = 1;
-//                    C[1] = 1;
-//                    C[2] = 1;
-//                    C[3] = 1;
-//                } else if (isnan(dist_to_corner)) {
-//                    C[0] = 0;
-//                    C[1] = 0;
-//                    C[2] = 1;
-//                    C[3] = 1;
-//                } else {
-//                    C[0] = radius / dist_to_corner;
-//                    C[1] = 0;
-//                    C[2] = 0;
-//                    C[3] = 1;
-//
-//                }
-
-//                    C[0] = d.x / dist_to_corner;
-//                    C[1] = d.y / dist_to_corner;
-//                    C[2] = 0;
-//                    C[3] = 1;
-
-//                if(isnan(dist_to_corner)){
-//                    C[0] = dist_to_corner;
-//                    C[1] = 0;
-//                    C[2] = 0;
-//                    C[3] = 1;
-//                } else {
-//                    C[0] = 0;
-//                    C[1] = dist_to_corner;
-//                    C[2] = 0;
-//                    C[3] = 1;
-//                }
+                C[0] = phong_color.x;
+                C[1] = phong_color.y;
+                C[2] = phong_color.z;
+                C[3] = 1;
 
             }
 
@@ -951,30 +761,7 @@ render_shadingCUDA(
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 
-
-//            if (pix_id == 0){
-//                printf("power: %f, con_o: %f, %f, %f \n", power_mod, con_o.x, con_o.y, con_o.z);
-//                printf("alpha: %f \n", alpha);
-//            }
-
-//
-//            if (d.x <= 0.5){
-//
-//                C[0] = alpha;
-//                C[1] = alpha;
-//                C[2] = alpha;
-//                C[3] = 1;
-//            } else {
-//                C[0] = lensqr;
-//                C[1] = lensqr;
-//                C[2] = lensqr;
-//                C[3] = 1;
-//            }
-
-
-
 			T = test_T;
-// 			T = 1.0f - test_T;
 
 			// Keep track of last range entry to update this
 			// pixel.
