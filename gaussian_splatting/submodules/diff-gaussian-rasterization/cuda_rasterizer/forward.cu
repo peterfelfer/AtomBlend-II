@@ -829,12 +829,14 @@ render_shadingCUDA(
             float mod = 1.0f;
 			float power_mod = -1.0f * (-0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y);
 
+            float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
+            float dist_to_center = sqrt(d.x * d.x + d.y * d.y);
+            dist_to_center = dist_to_center / r_in_pixels;
 
 
-
-            if (alpha > 0.8 || true) {  // Check if the pixel is inside the sphere
+            if (dist_to_center <= 1) {  // Check if the pixel is inside the sphere
 //                float dz = sqrtf(radius * radius - reltc.x * reltc.x - reltc.y * reltc.y);
-                float dz = sqrtf(radius * radius - dot(reltc, reltc));
+                float dz = sqrtf(radius * radius - dist_to_center);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
                 // View direction (assuming the viewer is along the z-axis at infinity)
@@ -858,7 +860,6 @@ render_shadingCUDA(
                 // Combine components
                 phong_color = ambient + diffuse + specular;
 
-                float r = float(radii[collected_id[j]]);
 
 
                 if (pix_id == 0){
@@ -871,18 +872,17 @@ render_shadingCUDA(
 
                 }
 
-                float dist_to_center = sqrt(d.x * d.x + d.y * d.y);
-                float bla = dist_to_center / r;
+
 
                 if (pix_id == 0){
                     printf("d %f %f \n", d.x, d.y);
                     printf("dist to center %f  \n", dist_to_center);
-                    printf("dtc/r %f  \n", bla);
+                    printf("dtc/r %f  \n", dist_to_center);
 
                 }
 
                  C[0] = 0;
-                 C[1] = bla;
+                 C[1] = dz;
                  C[2] = 0;
                  C[3] = 1;
 
@@ -939,8 +939,8 @@ render_shadingCUDA(
 //                }
 
             } else {
-                C[0] = 0;
-                C[1] = 1;
+                C[0] = 1;
+                C[1] = 0;
                 C[2] = 0;
                 C[3] = 1;
             }
