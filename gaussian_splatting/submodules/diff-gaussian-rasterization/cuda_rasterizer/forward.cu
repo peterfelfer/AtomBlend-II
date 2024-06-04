@@ -318,17 +318,55 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float2 point_image = { ndc2Pix(p_proj.x, W), ndc2Pix(p_proj.y, H) };
 	uint2 rect_min, rect_max;
 	getRect(point_image, my_radius, rect_min, rect_max, grid);
+
+//    printf("%i \n", idx, P);
+    for (uint32_t y = rect_min.y * 16; y < rect_max.y * 16; ++y) {
+        for (uint32_t x = rect_min.x * 16; x < rect_max.x * 16; ++x) {
+            float2 pixel_pos = { static_cast<float>(x), static_cast<float>(y) };
+            float2 relative_pos = { pixel_pos.x - point_image.x, pixel_pos.y - point_image.y };
+            float2 relative_pos_div = relative_pos / my_radius;
+
+            // Now you can use relative_pos as the coordinates relative to the center of the Gaussian
+            // For example, you might want to process or store these coordinates
+            // You can add your processing code here
+
+            if (idx == 1){
+//                printf("point image %f, %f\n", point_image.x, point_image.y);
+//                printf("rect_min %i %i \n", rect_min.x * 16, rect_min.y * 16);
+//                printf("rect_max %i %i \n", rect_max.x * 16, rect_max.y * 16);
+//                printf("pixel_pos %f %f \n", pixel_pos.x, pixel_pos.y);
+//                printf("relative_pos %f %f \n", relative_pos.x, relative_pos.y);
+//                printf("relative_pos_div %f %f \n", relative_pos_div.x, relative_pos_div.y);
+//                printf("my_radius %f \n", my_radius);
+//                printf("--------------------------------------\n");
+            }
+        }
+    }
+
+//    printf("cov %f, %f, %f\n", cov.x, cov.y, cov.z);
+//    printf("conic %f, %f, %f\n", conic.x, conic.y, conic.z);
+
 	if ((rect_max.x - rect_min.x) * (rect_max.y - rect_min.y) == 0)
 		return;
 
 	// If colors have been precomputed, use them, otherwise convert
 	// spherical harmonics coefficients to RGB color.
-	if (colors_precomp == nullptr)
+	if (colors_precomp == nullptr || true)
 	{
-		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
-		rgb[idx * C + 0] = result.x;
-		rgb[idx * C + 1] = result.y;
-		rgb[idx * C + 2] = result.z;
+//		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
+//		rgb[idx * C + 0] = result.x;
+//		rgb[idx * C + 1] = result.y;
+//		rgb[idx * C + 2] = result.z;
+
+        if (idx == 1){
+            rgb[idx * C + 0] = 1;
+            rgb[idx * C + 1] = 0;
+            rgb[idx * C + 2] = 0;
+        } else {
+            rgb[idx * C + 0] = 0;
+            rgb[idx * C + 1] = 1;
+            rgb[idx * C + 2] = 0;
+        }
 	}
 
 	// Store some useful helper data for the next steps.
@@ -624,6 +662,7 @@ render_shadingCUDA(
 	const float* projmatrix,
 	const float* orig_points,
 	const float scale_modifier,
+    int* radii,
 	float* __restrict__ out_color)
 {
 	// Identify current tile and associated min/max pixel range.
@@ -736,7 +775,7 @@ render_shadingCUDA(
             float2 tc = { d.x / W, d.y / H }; // "tc" coords in range [0,1]
             float2 reltc = { tc.x * 2.0f - 1.0f, tc.y * 2.0f - 1.0f };
 
-            reltc = tc * scale_modifier;
+            reltc = reltc * scale_modifier;
 
             uint2 pix_size = pix_max - pix_min;
             float2 tc_maybe = { d.x / BLOCK_X , d.y / BLOCK_Y };
@@ -790,12 +829,12 @@ render_shadingCUDA(
             float mod = 1.0f;
 			float power_mod = -1.0f * (-0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y);
 
-            if (pix_id == 0){
-                printf("lensqr %f, alpha %f ", lensqr, alpha);
-            }
 
-            if (alpha > 0.8) {  // Check if the pixel is inside the sphere
-                float dz = sqrtf(radius * radius - reltc.x * reltc.x - reltc.y * reltc.y);
+
+
+            if (alpha > 0.8 || true) {  // Check if the pixel is inside the sphere
+//                float dz = sqrtf(radius * radius - reltc.x * reltc.x - reltc.y * reltc.y);
+                float dz = sqrtf(radius * radius - dot(reltc, reltc));
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
                 // View direction (assuming the viewer is along the z-axis at infinity)
@@ -819,10 +858,37 @@ render_shadingCUDA(
                 // Combine components
                 phong_color = ambient + diffuse + specular;
 
+                float r = float(radii[collected_id[j]]);
+
+
+                if (pix_id == 0){
+//                    printf("d %f %f \n", d.x, d.y);
+//                    printf("xy %f %f \n", xy.x, xy.y);
+//                    printf("tc %f %f \n", tc.x, tc.y);
+//                    printf("reltc %f, %f \n ", reltc.x, reltc.y);
+//                    printf("dz %f \n", dz);
+//                    printf("%f \n", r);
+
+                }
+
+                float dist_to_center = sqrt(d.x * d.x + d.y * d.y);
+                float bla = dist_to_center / r;
+
+                if (pix_id == 0){
+                    printf("d %f %f \n", d.x, d.y);
+                    printf("dist to center %f  \n", dist_to_center);
+                    printf("dtc/r %f  \n", bla);
+
+                }
+
                  C[0] = 0;
-                 C[1] = 0;
-                 C[2] = dz;
+                 C[1] = bla;
+                 C[2] = 0;
                  C[3] = 1;
+
+                 if (pix_id == 0){
+                 }
+
 
 
 
@@ -949,6 +1015,7 @@ void FORWARD::render(int P,
 	const float* orig_points,
 	const int render_mode,
 	const float scale_modifier,
+    int* radii,
 	float* out_color)
 {
     if (render_mode == 0){
@@ -966,6 +1033,7 @@ void FORWARD::render(int P,
             projmatrix,
             orig_points,
             scale_modifier,
+            radii,
             out_color
         );
     } else if (render_mode == 1) {

@@ -64,7 +64,9 @@ namespace FORWARD
         const float* orig_points,
         const int render_mode,
         const float scale_modifier,
-		float* out_color);
+        int* radii,
+		float* out_color
+        );
 }
 
 

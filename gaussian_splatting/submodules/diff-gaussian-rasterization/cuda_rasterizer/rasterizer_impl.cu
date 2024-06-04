@@ -295,7 +295,7 @@ int CudaRasterizer::Rasterizer::forward(
 	char* binning_chunkptr = binningBuffer(binning_chunk_size);
 
 	bool bla = render_mode != 2;
-	BinningState binningState = BinningState::fromChunk(binning_chunkptr, num_rendered, bla);
+	BinningState binningState = BinningState::fromChunk(binning_chunkptr, num_rendered, render_mode != 2);
 
 	// For each instance to be rendered, produce adequate [ tile | depth ] key 
 	// and corresponding dublicated Gaussian indices to be sorted
@@ -342,6 +342,7 @@ int CudaRasterizer::Rasterizer::forward(
 
 	// Let each tile blend its range of Gaussians independently in parallel
 	const float* feature_ptr = colors_precomp != nullptr ? colors_precomp : geomState.rgb;
+    feature_ptr = geomState.rgb;
 
     CHECK_CUDA(FORWARD::render(P,
         tile_grid, block,
@@ -359,6 +360,7 @@ int CudaRasterizer::Rasterizer::forward(
         means3D,
         render_mode,
         scale_modifier,
+        radii,
         out_color), debug)
 
 
