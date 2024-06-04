@@ -834,6 +834,9 @@ render_shadingCUDA(
             dist_to_center = dist_to_center / r_in_pixels;
 
 
+            dx = d.x / r_in_pixels;
+            dy = d.y / r_in_pixels;
+
             if (dist_to_center <= 1) {  // Check if the pixel is inside the sphere
 //                float dz = sqrtf(radius * radius - reltc.x * reltc.x - reltc.y * reltc.y);
                 float dz = sqrtf(radius * radius - dist_to_center);
@@ -881,9 +884,9 @@ render_shadingCUDA(
 
                 }
 
-                 C[0] = 0;
-                 C[1] = dz;
-                 C[2] = 0;
+                 C[0] = phong_color.x;
+                 C[1] = phong_color.y;
+                 C[2] = phong_color.z;
                  C[3] = 1;
 
                  if (pix_id == 0){
@@ -938,11 +941,6 @@ render_shadingCUDA(
 //                    C[3] = 1;
 //                }
 
-            } else {
-                C[0] = 1;
-                C[1] = 0;
-                C[2] = 0;
-                C[3] = 1;
             }
 
 
