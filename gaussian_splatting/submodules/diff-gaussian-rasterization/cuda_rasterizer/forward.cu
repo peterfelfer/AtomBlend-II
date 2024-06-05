@@ -723,22 +723,17 @@ render_shadingCUDA(
                 float dz = sqrtf(radius * radius - dist_to_center);
                 float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
 
-                // View direction (assuming the viewer is along the z-axis at infinity)
-                float3 view_dir = normalize(make_float3(0.0f, 0.0f, 1.0f));
+                float3 view_dir = normalize(make_float3(viewmatrix[12], viewmatrix[13], viewmatrix[14]));
 
-                // Light direction
+                // view * light_pos (-> light im view space), pixf auch in view space
                 float3 light_dir = normalize(light_position - make_float3(pixf.x, pixf.y, dz));
 
-                // Reflection direction
                 float3 reflect_dir = normalize(2.0f * dot(normal, light_dir) * normal - light_dir);
 
-                // Ambient component
                 float3 ambient = ambient_intensity * material_ambient;
 
-                // Diffuse component
                 float3 diffuse = material_diffuse * max(dot(normal, light_dir), 0.0f);
 
-                // Specular component
                 float3 specular = material_specular * powf(max(dot(view_dir, reflect_dir), 0.0f), shininess);
 
                 float3 object_color = make_float3(features[collected_id[j] * CHANNELS], features[collected_id[j] * CHANNELS + 1], features[collected_id[j] * CHANNELS + 2]);
@@ -749,7 +744,7 @@ render_shadingCUDA(
                 C[0] = phong_color.x;
                 C[1] = phong_color.y;
                 C[2] = phong_color.z;
-                C[3] = 1;
+                C[3] = 0.5;
 
             }
 

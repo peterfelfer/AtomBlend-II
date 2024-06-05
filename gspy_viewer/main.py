@@ -33,11 +33,13 @@ g_renderer: GaussianRenderBase = g_renderer_list[g_renderer_idx]
 g_scale_modifier = 1.
 g_auto_sort = False
 g_show_control_win = True
-g_show_help_win = True
-g_show_camera_win = False
+g_show_help_win = False
+g_show_camera_win = True
+g_show_atom_settings_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
 g_render_mode_tables_cuda = ["Shading", "Flat", "Gaussian Splatting"]
 g_render_mode = 0
+
 
 def impl_glfw_init():
     window_name = "NeUVF editor"
@@ -159,6 +161,8 @@ def main():
     # gaussian data
     gaussians = util_gau.naive_gaussian()
     update_activated_renderer_state(gaussians)
+
+    color = 1., 0., 0., 1.
     
     # settings
     while not glfw.window_should_close(window):
@@ -191,6 +195,9 @@ def main():
         
         if g_show_control_win:
             if imgui.begin("Control", True):
+
+                imgui.core.set_window_font_scale(2.0)
+
                 # rendering backend
                 changed, g_renderer_idx = imgui.combo("backend", g_renderer_idx, ["ogl", "cuda"][:len(g_renderer_list)])
                 if changed:
@@ -316,6 +323,8 @@ def main():
                 imgui.end()
 
         if g_show_camera_win:
+            imgui.core.set_window_font_scale(2.0)
+
             if imgui.button(label='rot 180'):
                 g_camera.flip_ground()
 
@@ -355,12 +364,19 @@ def main():
 
         if g_show_help_win:
             imgui.begin("Help", True)
+            imgui.core.set_window_font_scale(2.0)
             imgui.text("Open Gaussian Splatting PLY file \n  by click 'open ply' button")
             imgui.text("Use left click & move to rotate camera")
             imgui.text("Use right click & move to translate camera")
             imgui.text("Press Q/E to roll camera")
             imgui.text("Use scroll to zoom in/out")
             imgui.text("Use control panel to change setting")
+            imgui.end()
+
+        if g_show_atom_settings_win:
+            if imgui.begin("Atom Settings", True):
+                imgui.core.set_window_font_scale(2.0)
+                _, color = imgui.core.color_edit4("color", *color)
             imgui.end()
         
         imgui.render()

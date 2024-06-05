@@ -14,6 +14,7 @@ from gaussian_splatting.arguments import ModelParams, PipelineParams, get_combin
 from gaussian_splatting.gaussian_renderer import GaussianModel
 from gaussian_splatting.scene.cameras import Camera
 from ab_utils import *
+
 import time
 
 all_elements = []
@@ -25,7 +26,7 @@ atom_color_list = []
 all_elems_sorted_by_mn = []
 unknown_label = 'n/a'
 
-def set_atom_color_list():
+def atom_color_update():
     global atom_color_list
 
     # reset color list
@@ -43,6 +44,23 @@ def set_atom_color_list():
         atom_color_list = [x for xs in atom_color_list for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
 
     return atom_color_list
+
+
+def atom_coords_update():
+    # reset coords list
+    global atom_coords
+    global all_elements_by_name
+    atom_coords = []
+    # build coord list for shader
+    for elem_name in all_elements_by_name:
+        this_elem_coords = all_elements_by_name[elem_name]['coordinates']
+        atom_coords.append(this_elem_coords)
+
+    # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+    if len(atom_coords) > 0 and isinstance(atom_coords[0], list):
+        atom_coords = [x for xs in atom_coords for x in xs]  # https://stackoverflow.com/questions/952914/how-do-i-make-a-flat-list-out-of-a-list-of-lists
+
+    return atom_coords
 
 
 def combine_rrng_and_e_pos_file():
@@ -343,7 +361,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 1000000
+    debug_nom = 100000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -458,16 +476,27 @@ if __name__ == "__main__":
     print('load rrng', time.time() - start)
     combine_rrng_and_e_pos_file()
     print('combine epos and rrng', time.time() - start)
-    atom_color_list = set_atom_color_list()
     print('set colors', time.time() - start)
 
     # scene = Scene(dataset, gaussians, np.asarray(atom_coords), props, load_iteration=-1, shuffle=False)
     path = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply'
     # TODO path wegmachen
-    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), props)
-    render_without_blender(atom_coords, gaussians, props)
-    print('render', time.time() - start)
 
+    atom_color_list = atom_color_update()
+    atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
+    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), props)
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply', colors)
+    # write numbers of atom elements as comment
+    comments = []
+    for elem_name in all_elements_by_name:
+        num_displayed = all_elements_by_name[elem_name]['num_displayed']
+        comments.append(elem_name + "//" + str(num_displayed))
+
+
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply', colors, comments)
+
+    # render_without_blender(atom_coords, gaussians, props)
+    # print('render', time.time() - start)
+
+
