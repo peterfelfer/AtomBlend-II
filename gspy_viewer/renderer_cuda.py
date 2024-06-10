@@ -245,10 +245,8 @@ class CUDARenderer(GaussianRenderBase):
         for key in self.gaussians.num_of_atoms_by_element:
             elem = self.gaussians.num_of_atoms_by_element[key]
             col = elem['color']
-            print(key, col)
             num = elem['num']
-            vec = [col] * num
-            colors.append(vec)
+            colors.append([col] * num)
 
         # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
         if len(colors) > 0:

@@ -611,7 +611,7 @@ render_flatCUDA(
 // Render shading
 template <uint32_t CHANNELS>
 __global__ void __launch_bounds__(BLOCK_X * BLOCK_Y)
-render_shadingCUDA(
+render_phongShadingCUDA(
 	const uint2* __restrict__ ranges,
 	const uint32_t* __restrict__ point_list,
 	int W, int H,
@@ -719,27 +719,28 @@ render_shadingCUDA(
             glm::vec3 material_specular = glm::vec3(0.8f, 0.8f, 0.8f);
             float shininess = 32.0f;
 
-            float radius = min(W, H) / 2.0f;  // Radius of the sphere
-            radius = scale_modifier;
+            float radius = scale_modifier;
 
             float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
-            float dist_to_center = sqrt(d.x * d.x + d.y * d.y);
+            glm::vec2 reltc = glm::vec2(d.x, d.y) * radius;
+            float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
             dist_to_center = dist_to_center / r_in_pixels;
 
             // Calculate the surface normal
-            float dx = d.x / r_in_pixels;  // X-distance from the pixel to the sphere center
-            float dy = d.y / r_in_pixels; // Y-distance from the pixel to the sphere center
+            float dx = reltc.x / r_in_pixels;  // X-distance from the pixel to the sphere center
+            float dy = reltc.y / r_in_pixels; // Y-distance from the pixel to the sphere center
 
-            if (dist_to_center <= 1) {  // Check if the pixel is inside the sphere
+            if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dist_to_center);
+//                float dz = sqrtf(radius * radius - glm::dot(reltc, reltc));
                 glm::vec3 normal = normalize(glm::vec3(dx, dy, dz));  // Surface normal
 
-//                glm::vec3 view_dir = normalize(glm::vec3(viewmatrix[12], viewmatrix[13], viewmatrix[14]));
-                glm::vec3 view_dir = normalize(glm::vec3(viewmatrix[3], viewmatrix[7], viewmatrix[11]));
+                glm::vec3 view_dir = normalize(glm::vec3(viewmatrix[12], viewmatrix[13], viewmatrix[14]));
+//                glm::vec3 view_dir = normalize(glm::vec3(viewmatrix[3], viewmatrix[7], viewmatrix[11]));
 
                 // view * light_pos (-> light im view space), pixf auch in view space
                 glm::vec3 frag_pos_clip = glm::vec3(pixf.x / W, pixf.y / H, dz) * 2.0f - 1.0f;
-                glm::vec3 frag_pos_world = glm::inverse(proj_glm) * glm::inverse(view_glm) * frag_pos_clip;
+                glm::vec3 frag_pos_world = glm::inverse(view_glm) * glm::inverse(proj_glm) * frag_pos_clip;
                 glm::vec3 light_dir = normalize(light_position - frag_pos_world);
 
                 glm::vec3 reflect_dir = normalize(2.0f * glm::dot(normal, light_dir) * normal - light_dir);
@@ -761,7 +762,6 @@ render_shadingCUDA(
                 C[3] = 1.0f;
 
             }
-
 
 			// Eq. (3) from 3D Gaussian splatting paper.
 // 			for (int ch = 0; ch < CHANNELS; ch++)
@@ -793,6 +793,137 @@ render_shadingCUDA(
 	}
 }
 
+// Main rasterization method. Collaboratively works on one tile per
+// block, each thread treats one pixel. Alternates between fetching
+// and rasterizing data.
+// Render shading
+template <uint32_t CHANNELS>
+__global__ void __launch_bounds__(BLOCK_X * BLOCK_Y)
+render_gaussianBall(
+	const uint2* __restrict__ ranges,
+	const uint32_t* __restrict__ point_list,
+	int W, int H,
+	const float2* __restrict__ points_xy_image,
+	const float* __restrict__ features,
+	const float4* __restrict__ conic_opacity,
+	float* __restrict__ final_T,
+	uint32_t* __restrict__ n_contrib,
+	const float* __restrict__ bg_color,
+    const float* viewmatrix,
+	const float* projmatrix,
+	const float* orig_points,
+	const float scale_modifier,
+    int* radii,
+	float* __restrict__ out_color)
+{
+	// Identify current tile and associated min/max pixel range.
+	auto block = cg::this_thread_block();
+	uint32_t horizontal_blocks = (W + BLOCK_X - 1) / BLOCK_X;
+	uint2 pix_min = { block.group_index().x * BLOCK_X, block.group_index().y * BLOCK_Y };
+	uint2 pix_max = { min(pix_min.x + BLOCK_X, W), min(pix_min.y + BLOCK_Y , H) };
+	uint2 pix = { pix_min.x + block.thread_index().x, pix_min.y + block.thread_index().y };
+	uint32_t pix_id = W * pix.y + pix.x;
+	float2 pixf = { (float)pix.x, (float)pix.y };
+
+	// Check if this thread is associated with a valid pixel or outside.
+	bool inside = pix.x < W&& pix.y < H;
+	// Done threads can help with fetching, but don't rasterize
+	bool done = !inside;
+
+	// Load start/end range of IDs to process in bit sorted list.
+	uint2 range = ranges[block.group_index().y * horizontal_blocks + block.group_index().x];
+	const int rounds = ((range.y - range.x + BLOCK_SIZE - 1) / BLOCK_SIZE);
+	int toDo = range.y - range.x;
+
+	// Allocate storage for batches of collectively fetched data.
+	__shared__ int collected_id[BLOCK_SIZE];
+	__shared__ float2 collected_xy[BLOCK_SIZE];
+	__shared__ float4 collected_conic_opacity[BLOCK_SIZE];
+
+	// Initialize helper variables
+	float T = 1.0f;
+	uint32_t contributor = 0;
+	uint32_t last_contributor = 0;
+	float C[CHANNELS] = { 0 };
+
+	// Iterate over batches until all done or range is complete
+	for (int i = 0; i < rounds; i++, toDo -= BLOCK_SIZE)
+	{
+		// End if entire block votes that it is done rasterizing
+		int num_done = __syncthreads_count(done);
+		if (num_done == BLOCK_SIZE)
+			break;
+
+		// Collectively fetch per-Gaussian data from global to shared
+		int progress = i * BLOCK_SIZE + block.thread_rank();
+		if (range.x + progress < range.y)
+		{
+			int coll_id = point_list[range.x + progress];
+			collected_id[block.thread_rank()] = coll_id;
+			collected_xy[block.thread_rank()] = points_xy_image[coll_id];
+			collected_conic_opacity[block.thread_rank()] = conic_opacity[coll_id];
+		}
+		block.sync();
+
+		// Iterate over current batch
+		for (int j = 0; !done && j < min(BLOCK_SIZE, toDo); j++)
+		{
+			// Keep track of current position in range
+			contributor++;
+
+			// Resample using conic matrix (cf. "Surface
+			// Splatting" by Zwicker et al., 2001)
+			float2 xy = collected_xy[j];
+			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
+			float4 con_o = collected_conic_opacity[j];
+			float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
+
+			// Eq. (2) from 3D Gaussian splatting paper.
+			// Obtain alpha by multiplying with Gaussian opacity
+			// and its exponential falloff from mean.
+			// Avoid numerical instabilities (see paper appendix).
+			float alpha = min(0.99f, con_o.w * exp(power));
+
+			float test_T = T * (1 - alpha);
+            float radius = scale_modifier;
+
+            float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
+            glm::vec2 reltc = glm::vec2(d.x, d.y) * radius;
+            float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
+            dist_to_center = dist_to_center / r_in_pixels;
+
+            // Calculate the surface normal
+            float dx = reltc.x / r_in_pixels;  // X-distance from the pixel to the sphere center
+            float dy = reltc.y / r_in_pixels; // Y-distance from the pixel to the sphere center
+
+            if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
+                float dz = sqrtf(radius * radius - dist_to_center);
+
+                C[0] = features[collected_id[j] * CHANNELS] * dz;
+                C[1] = features[collected_id[j] * CHANNELS + 1] * dz;
+                C[2] = features[collected_id[j] * CHANNELS + 2] * dz;
+                C[3] = 1.0f;
+            }
+
+			T = test_T;
+
+			// Keep track of last range entry to update this
+			// pixel.
+			last_contributor = contributor;
+		}
+	}
+
+	// All threads that treat valid pixel write out their final
+	// rendering data to the frame and auxiliary buffers.
+	if (inside)
+	{
+		final_T[pix_id] = T;
+		n_contrib[pix_id] = last_contributor;
+		for (int ch = 0; ch < CHANNELS; ch++)
+			out_color[ch * H * W + pix_id] = C[ch]; // + bg_color[ch];
+	}
+}
+
 void FORWARD::render(int P,
 	const dim3 grid, dim3 block,
 	const uint2* ranges,
@@ -812,8 +943,8 @@ void FORWARD::render(int P,
     int* radii,
 	float* out_color)
 {
-    if (render_mode == 0){
-        render_shadingCUDA<NUM_CHANNELS> << <grid, block >> > (
+    if (render_mode == 0){ // phong shading
+        render_phongShadingCUDA<NUM_CHANNELS> << <grid, block >> > (
             ranges,
             point_list,
             W, H,
@@ -830,7 +961,7 @@ void FORWARD::render(int P,
             radii,
             out_color
         );
-    } else if (render_mode == 1) {
+    } else if (render_mode == 1) { // flat shading
         render_flatCUDA<NUM_CHANNELS> << <grid, block >> > (
             ranges,
             point_list,
@@ -846,8 +977,8 @@ void FORWARD::render(int P,
             orig_points,
             out_color
         );
-    } else {
-        renderCUDA<NUM_CHANNELS> << <grid, block >> > (
+    } else if (render_mode == 2) { // flat shading
+        render_flatCUDA<NUM_CHANNELS> << <grid, block >> > (
             ranges,
             point_list,
             W, H,
@@ -857,10 +988,30 @@ void FORWARD::render(int P,
             final_T,
             n_contrib,
             bg_color,
-            out_color);
+            viewmatrix,
+            projmatrix,
+            orig_points,
+            out_color
+        );
+    } else { // gaussian splatting
+        render_gaussianBall<NUM_CHANNELS> << <grid, block >> > (
+            ranges,
+            point_list,
+            W, H,
+            means2D,
+            colors,
+            conic_opacity,
+            final_T,
+            n_contrib,
+            bg_color,
+            viewmatrix,
+            projmatrix,
+            orig_points,
+            scale_modifier,
+            radii,
+            out_color
+        );
     }
-
-
 }
 
 void FORWARD::preprocess(int P, int D, int M,

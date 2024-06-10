@@ -37,7 +37,7 @@ g_show_help_win = False
 g_show_camera_win = True
 g_show_atom_settings_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
-g_render_mode_tables_cuda = ["Shading", "Flat", "Gaussian Splatting"]
+g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball"]
 g_render_mode = 0
 
 
