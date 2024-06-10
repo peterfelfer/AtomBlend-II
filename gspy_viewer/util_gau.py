@@ -9,6 +9,8 @@ class GaussianData:
     scale: np.ndarray
     opacity: np.ndarray
     sh: np.ndarray
+    num_of_atoms_by_element: dict
+
     def flat(self) -> np.ndarray:
         ret = np.concatenate([self.xyz, self.rot, self.scale, self.opacity, self.sh], axis=-1)
         return np.ascontiguousarray(ret)
@@ -50,24 +52,50 @@ def naive_gaussian():
     gau_a = np.array([
         1, 1, 1, 1
     ]).astype(np.float32).reshape(-1, 1)
+    gau_num_of_atoms_by_element = {
+        'dummy': {
+            'num': 4,
+            'color': (1.0, 0.0, 0.0),
+        },
+    }
     return GaussianData(
         gau_xyz,
         gau_rot,
         gau_s,
         gau_a,
-        gau_c
+        gau_c,
+        gau_num_of_atoms_by_element
     )
 
 
 def load_ply(path):
     max_sh_degree = 3
     plydata = PlyData.read(path)
+
+    num_of_atoms_by_element = {}
+    for line in plydata.header.split('\n'):
+        if line.startswith('comment'):
+            if '//' in line:
+                element_name, rest = line.split('//', 1)
+                num, r, g, b = rest.split(' ')
+                r = float(int(r) / 255)
+                g = float(int(g) / 255)
+                b = float(int(b) / 255)
+
+                obj = {
+                    'num': int(num),
+                    'color': (r, g, b),
+                }
+
+                num_of_atoms_by_element[element_name.split(' ')[1]] = obj
+
+        if line.startswith('property'):
+            break
+
     xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
     opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
-
-    print(plydata.comments)
 
     features_dc = np.zeros((xyz.shape[0], 3, 1))
     features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
@@ -108,8 +136,7 @@ def load_ply(path):
                         features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
     shs = shs.astype(np.float32)
 
-    test = shs[:,:3]
-    return GaussianData(xyz, rots, scales, opacities, shs)
+    return GaussianData(xyz, rots, scales, opacities, shs, num_of_atoms_by_element)
 
 if __name__ == "__main__":
     gs = load_ply("/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply")

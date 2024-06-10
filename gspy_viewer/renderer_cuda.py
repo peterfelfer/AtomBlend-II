@@ -69,6 +69,7 @@ class GaussianDataCUDA:
     scale: torch.Tensor
     opacity: torch.Tensor
     sh: torch.Tensor
+    num_of_atoms_by_element: dict
     
     def __len__(self):
         return len(self.xyz)
@@ -100,7 +101,8 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
         rot = torch.tensor(gau.rot).float().cuda().requires_grad_(False),
         scale = torch.tensor(gau.scale).float().cuda().requires_grad_(False),
         opacity = torch.tensor(gau.opacity).float().cuda().requires_grad_(False),
-        sh = torch.tensor(gau.sh).float().cuda().requires_grad_(False)
+        sh = torch.tensor(gau.sh).float().cuda().requires_grad_(False),
+        num_of_atoms_by_element = gau.num_of_atoms_by_element,
     )
     gaus.sh = gaus.sh.reshape(len(gaus), -1, 3).contiguous()
     return gaus
@@ -237,12 +239,29 @@ class CUDARenderer(GaussianRenderBase):
         raster_settings = GaussianRasterizationSettings(**self.raster_settings)
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
+
+        # build color vector
+        colors = []
+        for key in self.gaussians.num_of_atoms_by_element:
+            elem = self.gaussians.num_of_atoms_by_element[key]
+            col = elem['color']
+            print(key, col)
+            num = elem['num']
+            vec = [col] * num
+            colors.append(vec)
+
+        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+        if len(colors) > 0:
+            colors = [[x] for xs in colors for x in xs]
+            colors = torch.tensor(colors, dtype=torch.float32, device="cuda")
+
+
         with torch.no_grad():
             img, radii = rasterizer(
                 means3D = self.gaussians.xyz,
                 means2D = None,
                 # shs = self.gaussians.sh,
-                colors_precomp = self.gaussians.sh[:, 0],
+                colors_precomp = colors,
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,

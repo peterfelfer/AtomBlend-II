@@ -698,14 +698,25 @@ render_shadingCUDA(
 
 			float test_T = T * (1 - alpha);
 
-            float3 phong_color;
-            float3 light_position = make_float3(0.0f, 0.0f, -10.0f); // Example position
-            float3 light_color = make_float3(1.0f, 1.0f, 1.0f); // White light
+            glm::mat3 view_glm = glm::mat3(
+                    viewmatrix[0], viewmatrix[4], viewmatrix[8],
+                    viewmatrix[1], viewmatrix[5], viewmatrix[9],
+                    viewmatrix[2], viewmatrix[6], viewmatrix[10]);
+
+            glm::mat3 proj_glm = glm::mat3(
+                    projmatrix[0], projmatrix[4], projmatrix[8],
+                    projmatrix[1], projmatrix[5], projmatrix[9],
+                    projmatrix[2], projmatrix[6], projmatrix[10]);
+
+            glm::vec3 phong_color;
+            glm::vec3 light_position_world = glm::vec3(0.0f, 0.0f, -10.0f);
+            glm::vec3 light_position = proj_glm * view_glm * light_position_world;
+            glm::vec3 light_color = glm::vec3(1.0f, 1.0f, 1.0f); // White light
             float ambient_intensity = 0.1f;
 
-            float3 material_ambient = make_float3(0.1f, 0.1f, 0.1f);
-            float3 material_diffuse = make_float3(0.6f, 0.6f, 0.6f);
-            float3 material_specular = make_float3(0.8f, 0.8f, 0.8f);
+            glm::vec3 material_ambient = glm::vec3(0.1f, 0.1f, 0.1f);
+            glm::vec3 material_diffuse = glm::vec3(0.6f, 0.6f, 0.6f);
+            glm::vec3 material_specular = glm::vec3(0.8f, 0.8f, 0.8f);
             float shininess = 32.0f;
 
             float radius = min(W, H) / 2.0f;  // Radius of the sphere
@@ -721,22 +732,25 @@ render_shadingCUDA(
 
             if (dist_to_center <= 1) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dist_to_center);
-                float3 normal = normalize(make_float3(dx, dy, dz));  // Surface normal
+                glm::vec3 normal = normalize(glm::vec3(dx, dy, dz));  // Surface normal
 
-                float3 view_dir = normalize(make_float3(viewmatrix[12], viewmatrix[13], viewmatrix[14]));
+//                glm::vec3 view_dir = normalize(glm::vec3(viewmatrix[12], viewmatrix[13], viewmatrix[14]));
+                glm::vec3 view_dir = normalize(glm::vec3(viewmatrix[3], viewmatrix[7], viewmatrix[11]));
 
                 // view * light_pos (-> light im view space), pixf auch in view space
-                float3 light_dir = normalize(light_position - make_float3(pixf.x, pixf.y, dz));
+                glm::vec3 frag_pos_clip = glm::vec3(pixf.x / W, pixf.y / H, dz) * 2.0f - 1.0f;
+                glm::vec3 frag_pos_world = glm::inverse(proj_glm) * glm::inverse(view_glm) * frag_pos_clip;
+                glm::vec3 light_dir = normalize(light_position - frag_pos_world);
 
-                float3 reflect_dir = normalize(2.0f * dot(normal, light_dir) * normal - light_dir);
+                glm::vec3 reflect_dir = normalize(2.0f * glm::dot(normal, light_dir) * normal - light_dir);
 
-                float3 ambient = ambient_intensity * material_ambient;
+                glm::vec3 ambient = ambient_intensity * material_ambient;
 
-                float3 diffuse = material_diffuse * max(dot(normal, light_dir), 0.0f);
+                glm::vec3 diffuse = material_diffuse * max(glm::dot(normal, light_dir), 0.0f);
 
-                float3 specular = material_specular * powf(max(dot(view_dir, reflect_dir), 0.0f), shininess);
+                glm::vec3 specular = material_specular * powf(max(glm::dot(view_dir, reflect_dir), 0.0f), shininess);
 
-                float3 object_color = make_float3(features[collected_id[j] * CHANNELS], features[collected_id[j] * CHANNELS + 1], features[collected_id[j] * CHANNELS + 2]);
+                glm::vec3 object_color = glm::vec3(features[collected_id[j] * CHANNELS], features[collected_id[j] * CHANNELS + 1], features[collected_id[j] * CHANNELS + 2]);
 
                 // Combine components
                 phong_color = (ambient + diffuse + specular) * object_color;
@@ -744,7 +758,7 @@ render_shadingCUDA(
                 C[0] = phong_color.x;
                 C[1] = phong_color.y;
                 C[2] = phong_color.z;
-                C[3] = 0.5;
+                C[3] = 1.0f;
 
             }
 

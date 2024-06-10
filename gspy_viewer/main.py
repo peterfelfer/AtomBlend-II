@@ -162,8 +162,6 @@ def main():
     gaussians = util_gau.naive_gaussian()
     update_activated_renderer_state(gaussians)
 
-    color = 1., 0., 0., 1.
-    
     # settings
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -375,8 +373,10 @@ def main():
 
         if g_show_atom_settings_win:
             if imgui.begin("Atom Settings", True):
-                imgui.core.set_window_font_scale(2.0)
-                _, color = imgui.core.color_edit4("color", *color)
+                for elem in gaussians.num_of_atoms_by_element:
+                    imgui.core.set_window_font_scale(2.0)
+                    _, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit3(elem, *gaussians.num_of_atoms_by_element[elem]['color'])
+
             imgui.end()
         
         imgui.render()

@@ -327,7 +327,7 @@ def load_e_pos_file():
     global atom_coords
     unknown_element_dict = {}
     unknown_element_dict['element_name'] = 'Unknown'
-    unknown_element_dict['color'] = (1.0, 0.0, 0.0, 1.0)
+    unknown_element_dict['color'] = (255, 0, 0, 1)
     unknown_element_dict['coordinates'] = []
     unknown_element_dict['num_of_atoms'] = len(atom_coords)
     unknown_element_dict['num_displayed'] = len(atom_coords)
@@ -376,7 +376,7 @@ def load_pos_file():
     # add unknown element to the list
     unknown_element_dict = {}
     unknown_element_dict['element_name'] = 'Unknown'
-    unknown_element_dict['color'] = (1.0, 0.0, 0.0, 1.0)
+    unknown_element_dict['color'] = (255, 0, 0, 1)
     unknown_element_dict['coordinates'] = []
     unknown_element_dict['num_of_atoms'] = num_of_atoms
     unknown_element_dict['num_displayed'] = num_of_atoms
@@ -491,7 +491,9 @@ if __name__ == "__main__":
     comments = []
     for elem_name in all_elements_by_name:
         num_displayed = all_elements_by_name[elem_name]['num_displayed']
-        comments.append(elem_name + "//" + str(num_displayed))
+        color = str(all_elements_by_name[elem_name]['color']).split('(')[1].split(')')[0]
+        color = color.split(',')
+        comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
 
     gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply', colors, comments)
