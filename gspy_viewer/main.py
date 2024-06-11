@@ -11,6 +11,7 @@ from tkinter import filedialog
 import os
 import sys
 import argparse
+import torch
 from renderer_ogl import OpenGLRenderer, GaussianRenderBase
 
 
@@ -37,8 +38,8 @@ g_show_help_win = False
 g_show_camera_win = True
 g_show_atom_settings_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
-g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball"]
-g_render_mode = 0
+g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
+g_render_mode = 4
 
 
 def impl_glfw_init():
@@ -125,6 +126,22 @@ def window_resize_callback(window, width, height):
     gl.glViewport(0, 0, width, height)
     g_camera.update_resolution(height, width)
     g_renderer.set_render_reso(width, height)
+
+def set_colors(gaussians):
+    colors = []
+    for key in gaussians.num_of_atoms_by_element:
+        elem = gaussians.num_of_atoms_by_element[key]
+        col = elem['color']
+        num = elem['num']
+        colors.append([col] * num)
+
+    # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
+    if len(colors) > 0:
+        colors = [[x] for xs in colors for x in xs]
+        gaussians.sh = torch.tensor(colors, dtype=torch.float32, device="cuda")
+
+        g_renderer.update_gaussian_data(gaussians)
+        g_renderer.sort_and_update(g_camera)
 
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
@@ -375,7 +392,9 @@ def main():
             if imgui.begin("Atom Settings", True):
                 for elem in gaussians.num_of_atoms_by_element:
                     imgui.core.set_window_font_scale(2.0)
-                    _, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit3(elem, *gaussians.num_of_atoms_by_element[elem]['color'])
+                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit3(elem, *gaussians.num_of_atoms_by_element[elem]['color'])
+                    if changed:
+                        set_colors(gaussians)
 
             imgui.end()
         

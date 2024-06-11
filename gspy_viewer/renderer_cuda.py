@@ -240,26 +240,12 @@ class CUDARenderer(GaussianRenderBase):
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
-        # build color vector
-        colors = []
-        for key in self.gaussians.num_of_atoms_by_element:
-            elem = self.gaussians.num_of_atoms_by_element[key]
-            col = elem['color']
-            num = elem['num']
-            colors.append([col] * num)
-
-        # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
-        if len(colors) > 0:
-            colors = [[x] for xs in colors for x in xs]
-            colors = torch.tensor(colors, dtype=torch.float32, device="cuda")
-
-
         with torch.no_grad():
             img, radii = rasterizer(
                 means3D = self.gaussians.xyz,
                 means2D = None,
                 # shs = self.gaussians.sh,
-                colors_precomp = colors,
+                colors_precomp = self.gaussians.sh[:, 0],
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,

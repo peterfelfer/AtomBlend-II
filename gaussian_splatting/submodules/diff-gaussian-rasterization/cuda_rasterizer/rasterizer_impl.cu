@@ -294,8 +294,7 @@ int CudaRasterizer::Rasterizer::forward(
 	size_t binning_chunk_size = required<BinningState>(num_rendered);
 	char* binning_chunkptr = binningBuffer(binning_chunk_size);
 
-	bool bla = render_mode != 2;
-	BinningState binningState = BinningState::fromChunk(binning_chunkptr, num_rendered, render_mode != 2);
+	BinningState binningState = BinningState::fromChunk(binning_chunkptr, num_rendered, false);
 
 	// For each instance to be rendered, produce adequate [ tile | depth ] key 
 	// and corresponding dublicated Gaussian indices to be sorted
