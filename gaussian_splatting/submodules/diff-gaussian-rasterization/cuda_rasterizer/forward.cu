@@ -1049,9 +1049,9 @@ render_gaussianBallOpt(
             if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dist_to_center);
 
-                C[0] += features[collected_id[j] * CHANNELS] * dz;
-                C[1] += features[collected_id[j] * CHANNELS + 1] * dz;
-                C[2] += features[collected_id[j] * CHANNELS + 2] * dz;
+                C[0] += features[collected_id[j] * CHANNELS] * con_o.w * dz;
+                C[1] += features[collected_id[j] * CHANNELS + 1] * con_o.w * dz;
+                C[2] += features[collected_id[j] * CHANNELS + 2] * con_o.w * dz;
 //                C[3] = 1.0f;
 
 //                C[0] += T;

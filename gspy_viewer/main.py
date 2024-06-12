@@ -129,16 +129,19 @@ def window_resize_callback(window, width, height):
 
 def set_colors(gaussians):
     colors = []
+    opacities = []
     for key in gaussians.num_of_atoms_by_element:
         elem = gaussians.num_of_atoms_by_element[key]
         col = elem['color']
         num = elem['num']
-        colors.append([col] * num)
+        colors.append([col[:3]] * num)
+        opacities.extend([[col[3]]] * num)
 
     # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
     if len(colors) > 0:
         colors = [[x] for xs in colors for x in xs]
         gaussians.sh = torch.tensor(colors, dtype=torch.float32, device="cuda")
+        gaussians.opacity = torch.tensor(opacities, dtype=torch.float32, device="cuda")
 
         g_renderer.update_gaussian_data(gaussians)
         g_renderer.sort_and_update(g_camera)
@@ -392,7 +395,7 @@ def main():
             if imgui.begin("Atom Settings", True):
                 for elem in gaussians.num_of_atoms_by_element:
                     imgui.core.set_window_font_scale(2.0)
-                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit3(elem, *gaussians.num_of_atoms_by_element[elem]['color'])
+                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4(elem, *gaussians.num_of_atoms_by_element[elem]['color'])
                     if changed:
                         set_colors(gaussians)
 

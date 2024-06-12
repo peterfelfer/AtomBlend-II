@@ -55,7 +55,7 @@ def naive_gaussian():
     gau_num_of_atoms_by_element = {
         'dummy': {
             'num': 4,
-            'color': (1.0, 0.0, 0.0),
+            'color': (1.0, 0.0, 0.0, 1.0),
         },
     }
     return GaussianData(
@@ -84,7 +84,7 @@ def load_ply(path):
 
                 obj = {
                     'num': int(num),
-                    'color': (r, g, b),
+                    'color': (r, g, b, 1.0),
                 }
 
                 num_of_atoms_by_element[element_name.split(' ')[1]] = obj
@@ -96,6 +96,7 @@ def load_ply(path):
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
     opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
+    opacities = np.asarray([1.0] * len(xyz))
 
     features_dc = np.zeros((xyz.shape[0], 3, 1))
     features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
