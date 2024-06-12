@@ -955,6 +955,7 @@ render_gaussianBallOpt(
         const float* orig_points,
         const float scale_modifier,
         int* radii,
+        const float global_alpha,
         float* __restrict__ out_color)
 {
     // Identify current tile and associated min/max pixel range.
@@ -1035,9 +1036,26 @@ render_gaussianBallOpt(
                 continue;
             }
 
-            // Eq. (3) from 3D Gaussian splatting paper.
-            for (int ch = 0; ch < CHANNELS; ch++)
-                C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
+            float radius = scale_modifier;
+
+            float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
+            glm::vec2 reltc = glm::vec2(d.x, d.y) * radius;
+            float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
+            dist_to_center = dist_to_center / r_in_pixels;
+
+            // Calculate the surface normal
+            float dx = reltc.x / r_in_pixels;  // X-distance from the pixel to the sphere center
+            float dy = reltc.y / r_in_pixels; // Y-distance from the pixel to the sphere center
+
+            if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
+                float dz = sqrtf(radius * radius - dist_to_center);
+
+                printf("%f, %", global_alpha);
+
+//                C[0] += features[collected_id[j] * CHANNELS] * global_alpha * dz;
+//                C[1] += features[collected_id[j] * CHANNELS + 1] * global_alpha  * dz;
+//                C[2] += features[collected_id[j] * CHANNELS + 2] * global_alpha * dz;
+            }
 
             T = test_T;
 
@@ -1075,6 +1093,7 @@ void FORWARD::render(int P,
 	const float* orig_points,
 	const int render_mode,
 	const float scale_modifier,
+    const float global_alpha,
     int* radii,
 	float* out_color)
 {
@@ -1158,6 +1177,7 @@ void FORWARD::render(int P,
             orig_points,
             scale_modifier,
             radii,
+            global_alpha,
             out_color
         );
     }

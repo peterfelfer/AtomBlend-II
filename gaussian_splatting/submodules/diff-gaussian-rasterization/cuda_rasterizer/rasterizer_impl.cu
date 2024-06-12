@@ -226,6 +226,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const bool prefiltered,
 	float* out_color,
 	const int render_mode,
+    const float global_alpha,
 	int* radii,
 	bool debug
 	)
@@ -312,7 +313,7 @@ int CudaRasterizer::Rasterizer::forward(
 	int bit = getHigherMsb(tile_grid.x * tile_grid.y);
 
 	// Sort complete list of (duplicated) Gaussian indices by keys
-	if (render_mode != 2){  // render_mode != gaussian splatting
+	if (render_mode != 2 && false){  // render_mode != gaussian splatting
 		CHECK_CUDA(cub::DeviceRadixSort::SortPairsDescending(
 		binningState.list_sorting_space,
 		binningState.sorting_size,
@@ -358,6 +359,7 @@ int CudaRasterizer::Rasterizer::forward(
         means3D,
         render_mode,
         scale_modifier,
+        global_alpha,
         radii,
         out_color), debug)
 
