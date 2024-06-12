@@ -39,7 +39,7 @@ g_show_camera_win = True
 g_show_atom_settings_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
 g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
-g_render_mode = 3
+g_render_mode = 4
 
 
 def impl_glfw_init():

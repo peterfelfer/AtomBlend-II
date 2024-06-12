@@ -955,7 +955,6 @@ render_gaussianBallOpt(
         const float* orig_points,
         const float scale_modifier,
         int* radii,
-        const float global_alpha,
         float* __restrict__ out_color)
 {
     // Identify current tile and associated min/max pixel range.
@@ -1050,11 +1049,14 @@ render_gaussianBallOpt(
             if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dist_to_center);
 
-                printf("%f, %", global_alpha);
+                C[0] += features[collected_id[j] * CHANNELS] * dz;
+                C[1] += features[collected_id[j] * CHANNELS + 1] * dz;
+                C[2] += features[collected_id[j] * CHANNELS + 2] * dz;
+//                C[3] = 1.0f;
 
-//                C[0] += features[collected_id[j] * CHANNELS] * global_alpha * dz;
-//                C[1] += features[collected_id[j] * CHANNELS + 1] * global_alpha  * dz;
-//                C[2] += features[collected_id[j] * CHANNELS + 2] * global_alpha * dz;
+//                C[0] += T;
+//                C[1] += T;
+//                C[2] += T;
             }
 
             T = test_T;
@@ -1093,7 +1095,6 @@ void FORWARD::render(int P,
 	const float* orig_points,
 	const int render_mode,
 	const float scale_modifier,
-    const float global_alpha,
     int* radii,
 	float* out_color)
 {
@@ -1177,7 +1178,6 @@ void FORWARD::render(int P,
             orig_points,
             scale_modifier,
             radii,
-            global_alpha,
             out_color
         );
     }

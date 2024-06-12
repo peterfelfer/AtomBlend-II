@@ -93,8 +93,6 @@ class GaussianRasterizationSettingsStorage:
     campos : torch.Tensor
     prefiltered : bool
     debug : bool
-    render_mode : int
-    global_alpha : float
 
 
 def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
@@ -126,7 +124,7 @@ class CUDARenderer(GaussianRenderBase):
             "campos": None,
             "prefiltered": False,
             "debug": False,
-            "render_mode": 0
+            "render_mode": 0,
         }
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
@@ -251,7 +249,7 @@ class CUDARenderer(GaussianRenderBase):
                 opacities = self.gaussians.opacity,
                 scales = self.gaussians.scale,
                 rotations = self.gaussians.rot,
-                cov3D_precomp = None
+                cov3D_precomp = None,
             )
 
         # print('viewmatrix', raster_settings.viewmatrix)

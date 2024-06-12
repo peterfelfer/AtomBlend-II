@@ -54,8 +54,7 @@ RasterizeGaussiansCUDA(
 	const torch::Tensor& campos,
 	const bool prefiltered,
 	const bool debug,
-	const int render_mode,
-    const float global_alpha)
+	const int render_mode)
 {
   if (means3D.ndimension() != 2 || means3D.size(1) != 3) {
     AT_ERROR("means3D must have dimensions (num_points, 3)");
@@ -112,7 +111,6 @@ RasterizeGaussiansCUDA(
 		prefiltered,
 		out_color.contiguous().data<float>(),
 		render_mode,
-        global_alpha,
 		radii.contiguous().data<int>(),
 		debug);
   }
