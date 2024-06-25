@@ -911,7 +911,6 @@ render_gaussianBall(
                 C[0] = features[collected_id[j] * CHANNELS] * dz;
                 C[1] = features[collected_id[j] * CHANNELS + 1] * dz;
                 C[2] = features[collected_id[j] * CHANNELS + 2] * dz;
-                C[3] = 1.0f;
             }
 
 			T = test_T;
@@ -1025,8 +1024,17 @@ render_gaussianBallOpt(
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
-            float alpha = min(0.99f, con_o.w * exp(power));
+            float alpha_value = min(0.99f, con_o.w * exp(power));
+            float opaque_value = 1;
+            float alpha = alpha_value;
+            if(con_o.w > 0.5) {
+                float interp_value = con_o.w * 2 - 1;
+                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
+            }
+            alpha = min(0.99f, alpha);
             if (alpha < 1.0f / 255.0f)
+                continue;
+            if (alpha_value < 1.0f / 255.0f)
                 continue;
             float test_T = T * (1 - alpha);
             if (test_T < 0.0001f)
@@ -1049,17 +1057,17 @@ render_gaussianBallOpt(
             if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
                 float dz = sqrtf(radius * radius - dist_to_center);
 
-                C[0] += features[collected_id[j] * CHANNELS] * con_o.w * dz;
-                C[1] += features[collected_id[j] * CHANNELS + 1] * con_o.w * dz;
-                C[2] += features[collected_id[j] * CHANNELS + 2] * con_o.w * dz;
+                C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
+                C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
+                C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
 //                C[3] = 1.0f;
 
 //                C[0] += T;
 //                C[1] += T;
 //                C[2] += T;
+                T = test_T;
             }
 
-            T = test_T;
 
             // Keep track of last range entry to update this
             // pixel.

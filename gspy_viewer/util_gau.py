@@ -96,13 +96,14 @@ def load_ply(path):
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
     opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
-    opacities = np.asarray([1.0] * len(xyz))
+    opacities = np.asarray([[1.0]] * len(xyz))
 
     features_dc = np.zeros((xyz.shape[0], 3, 1))
     features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
     features_dc[:, 1, 0] = np.asarray(plydata.elements[0]["f_dc_1"])
     features_dc[:, 2, 0] = np.asarray(plydata.elements[0]["f_dc_2"])
 
+    '''
     extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
     extra_f_names = sorted(extra_f_names, key = lambda x: int(x.split('_')[-1]))
     assert len(extra_f_names)==3 * (max_sh_degree + 1) ** 2 - 3
@@ -112,6 +113,7 @@ def load_ply(path):
     # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
     features_extra = features_extra.reshape((features_extra.shape[0], 3, (max_sh_degree + 1) ** 2 - 1))
     features_extra = np.transpose(features_extra, [0, 2, 1])
+    '''
 
     scale_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("scale_")]
     scale_names = sorted(scale_names, key = lambda x: int(x.split('_')[-1]))
@@ -133,9 +135,13 @@ def load_ply(path):
     scales = scales.astype(np.float32)
     # opacities = 1/(1 + np.exp(- opacities))  # sigmoid
     opacities = opacities.astype(np.float32)
-    shs = np.concatenate([features_dc.reshape(-1, 3), 
-                        features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
-    shs = shs.astype(np.float32)
+    # shs = np.concatenate([features_dc.reshape(-1, 3),
+    #                     features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
+    # shs = shs.astype(np.float32)
+
+
+    test = features_dc.reshape(-1, 3)
+    shs = test
 
     return GaussianData(xyz, rots, scales, opacities, shs, num_of_atoms_by_element)
 
