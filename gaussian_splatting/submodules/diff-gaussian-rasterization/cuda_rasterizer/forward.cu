@@ -1031,6 +1031,7 @@ render_gaussianBallOpt(
                 float interp_value = con_o.w * 2 - 1;
                 alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
             }
+
             alpha = min(0.99f, alpha);
             if (alpha < 1.0f / 255.0f)
                 continue;
@@ -1046,25 +1047,29 @@ render_gaussianBallOpt(
             float radius = scale_modifier;
 
             float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
-            glm::vec2 reltc = glm::vec2(d.x, d.y) * radius;
+            glm::vec2 reltc = glm::vec2(d.x, d.y) * 2.0f - 1.0f;
+            reltc = reltc * radius;
             float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
             dist_to_center = dist_to_center / r_in_pixels;
 
             // Calculate the surface normal
-            float dx = reltc.x / r_in_pixels;  // X-distance from the pixel to the sphere center
-            float dy = reltc.y / r_in_pixels; // Y-distance from the pixel to the sphere center
+            float dx = (reltc.x / r_in_pixels);  // X-distance from the pixel to the sphere center
+            float dy = (reltc.y / r_in_pixels); // Y-distance from the pixel to the sphere center
 
             if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
-                float dz = sqrtf(radius * radius - dist_to_center);
+//                float dz = sqrtf(radius - dist_to_center);
+//                float dz = sqrtf(radius * radius - glm::dot(reltc, reltc));
+//                float dz = sqrtf(radius * radius - (dx * dx + dy * dy));
+                float dz = sqrtf(radius - dist_to_center);
 
                 C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
                 C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
                 C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
 //                C[3] = 1.0f;
 
-//                C[0] += T;
-//                C[1] += T;
-//                C[2] += T;
+//                C[0] = dz;
+//                C[1] = dz;
+//                C[2] = 0;
                 T = test_T;
             }
 

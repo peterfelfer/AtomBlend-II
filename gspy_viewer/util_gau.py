@@ -56,6 +56,7 @@ def naive_gaussian():
         'dummy': {
             'num': 4,
             'color': (1.0, 0.0, 0.0, 1.0),
+            'scale': 0.1,
         },
     }
     return GaussianData(
@@ -85,6 +86,7 @@ def load_ply(path):
                 obj = {
                     'num': int(num),
                     'color': (r, g, b, 1.0),
+                    'scale': 0.1,
                 }
 
                 num_of_atoms_by_element[element_name.split(' ')[1]] = obj
@@ -140,8 +142,7 @@ def load_ply(path):
     # shs = shs.astype(np.float32)
 
 
-    test = features_dc.reshape(-1, 3)
-    shs = test
+    shs = features_dc.reshape(-1, 3)
 
     return GaussianData(xyz, rots, scales, opacities, shs, num_of_atoms_by_element)
 
