@@ -41,6 +41,9 @@ g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", 
 g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
 g_render_mode = 4
 
+global_alpha = 1.0
+global_scale = 1.0
+
 
 def impl_glfw_init():
     window_name = "NeUVF editor"
@@ -127,10 +130,14 @@ def window_resize_callback(window, width, height):
     g_camera.update_resolution(height, width)
     g_renderer.set_render_reso(width, height)
 
-def set_colors(gaussians):
+def set_colors(gaussians, global_alpha=None):
     colors = []
     opacities = []
     for key in gaussians.num_of_atoms_by_element:
+        if global_alpha is not None:
+            col = gaussians.num_of_atoms_by_element[key]['color']
+            gaussians.num_of_atoms_by_element[key]['color'] = (col[0], col[1], col[2], global_alpha)
+
         elem = gaussians.num_of_atoms_by_element[key]
         col = elem['color']
         num = elem['num']
@@ -146,10 +153,24 @@ def set_colors(gaussians):
         g_renderer.update_gaussian_data(gaussians)
         g_renderer.sort_and_update(g_camera)
 
+def set_radius(gaussians, global_scale=None):
+    scales = []
+    for key in gaussians.num_of_atoms_by_element:
+        if global_scale is not None:
+            gaussians.num_of_atoms_by_element[key]['scale'] = global_scale
+        elem = gaussians.num_of_atoms_by_element[key]
+        scale = elem['scale']
+        num = elem['num']
+        scales.extend([[scale, scale, scale]] * num)
+
+    gaussians.scale = torch.tensor(scales, dtype=torch.float32, device="cuda")
+    g_renderer.update_gaussian_data(gaussians)
+    g_renderer.sort_and_update(g_camera)
+
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, \
-        g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda
+        g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha
         
     imgui.create_context()
     if args.hidpi:
@@ -393,12 +414,42 @@ def main():
 
         if g_show_atom_settings_win:
             if imgui.begin("Atom Settings", True):
+
+                imgui.text('Display settings:')
+
+                changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)
+                if changed:
+                    set_colors(gaussians, global_alpha=global_alpha)
+                changed, global_scale = imgui.core.slider_float('Global scale', global_scale, 0.0, 1.0)
+                if changed:
+                    set_radius(gaussians, global_scale=global_scale)
+
+                imgui.text('Element settings:')
                 for elem in gaussians.num_of_atoms_by_element:
+                    imgui.push_id(elem)
                     imgui.core.set_window_font_scale(2.0)
-                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4(elem, *gaussians.num_of_atoms_by_element[elem]['color'])
+                    # imgui.table_next_row()
+                    # imgui.table_set_column_index(0)
+                    imgui.text(elem)
+                    imgui.same_line(50, 50)
+
+                    # imgui.table_set_column_index(1)
+                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4('', *gaussians.num_of_atoms_by_element[elem]['color'])
+
                     if changed:
                         set_colors(gaussians)
 
+                    # imgui.table_set_column_index(2)
+                    imgui.same_line(spacing=50)
+
+                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 1.0)
+                    imgui.pop_id()
+
+
+                    if changed:
+                        set_radius(gaussians)
+
+                # imgui.end_table()
             imgui.end()
         
         imgui.render()
