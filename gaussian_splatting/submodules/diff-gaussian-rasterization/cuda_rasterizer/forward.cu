@@ -542,36 +542,38 @@ render_flatCUDA(
 			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
 			float4 con_o = collected_conic_opacity[j];
 			float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
-// 			if (power > 0.0f)
-// 				continue;
+ 			if (power > 0.0f)
+ 				continue;
 
 			// Eq. (2) from 3D Gaussian splatting paper.
 			// Obtain alpha by multiplying with Gaussian opacity
 			// and its exponential falloff from mean.
 			// Avoid numerical instabilities (see paper appendix).
-			float alpha = min(0.99f, con_o.w * exp(power));
+            float alpha_value = min(0.99f, con_o.w * exp(power));
+            float opaque_value = 1;
+            float alpha = alpha_value;
+            if(con_o.w > 0.5) {
+                float interp_value = con_o.w * 2 - 1;
+                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
+            }
 
-// 			if (alpha < 10.0f / 255.0f){
-//                 C[0] = 0;
-//                 C[1] = 1;
-//                 C[2] = 0;
-//                 C[3] = 1;
-// 			}
-
+            alpha = min(0.99f, alpha);
 			if (alpha < 1.0f / 255.0f)
 				continue;
-			float test_T = T * (1 - alpha);
-// 			if (test_T < 0.0001f)
-// 			{
-// 				done = true;
-// 				continue;
-// 			}
+            if (alpha_value < 1.0f / 255.0f)
+                continue;
+            float test_T = T * (1 - alpha);
+            if (test_T < 0.0001f)
+            {
+                done = true;
+                continue;
+            }
 
 			float test = con_o.w * exp(power);
 
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
-				C[ch] = features[collected_id[j] * CHANNELS + ch];
+				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
 //                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
 // 				C[ch] += test;
 

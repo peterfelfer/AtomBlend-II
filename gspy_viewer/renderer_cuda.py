@@ -252,6 +252,7 @@ class CUDARenderer(GaussianRenderBase):
                 cov3D_precomp = None,
             )
 
+
         # print('viewmatrix', raster_settings.viewmatrix)
         # print('projmatrix', raster_settings.projmatrix)
 

@@ -346,7 +346,7 @@ def main():
                     gl.glReadBuffer(gl.GL_FRONT)
                     bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
                     img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
-                    imageio.imwrite("save.png", img[::-1])
+                    imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
                     # save intermediate information
                     # np.savez(
                     #     "save.npz",
