@@ -52,6 +52,7 @@ class GaussianModel:
         self._scaling = torch.empty(0)
         self._rotation = torch.empty(0)
         self._opacity = torch.empty(0)
+        self.cov3D = torch.empty(0)
         self.max_radii2D = torch.empty(0)
         self.xyz_gradient_accum = torch.empty(0)
         self.denom = torch.empty(0)
@@ -285,7 +286,6 @@ class GaussianModel:
 
     def load_ply_ab(self, path, atom_coords, atom_color_list, props):
         plydata = PlyData.read(path)
-        print(path)
 
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),

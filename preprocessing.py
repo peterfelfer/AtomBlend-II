@@ -14,6 +14,11 @@ from gaussian_splatting.arguments import ModelParams, PipelineParams, get_combin
 from gaussian_splatting.gaussian_renderer import GaussianModel
 from gaussian_splatting.scene.cameras import Camera
 from ab_utils import *
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA
+import numpy as np
+from scipy.spatial import KDTree
 
 import time
 
@@ -25,6 +30,8 @@ atom_coords = []
 atom_color_list = []
 all_elems_sorted_by_mn = []
 unknown_label = 'n/a'
+cov3D_list = []
+
 
 def atom_color_update():
     global atom_color_list
@@ -54,7 +61,7 @@ def atom_coords_update():
     # build coord list for shader
     for elem_name in all_elements_by_name:
         this_elem_coords = all_elements_by_name[elem_name]['coordinates']
-        atom_coords.append(this_elem_coords)
+        atom_coords.extend(this_elem_coords)
 
     # flatten list: e.g. [[(1,1,0,1), (0,0,1,1)], []] -> [(1,1,0,1), (0,0,1,1)]
     if len(atom_coords) > 0 and isinstance(atom_coords[0], list):
@@ -161,10 +168,12 @@ def combine_rrng_and_e_pos_file():
         all_elements_by_name[elem]['coordinates'] = np.random.permutation(
             all_elements_by_name[elem]['coordinates'])
         all_elements_by_name[elem]['coordinates'] = [tuple(i) for i in
-                                                               all_elements_by_name[elem]['coordinates']]
+                                                     all_elements_by_name[elem]['coordinates']]
         this_elem_coords = all_elements_by_name[elem]['coordinates']
         all_elements_by_name[elem]['num_of_atoms'] = len(this_elem_coords)
         all_elements_by_name[elem]['num_displayed'] = len(this_elem_coords)
+
+        all_elements_by_name[elem]['coordinates'] = np.asarray(all_elements_by_name[elem]['coordinates'])
 
     # disable the unknown atoms by default
     x = color_settings[unknown_label]
@@ -361,7 +370,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 15000000
+    debug_nom = 10000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -389,60 +398,68 @@ def load_pos_file():
 
     return coords
 
-def render_without_blender(atom_coords, gaussians, props):
-    atom_coords_numpy = np.asarray(atom_coords)
-    gaussians.xyz = torch.tensor(atom_coords, dtype=torch.float32, device="cuda")
+def pca(point_cloud):
+    # center data
+    mean = np.mean(point_cloud, axis=0)
+    centered_point_cloud = point_cloud - mean
 
-    pipeline = PipelineParams(args)
-    bg_color = props["background_color"]
-    background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
-    # scene = Scene(dataset, gaussians, atom_coords_numpy, props, load_iteration=-1, shuffle=False)
+    # covariance matrix of centered data (do we need this?)
+    # cov_matrix = np.cov(centered_point_cloud, rowvar=False)
 
+    # perform pca
+    if len(centered_point_cloud.shape) == 1:
+        centered_point_cloud = [centered_point_cloud]
 
-    R = np.matmul(np.matmul(R_x, R_y), R_z)
-    T = np.asarray(props['T'])
-    FoVx = props['FoVx']
-    FoVy = props['FoVy']
-    uid = 0
+    num_components = 3 if len(centered_point_cloud) >= 3 else len(centered_point_cloud) # TODO for len < 3
+    pca = PCA(n_components=num_components)
 
-    dummy_cam = Camera(colmap_id, R, T, FoVx, FoVy, None, None, 'bla', uid)
+    print('num components', num_components)
+    print('pca', centered_point_cloud)
+    pca.fit(centered_point_cloud)
+    transformed_point_cloud = pca.transform(centered_point_cloud)
 
-    # color preparation
-    global atom_color_list
-    colors = torch.tensor(np.asarray(atom_color_list)[:, :3], dtype=torch.float32, device="cuda")
-    # colors = torch.tensor([1, 0, 0] * len(atom_coords), dtype=torch.float32, device="cuda")
+    # covariance matrix of transformed data
+    transformed_cov_matrix = np.cov(transformed_point_cloud, rowvar=False)
 
-    rendering = render(dummy_cam, gaussians, pipeline, background, override_color=colors)["render"]
-    render_path = '/home/qa43nawu/temp/qa43nawu/out/'
-    torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(0) + ".png"))
+    return transformed_cov_matrix
+
+def find_nearest_neighbors():
+    global cov3D_list
+
+    for elem in all_elements_by_name:
+        coords = all_elements_by_name[elem][('coordinates')]
+        print(elem, coords)
+        if (len(coords) == 0):
+            continue
+
+        kdtree = KDTree(coords)
+
+        for c in coords:
+            query_coord = np.array(c)
+            num_neighbors = 10 if all_elements_by_name[elem]['num_of_atoms'] >= 10 else all_elements_by_name[elem]['num_of_atoms']
+            distance, indices = kdtree.query(query_coord, k=num_neighbors)
+
+            indices = [indices]
+            # print('coords', coords)
+            # print('indices', indices)
+            nn_coords = coords[indices][0]
+            cov_mat = pca(nn_coords)
+
+            cov3D_list.append(cov_mat)
+
 
 if __name__ == "__main__":
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
-              images='images', iteration=-1, model_path='/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
-              skip_test=False, skip_train=False, source_path='/home/qa43nawu/temp/qa43nawu/input_files/voldata',
-              white_background=False)
+                     images='images', iteration=-1, model_path='/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
+                     skip_test=False, skip_train=False, source_path='/home/qa43nawu/temp/qa43nawu/input_files/voldata',
+                     white_background=False)
 
     ply_model = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/'
     model = ModelParams(ply_model)
     dataset = model.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
-
-
-    # Set up command line argument parser
-    parser = ArgumentParser(description="Testing script parameters")
-    model = ModelParams(parser, sentinel=True)
-    pipeline = PipelineParams(parser)
-    parser.add_argument("--iteration", default=-1, type=int)
-    parser.add_argument("--skip_train", action="store_true")
-    parser.add_argument("--skip_test", action="store_true")
-    parser.add_argument("--quiet", action="store_true")
-    # args = get_combined_args(parser)
-    # print("Rendering " + args.model_path)
-
-    # Initialize system state (RNG)
-    # safe_state(args.quiet)
 
     colmap_id = 1
     a_x = 1.57
@@ -467,7 +484,6 @@ if __name__ == "__main__":
     }
 
     start = time.time()
-    # render_sets(model.extract(args), args.iteration, pipeline.extract(args), args.skip_train, args.skip_test)
     atom_coords = load_pos_file()
 
 
@@ -478,14 +494,17 @@ if __name__ == "__main__":
     print('combine epos and rrng', time.time() - start)
     print('set colors', time.time() - start)
 
-    # scene = Scene(dataset, gaussians, np.asarray(atom_coords), props, load_iteration=-1, shuffle=False)
     path = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply'
-    # TODO path wegmachen
 
     atom_color_list = atom_color_update()
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
+
+    find_nearest_neighbors()
+    # gaussians.cov3D = np.asarray(cov3D_list) # <--- TODO
+
     gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), props)
+
 
     # write numbers of atom elements as comment
     comments = []
@@ -496,9 +515,4 @@ if __name__ == "__main__":
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_15M.ply', colors, comments)
-
-    # render_without_blender(atom_coords, gaussians, props)
-    # print('render', time.time() - start)
-
-
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply', colors, comments)

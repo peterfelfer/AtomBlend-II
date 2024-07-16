@@ -95,13 +95,17 @@ def key_callback(window, key, scancode, action, mods):
         elif key == glfw.KEY_E:
             g_camera.process_roll_key(-1)
         elif key == glfw.KEY_W:
-            g_camera.process_move_key(0, 1)
+            g_camera.process_move_key(0, 1, 0)
         elif key == glfw.KEY_S:
-            g_camera.process_move_key(0, -1)
+            g_camera.process_move_key(0, -1, 0)
         elif key == glfw.KEY_A:
-            g_camera.process_move_key(1, 0)
+            g_camera.process_move_key(1, 0, 0)
         elif key == glfw.KEY_D:
-            g_camera.process_move_key(-1, 0)
+            g_camera.process_move_key(-1, 0, 0)
+        elif key == glfw.KEY_R:
+            g_camera.process_move_key(0, 0, 1)
+        elif key == glfw.KEY_F:
+            g_camera.process_move_key(0, 0, -1)
 
 def update_camera_pose_lazy():
     if g_camera.is_pose_dirty:
@@ -208,13 +212,13 @@ def main():
         glfw.poll_events()
         impl.process_inputs()
         imgui.new_frame()
-        
+
         gl.glClearColor(0, 0, 0, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
         update_camera_pose_lazy()
         update_camera_intrin_lazy()
-        
+
         g_renderer.draw()
 
         # imgui ui
@@ -381,7 +385,7 @@ def main():
                 g_camera.rot_sensitivity = 0.02
 
             changed, g_camera.trans_sensitivity = imgui.slider_float(
-                    "m", g_camera.trans_sensitivity, 0.001, 0.03, "move speed = %.3f"
+                    "m", g_camera.trans_sensitivity, 0.001, 0.2, "move speed = %.3f"
                 )
             imgui.same_line()
             if imgui.button(label="reset m"):
@@ -442,7 +446,7 @@ def main():
                     # imgui.table_set_column_index(2)
                     imgui.same_line(spacing=50)
 
-                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 1.0)
+                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 10.0)
                     imgui.pop_id()
 
 

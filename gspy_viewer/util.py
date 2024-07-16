@@ -121,7 +121,7 @@ class Camera:
         self.up = new_up / np.linalg.norm(new_up)
         self.is_pose_dirty = True
 
-    def process_move_key(self, dx, dy):
+    def process_move_key(self, dx, dy, dz):
         front = self.target - self.position
         front = front / np.linalg.norm(front)
 
@@ -131,6 +131,7 @@ class Camera:
 
         self.position += right * dx * self.zoom_sensitivity
         self.position += front * dy * self.zoom_sensitivity
+        self.position += up * dz * self.zoom_sensitivity
 
         self.target = self.position + front
         self.is_pose_dirty = True
