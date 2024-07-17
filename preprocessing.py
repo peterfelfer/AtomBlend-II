@@ -370,7 +370,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 10000
+    debug_nom = 5
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -413,13 +413,16 @@ def pca(point_cloud):
     num_components = 3 if len(centered_point_cloud) >= 3 else len(centered_point_cloud) # TODO for len < 3
     pca = PCA(n_components=num_components)
 
-    print('num components', num_components)
-    print('pca', centered_point_cloud)
     pca.fit(centered_point_cloud)
     transformed_point_cloud = pca.transform(centered_point_cloud)
 
     # covariance matrix of transformed data
     transformed_cov_matrix = np.cov(transformed_point_cloud, rowvar=False)
+
+    if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
+        mat_3x3 = np.zeros((3,3))
+        mat_3x3[:2, :2] = transformed_cov_matrix
+        transformed_cov_matrix = mat_3x3
 
     return transformed_cov_matrix
 
@@ -428,7 +431,6 @@ def find_nearest_neighbors():
 
     for elem in all_elements_by_name:
         coords = all_elements_by_name[elem][('coordinates')]
-        print(elem, coords)
         if (len(coords) == 0):
             continue
 
@@ -443,9 +445,14 @@ def find_nearest_neighbors():
             # print('coords', coords)
             # print('indices', indices)
             nn_coords = coords[indices][0]
-            cov_mat = pca(nn_coords)
+            cov_mat = pca(nn_coords).flatten()
 
-            cov3D_list.append(cov_mat)
+            if np.isnan(cov_mat).any(): # TODO fix nan
+                # print(cov_mat)
+                cov_mat = np.asarray([1,0,0,0,1,0,0,0,1])
+
+
+            cov3D_list.append(np.asarray(cov_mat))
 
 
 if __name__ == "__main__":
@@ -501,10 +508,9 @@ if __name__ == "__main__":
     colors = np.asarray(atom_color_list)[:, :3]
 
     find_nearest_neighbors()
-    # gaussians.cov3D = np.asarray(cov3D_list) # <--- TODO
+    # gaussians.cov3D = np.asarray(cov3D_list)
 
-    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), props)
-
+    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), props)
 
     # write numbers of atom elements as comment
     comments = []

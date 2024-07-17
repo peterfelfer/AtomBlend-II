@@ -69,6 +69,7 @@ class GaussianDataCUDA:
     scale: torch.Tensor
     opacity: torch.Tensor
     sh: torch.Tensor
+    cov3D: torch.Tensor
     num_of_atoms_by_element: dict
     
     def __len__(self):
@@ -102,6 +103,7 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
         scale = torch.tensor(gau.scale).float().cuda().requires_grad_(False),
         opacity = torch.tensor(gau.opacity).float().cuda().requires_grad_(False),
         sh = torch.tensor(gau.sh).float().cuda().requires_grad_(False),
+        cov3D = torch.tensor(gau.cov3D).float().cuda().requires_grad_(False),
         num_of_atoms_by_element = gau.num_of_atoms_by_element,
     )
     gaus.sh = gaus.sh.reshape(len(gaus), -1, 3).contiguous()
@@ -221,7 +223,7 @@ class CUDARenderer(GaussianRenderBase):
         self.raster_settings["tanfovx"] = hfovx
         self.raster_settings["tanfovy"] = hfovy
 
-    def draw(self):
+    def draw(self, g_render_cov3D=False):
         if self.reduce_updates and not self.need_rerender:
             gl.glUseProgram(self.program)
             gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex)
@@ -240,17 +242,31 @@ class CUDARenderer(GaussianRenderBase):
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
-        with torch.no_grad():
-            img, radii = rasterizer(
-                means3D = self.gaussians.xyz,
-                means2D = None,
-                # shs = self.gaussians.sh,
-                colors_precomp = self.gaussians.sh[:, 0],
-                opacities = self.gaussians.opacity,
-                scales = self.gaussians.scale,
-                rotations = self.gaussians.rot,
-                cov3D_precomp = None,
-            )
+        if g_render_cov3D:
+            with torch.no_grad():
+                img, radii = rasterizer(
+                    means3D = self.gaussians.xyz,
+                    means2D = None,
+                    # shs = self.gaussians.sh,
+                    colors_precomp = self.gaussians.sh[:, 0],
+                    opacities = self.gaussians.opacity,
+                    # scales = self.gaussians.scale,
+                    # rotations = self.gaussians.rot,
+                    cov3D_precomp = self.gaussians.cov3D,
+                )
+        else:
+            with torch.no_grad():
+                img, radii = rasterizer(
+                    means3D = self.gaussians.xyz,
+                    means2D = None,
+                    # shs = self.gaussians.sh,
+                    colors_precomp = self.gaussians.sh[:, 0],
+                    opacities = self.gaussians.opacity,
+                    scales = self.gaussians.scale,
+                    rotations = self.gaussians.rot,
+                    cov3D_precomp = None,
+                )
+
 
 
         # print('viewmatrix', raster_settings.viewmatrix)

@@ -40,9 +40,13 @@ g_show_atom_settings_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
 g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
 g_render_mode = 4
+g_render_cov3D = True
 
 global_alpha = 1.0
 global_scale = 1.0
+
+debug_covmat = np.zeros((3,3))
+
 
 
 def impl_glfw_init():
@@ -174,7 +178,8 @@ def set_radius(gaussians, global_scale=None):
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, \
-        g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha
+        g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
+        g_render_cov3D, debug_covmat
         
     imgui.create_context()
     if args.hidpi:
@@ -219,7 +224,7 @@ def main():
         update_camera_pose_lazy()
         update_camera_intrin_lazy()
 
-        g_renderer.draw()
+        g_renderer.draw(g_render_cov3D)
 
         # imgui ui
         if imgui.begin_main_menu_bar():
@@ -257,6 +262,17 @@ def main():
 
                 if imgui.button(label='open CuAl50_Ni'):
                     file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply'
+
+                    if file_path:
+                        try:
+                            gaussians = util_gau.load_ply(file_path)
+                            g_renderer.update_gaussian_data(gaussians)
+                            g_renderer.sort_and_update(g_camera)
+                        except RuntimeError as e:
+                            pass
+
+                if imgui.button(label='open CuAl50_Ni COV'):
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_COV.ply'
 
                     if file_path:
                         try:
@@ -363,7 +379,28 @@ def main():
                     #     projmat=g_camera.get_project_matrix(),
                     #     hfovxyfocal=g_camera.get_htanfovxy_focal()
                     # )
+
+                    ########################
+                    # matrix = [[0.0 for _ in range(3)] for _ in range(3)]
+
+                if imgui.begin_table("matrix_table", 3):
+                    # Fill the table with matrix data
+                    for row in range(3):
+                        imgui.table_next_row()
+                        for col in range(3):
+                            imgui.table_set_column_index(col)
+                            changed, debug_covmat[row][col] = imgui.slider_float(f"##cell{row}{col}", debug_covmat[row][col], -1, 1, format="%.3f")
+                            if changed:
+                                gaussians.cov3D = np.tile(debug_covmat, (10,1))
+                                g_renderer.update_gaussian_data(gaussians)
+
+                    imgui.end_table()
+
+
                 imgui.end()
+
+
+
 
         if g_show_camera_win:
             imgui.core.set_window_font_scale(2.0)
@@ -420,6 +457,9 @@ def main():
             if imgui.begin("Atom Settings", True):
 
                 imgui.text('Display settings:')
+                changed, g_render_cov3D = imgui.core.checkbox('Render cov3D', g_render_cov3D)
+                if changed:
+                    g_renderer.need_rerender = True
 
                 changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)
                 if changed:

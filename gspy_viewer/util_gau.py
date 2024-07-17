@@ -9,6 +9,7 @@ class GaussianData:
     scale: np.ndarray
     opacity: np.ndarray
     sh: np.ndarray
+    cov3D: np.ndarray
     num_of_atoms_by_element: dict
 
     def flat(self) -> np.ndarray:
@@ -59,12 +60,19 @@ def naive_gaussian():
             'scale': 0.1,
         },
     }
+    gau_cov3D = np.array([
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ]).astype(np.float32).reshape(-1, 3)
+
     return GaussianData(
         gau_xyz,
         gau_rot,
         gau_s,
         gau_a,
         gau_c,
+        gau_cov3D,
         gau_num_of_atoms_by_element
     )
 
@@ -129,6 +137,16 @@ def load_ply(path):
     for idx, attr_name in enumerate(rot_names):
         rots[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
+    cov3D_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("cov3D")]
+    cov3D_names = sorted(cov3D_names, key = lambda x: int(x.split('_')[-1]))
+    cov3Ds = np.zeros((xyz.shape[0], len(cov3D_names)))
+    for idx, attr_name in enumerate(cov3D_names):
+        bla = np.asarray(plydata.elements[0][attr_name])
+        cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
+
+        if np.isnan(bla).any():
+            print('NAN', bla)
+
     # pass activate function
     xyz = xyz.astype(np.float32)
     # rots = rots / np.linalg.norm(rots, axis=-1, keepdims=True)
@@ -144,7 +162,7 @@ def load_ply(path):
 
     shs = features_dc.reshape(-1, 3)
 
-    return GaussianData(xyz, rots, scales, opacities, shs, num_of_atoms_by_element)
+    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element)
 
 if __name__ == "__main__":
     gs = load_ply("/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply")
