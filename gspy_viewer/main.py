@@ -45,7 +45,7 @@ g_render_cov3D = True
 global_alpha = 1.0
 global_scale = 1.0
 
-debug_covmat = np.zeros((3,3))
+debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 
 
 
@@ -385,14 +385,37 @@ def main():
 
                 if imgui.begin_table("matrix_table", 3):
                     # Fill the table with matrix data
-                    for row in range(3):
-                        imgui.table_next_row()
-                        for col in range(3):
-                            imgui.table_set_column_index(col)
-                            changed, debug_covmat[row][col] = imgui.slider_float(f"##cell{row}{col}", debug_covmat[row][col], -1, 1, format="%.3f")
-                            if changed:
-                                gaussians.cov3D = np.tile(debug_covmat, (10,1))
-                                g_renderer.update_gaussian_data(gaussians)
+                    # for row in range(3):
+                    #     imgui.table_next_row()
+                    #     for col in range(3):
+                    #         imgui.table_set_column_index(col)
+                            # changed, debug_covmat[row][col] = imgui.slider_float(f"##cell{row}{col}", debug_covmat[row][col], -1, 1, format="%.3f")
+
+                    c1, c2, c3, c4, c5, c6 = False, False, False, False, False, False
+
+                    imgui.table_next_row()
+
+                    imgui.table_set_column_index(0)
+                    c1, debug_covmat[0] = imgui.slider_float(f"##cell{0}{0}", debug_covmat[0], -1, 1, format="%.3f")
+                    imgui.table_set_column_index(1)
+                    c2, debug_covmat[1] = imgui.slider_float(f"##cell{0}{1}", debug_covmat[1], -1, 1, format="%.3f")
+                    imgui.table_set_column_index(2)
+                    c3, debug_covmat[2] = imgui.slider_float(f"##cell{0}{2}", debug_covmat[2], -1, 1, format="%.3f")
+
+                    imgui.table_next_row()
+                    imgui.table_set_column_index(1)
+                    c4, debug_covmat[3] = imgui.slider_float(f"##cell{1}{1}", debug_covmat[3], -1, 1, format="%.3f")
+                    imgui.table_set_column_index(2)
+                    c5, debug_covmat[4] = imgui.slider_float(f"##cell{1}{2}", debug_covmat[4], -1, 1, format="%.3f")
+
+                    imgui.table_next_row()
+                    imgui.table_set_column_index(2)
+                    c6, debug_covmat[5] = imgui.slider_float(f"##cell{2}{2}", debug_covmat[5], -1, 1, format="%.3f")
+
+                    if c1 or c2 or c3 or c4 or c5 or c6:
+                        gaussians.cov3D = np.tile(debug_covmat, (100, 1))
+                        g_renderer.update_gaussian_data(gaussians)
+                        # print(gaussians.cov3D)
 
                     imgui.end_table()
 

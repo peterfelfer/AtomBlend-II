@@ -290,6 +290,10 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	if (cov3D_precomp != nullptr)
 	{
 		cov3D = cov3D_precomp + idx * 6;
+
+		cov3D[0] *= scale_modifier;
+		cov3D[3] *= scale_modifier;
+		cov3D[5] *= scale_modifier;
 	}
 	else
 	{

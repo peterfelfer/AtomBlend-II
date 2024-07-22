@@ -370,7 +370,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 5
+    debug_nom = 100
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -447,9 +447,30 @@ def find_nearest_neighbors():
             nn_coords = coords[indices][0]
             cov_mat = pca(nn_coords).flatten()
 
+            # if cov_mat[1] != cov_mat[3]:
+            #     print('COVMAT13')
+            #
+            # if cov_mat[2] != cov_mat[6]:
+            #     print('COVMAT26')
+            #
+            # if cov_mat[5] != cov_mat[7]:
+            #     print('COVMAT57')
+
+            reduced_covmat = np.zeros(6)
+            reduced_covmat[0] = cov_mat[0]
+            reduced_covmat[1] = cov_mat[1]
+            reduced_covmat[2] = cov_mat[2]
+            reduced_covmat[3] = cov_mat[4]
+            reduced_covmat[4] = cov_mat[5]
+            reduced_covmat[5] = cov_mat[8]
+
+            cov_mat = reduced_covmat
+
+            # cov_mat = np.asarray([1, 0, 0, 1, 0, 1])
+
             if np.isnan(cov_mat).any(): # TODO fix nan
                 # print(cov_mat)
-                cov_mat = np.asarray([1,0,0,0,1,0,0,0,1])
+                cov_mat = np.asarray([1,0,0,1,0,1])
 
 
             cov3D_list.append(np.asarray(cov_mat))
@@ -521,4 +542,4 @@ if __name__ == "__main__":
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply', colors, comments)
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_COV.ply', colors, comments)
