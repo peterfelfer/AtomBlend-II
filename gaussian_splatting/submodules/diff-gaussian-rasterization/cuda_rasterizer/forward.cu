@@ -156,7 +156,7 @@ __device__ glm::vec3 computeColorFromSH(int idx, int deg, int max_coeffs, const 
 }
 
 // Forward version of 2D covariance matrix computation
-__device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y, float tan_fovx, float tan_fovy, const float* cov3D, const float* viewmatrix)
+__device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y, float tan_fovx, float tan_fovy, const float* cov3D, const float* viewmatrix, const float scale)
 {
 	// The following models the steps outlined by equations 29
 	// and 31 in "EWA Splatting" (Zwicker et al., 2002). 
@@ -184,9 +184,9 @@ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y,
 	glm::mat3 T = W * J;
 
 	glm::mat3 Vrk = glm::mat3(
-		cov3D[0], cov3D[1], cov3D[2],
-		cov3D[1], cov3D[3], cov3D[4],
-		cov3D[2], cov3D[4], cov3D[5]);
+		cov3D[0] * scale, cov3D[1], cov3D[2],
+		cov3D[1], cov3D[3] * scale, cov3D[4],
+		cov3D[2], cov3D[4], cov3D[5] * scale);
 
 	glm::mat3 cov = glm::transpose(T) * glm::transpose(Vrk) * T;
 
@@ -290,10 +290,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	if (cov3D_precomp != nullptr)
 	{
 		cov3D = cov3D_precomp + idx * 6;
-
-		cov3D[0] *= scale_modifier;
-		cov3D[3] *= scale_modifier;
-		cov3D[5] *= scale_modifier;
 	}
 	else
 	{
@@ -302,7 +298,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	}
 
 	// Compute 2D screen-space covariance matrix
-	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix);
+	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale_modifier);
 
 	// Invert covariance (EWA algorithm)
 	float det = (cov.x * cov.z - cov.y * cov.y);

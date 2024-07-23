@@ -58,6 +58,7 @@ def naive_gaussian():
             'num': 4,
             'color': (1.0, 0.0, 0.0, 1.0),
             'scale': 0.1,
+            'is_rendered': True,
         },
     }
     gau_cov3D = np.array([
@@ -95,6 +96,7 @@ def load_ply(path):
                     'num': int(num),
                     'color': (r, g, b, 1.0),
                     'scale': 0.1,
+                    'is_rendered': True,
                 }
 
                 num_of_atoms_by_element[element_name.split(' ')[1]] = obj

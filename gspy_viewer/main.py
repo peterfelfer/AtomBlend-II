@@ -44,8 +44,10 @@ g_render_cov3D = True
 
 global_alpha = 1.0
 global_scale = 1.0
+render_all_elements = True
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
+
 
 
 
@@ -138,13 +140,36 @@ def window_resize_callback(window, width, height):
     g_camera.update_resolution(height, width)
     g_renderer.set_render_reso(width, height)
 
-def set_colors(gaussians, global_alpha=None):
+
+def changed_render_all_elements(gaussians):
+    for key in gaussians.num_of_atoms_by_element:
+        if render_all_elements:
+            gaussians.num_of_atoms_by_element[key]['is_rendered'] = True
+        else:
+            gaussians.num_of_atoms_by_element[key]['is_rendered'] = False
+
+    set_colors(gaussians)
+    g_renderer.update_gaussian_data(gaussians)
+    g_renderer.sort_and_update(g_camera)
+
+
+def set_colors(gaussians, global_alpha=None, changed_render_checkbox=False):
     colors = []
     opacities = []
     for key in gaussians.num_of_atoms_by_element:
         if global_alpha is not None:
             col = gaussians.num_of_atoms_by_element[key]['color']
             gaussians.num_of_atoms_by_element[key]['color'] = (col[0], col[1], col[2], global_alpha)
+
+        if changed_render_checkbox:
+            col = gaussians.num_of_atoms_by_element[key]['color']
+            if not gaussians.num_of_atoms_by_element[key]['is_rendered']:
+                gaussians.num_of_atoms_by_element[key]['color'] = (col[0], col[1], col[2], 0)
+            else:
+                gaussians.num_of_atoms_by_element[key]['color'] = (col[0], col[1], col[2], 1)
+
+        if gaussians.num_of_atoms_by_element[key]['color'][3] == 0:
+            gaussians.num_of_atoms_by_element[key]['is_rendered'] = False
 
         elem = gaussians.num_of_atoms_by_element[key]
         col = elem['color']
@@ -179,7 +204,7 @@ def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
-        g_render_cov3D, debug_covmat
+        g_render_cov3D, debug_covmat, render_all_elements
         
     imgui.create_context()
     if args.hidpi:
@@ -311,7 +336,7 @@ def main():
                     "fov", g_camera.fovy, 0.001, np.pi - 0.001, "fov = %.3f"
                 )
                 changed, g_camera.zoom_sensitivity = imgui.slider_float(
-                    "move sensitivity", g_camera.zoom_sensitivity, 0.001, np.pi - 0.001, "zoom_sensitivity = %.3f"
+                    "move sensitivity", g_camera.zoom_sensitivity, 0.001, 10, "zoom_sensitivity = %.3f"
                 )
                 # changed, g_camera.position = imgui.slider_float3(
                 #     "camera position", g_camera.position[0], g_camera.position[1], g_camera.position[2], np.pi - 0.001, 10000.0
@@ -480,10 +505,12 @@ def main():
             if imgui.begin("Atom Settings", True):
 
                 imgui.text('Display settings:')
+
                 changed, g_render_cov3D = imgui.core.checkbox('Render cov3D', g_render_cov3D)
                 if changed:
                     g_renderer.need_rerender = True
 
+                imgui.core.push_item_width(500)
                 changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)
                 if changed:
                     set_colors(gaussians, global_alpha=global_alpha)
@@ -492,13 +519,32 @@ def main():
                     set_radius(gaussians, global_scale=global_scale)
 
                 imgui.text('Element settings:')
+
+                changed, render_all_elements = imgui.core.checkbox('', render_all_elements)
+                if changed:
+                    changed_render_all_elements(gaussians)
+                    # set_colors(gaussians)
+
                 for elem in gaussians.num_of_atoms_by_element:
                     imgui.push_id(elem)
                     imgui.core.set_window_font_scale(2.0)
                     # imgui.table_next_row()
                     # imgui.table_set_column_index(0)
+
+                    changed, gaussians.num_of_atoms_by_element[elem]['is_rendered'] = imgui.core.checkbox('', gaussians.num_of_atoms_by_element[elem]['is_rendered'])
+
+                    if changed:
+                        set_colors(gaussians, changed_render_checkbox=True)
+
+                    imgui.same_line()
+
                     imgui.text(elem)
-                    imgui.same_line(50, 50)
+                    imgui.same_line(80, 50)
+
+                    imgui.text(str(gaussians.num_of_atoms_by_element[elem]['num']))
+                    imgui.same_line(200, 50)
+
+                    imgui.core.push_item_width(500)
 
                     # imgui.table_set_column_index(1)
                     changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4('', *gaussians.num_of_atoms_by_element[elem]['color'])
@@ -509,6 +555,7 @@ def main():
                     # imgui.table_set_column_index(2)
                     imgui.same_line(spacing=50)
 
+                    imgui.core.push_item_width(200)
                     changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 10.0)
                     imgui.pop_id()
 

@@ -370,7 +370,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 100
+    debug_nom = 100000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -438,14 +438,24 @@ def find_nearest_neighbors():
 
         for c in coords:
             query_coord = np.array(c)
-            num_neighbors = 10 if all_elements_by_name[elem]['num_of_atoms'] >= 10 else all_elements_by_name[elem]['num_of_atoms']
-            distance, indices = kdtree.query(query_coord, k=num_neighbors)
+
+            # get n nearest neighbors; only consider neighbors with distance < distance_upper_bound
+            num_neighbors = 15
+            num_neighbors = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
+            distance, indices = kdtree.query(query_coord, k=num_neighbors, distance_upper_bound=20.0)
+
+            filter = indices < len(coords)
+            indices = indices[filter]
 
             indices = [indices]
-            # print('coords', coords)
-            # print('indices', indices)
             nn_coords = coords[indices][0]
+
             cov_mat = pca(nn_coords).flatten()
+
+            cov_mat = cov_mat / 100.0
+
+            if np.isnan(cov_mat).any(): # TODO fix nan
+                print(cov_mat)
 
             # if cov_mat[1] != cov_mat[3]:
             #     print('COVMAT13')
@@ -466,12 +476,9 @@ def find_nearest_neighbors():
 
             cov_mat = reduced_covmat
 
-            # cov_mat = np.asarray([1, 0, 0, 1, 0, 1])
-
             if np.isnan(cov_mat).any(): # TODO fix nan
                 # print(cov_mat)
-                cov_mat = np.asarray([1,0,0,1,0,1])
-
+                cov_mat = np.asarray([0.1, 0, 0, 0.1, 0, 0.1])
 
             cov3D_list.append(np.asarray(cov_mat))
 
@@ -542,4 +549,4 @@ if __name__ == "__main__":
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_COV.ply', colors, comments)
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply', colors, comments)
