@@ -38,6 +38,7 @@ namespace FORWARD
 		const float focal_x, float focal_y,
 		const float tan_fovx, float tan_fovy,
 		int* radii,
+		int* radii_xy,
 		float2* points_xy_image,
 		float* depths,
 		float* cov3Ds,
@@ -65,6 +66,7 @@ namespace FORWARD
         const int render_mode,
         const float scale_modifier,
         int* radii,
+        int* radii_xy,
 		float* out_color
         );
 }

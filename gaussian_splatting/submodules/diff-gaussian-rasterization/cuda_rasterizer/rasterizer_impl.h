@@ -33,6 +33,7 @@ namespace CudaRasterizer
 		char* scanning_space;
 		bool* clamped;
 		int* internal_radii;
+		int* internal_radii_xy;
 		float2* means2D;
 		float* cov3D;
 		float4* conic_opacity;

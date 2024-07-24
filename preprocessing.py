@@ -370,7 +370,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 100000
+    debug_nom = 100
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -452,7 +452,7 @@ def find_nearest_neighbors():
 
             cov_mat = pca(nn_coords).flatten()
 
-            cov_mat = cov_mat / 100.0
+            # cov_mat = cov_mat / 100.0
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 print(cov_mat)
@@ -475,6 +475,8 @@ def find_nearest_neighbors():
             reduced_covmat[5] = cov_mat[8]
 
             cov_mat = reduced_covmat
+
+            print(np.max(cov_mat))
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 # print(cov_mat)
@@ -549,4 +551,4 @@ if __name__ == "__main__":
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply', colors, comments)
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_normalized.ply', colors, comments)

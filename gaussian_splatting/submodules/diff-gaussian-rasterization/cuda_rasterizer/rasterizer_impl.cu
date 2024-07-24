@@ -159,6 +159,7 @@ CudaRasterizer::GeometryState CudaRasterizer::GeometryState::fromChunk(char*& ch
 	obtain(chunk, geom.depths, P, 128);
 	obtain(chunk, geom.clamped, P * 3, 128);
 	obtain(chunk, geom.internal_radii, P, 128);
+	obtain(chunk, geom.internal_radii_xy, P * 2, 128);
 	obtain(chunk, geom.means2D, P, 128);
 	obtain(chunk, geom.cov3D, P * 6, 128);
 	obtain(chunk, geom.conic_opacity, P, 128);
@@ -242,6 +243,8 @@ int CudaRasterizer::Rasterizer::forward(
 		radii = geomState.internal_radii;
 	}
 
+	int* radii_xy = geomState.internal_radii_xy;
+
 	dim3 tile_grid((width + BLOCK_X - 1) / BLOCK_X, (height + BLOCK_Y - 1) / BLOCK_Y, 1);
 	dim3 block(BLOCK_X, BLOCK_Y, 1);
 
@@ -273,6 +276,7 @@ int CudaRasterizer::Rasterizer::forward(
 		focal_x, focal_y,
 		tan_fovx, tan_fovy,
 		radii,
+		radii_xy,
 		geomState.means2D,
 		geomState.depths,
 		geomState.cov3D,
@@ -359,6 +363,7 @@ int CudaRasterizer::Rasterizer::forward(
         render_mode,
         scale_modifier,
         radii,
+        radii_xy,
         out_color), debug)
 
 

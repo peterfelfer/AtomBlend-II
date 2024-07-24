@@ -255,6 +255,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const float tan_fovx, float tan_fovy,
 	const float focal_x, float focal_y,
 	int* radii,
+	int* radii_xy,
 	float2* points_xy_image,
 	float* depths,
 	float* cov3Ds,
@@ -315,6 +316,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float lambda1 = mid + sqrt(max(0.1f, mid * mid - det));
 	float lambda2 = mid - sqrt(max(0.1f, mid * mid - det));
 	float my_radius = ceil(3.f * sqrt(max(lambda1, lambda2)));
+	float my_radius_x = ceil(3.f * sqrt(lambda1));
+	float my_radius_y = ceil(3.f * sqrt(lambda2));
 	float2 point_image = { ndc2Pix(p_proj.x, W), ndc2Pix(p_proj.y, H) };
 	uint2 rect_min, rect_max;
 	getRect(point_image, my_radius, rect_min, rect_max, grid);
@@ -335,6 +338,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// Store some useful helper data for the next steps.
 	depths[idx] = p_view.z;
 	radii[idx] = my_radius;
+    radii_xy[idx] = my_radius_x;
+    radii_xy[idx + 1] = my_radius_y;
 	points_xy_image[idx] = point_image;
 	// Inverse 2D covariance and opacity neatly pack into one float4
 	conic_opacity[idx] = { conic.x, conic.y, conic.z, opacities[idx] };
@@ -956,6 +961,7 @@ render_gaussianBallOpt(
         const float* orig_points,
         const float scale_modifier,
         int* radii,
+        int* radii_xy,
         float* __restrict__ out_color)
 {
     // Identify current tile and associated min/max pixel range.
@@ -1049,16 +1055,40 @@ render_gaussianBallOpt(
             float radius = scale_modifier;
 
             float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
+
+            float r_in_pixels_x = float(radii_xy[collected_id[j]]);
+            float r_in_pixels_y = float(radii_xy[collected_id[j] + 1]);
+
+            if (r_in_pixels_x == 0.0f || r_in_pixels_y == 0.0f){
+//                printf("CONTINUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUE");
+                continue;
+            }
+
             glm::vec2 reltc = glm::vec2(d.x, d.y) * 2.0f - 1.0f;
+
+//            printf("%f, %f d.x, d.y", d.x / r_in_pixels_x, d.y / r_in_pixels_y);
             reltc = reltc * radius;
             float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
             dist_to_center = dist_to_center / r_in_pixels;
 
-            // Calculate the surface normal
-            float dx = (reltc.x / r_in_pixels);  // X-distance from the pixel to the sphere center
-            float dy = (reltc.y / r_in_pixels); // Y-distance from the pixel to the sphere center
 
-            if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
+            // Calculate the surface normal
+            float dx = (reltc.x / r_in_pixels_x);  // X-distance from the pixel to the sphere center
+            float dy = (reltc.y / r_in_pixels_y); // Y-distance from the pixel to the sphere center
+
+            // Check if point is in the gaussian (ellipse)
+            float normalized_x = reltc.x / r_in_pixels_x;
+            float normalized_y = reltc.y / r_in_pixels_y;
+
+            bool inside_ellipse = (normalized_x * normalized_x + normalized_y * normalized_y) <= 1.0f;
+
+            if (inside_ellipse){
+//                printf("%f %f reltc xy\n", reltc.x, reltc.y);
+//                printf("%f %f rinpixels xy\n", r_in_pixels_x, r_in_pixels_y);
+//                printf("%f %f nromalized  xy\n", normalized_x, normalized_y);
+            }
+
+            if (inside_ellipse) {  // Check if the pixel is inside the sphere
 //                float dz = sqrtf(radius - dist_to_center);
 //                float dz = sqrtf(radius * radius - glm::dot(reltc, reltc));
 //                float dz = sqrtf(radius * radius - (dx * dx + dy * dy));
@@ -1072,6 +1102,11 @@ render_gaussianBallOpt(
 //                C[0] = dz;
 //                C[1] = dz;
 //                C[2] = 0;
+                T = test_T;
+            } else {
+                C[0] = 1.0f;
+                C[1] = 0.0f;
+                C[2] = 0.0f;
                 T = test_T;
             }
 
@@ -1111,6 +1146,7 @@ void FORWARD::render(int P,
 	const int render_mode,
 	const float scale_modifier,
     int* radii,
+    int* radii_xy,
 	float* out_color)
 {
     if (render_mode == 0){ // phong shading
@@ -1193,6 +1229,7 @@ void FORWARD::render(int P,
             orig_points,
             scale_modifier,
             radii,
+            radii_xy,
             out_color
         );
     }
@@ -1215,6 +1252,7 @@ void FORWARD::preprocess(int P, int D, int M,
 	const float focal_x, float focal_y,
 	const float tan_fovx, float tan_fovy,
 	int* radii,
+	int* radii_xy,
 	float2* means2D,
 	float* depths,
 	float* cov3Ds,
@@ -1242,6 +1280,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		tan_fovx, tan_fovy,
 		focal_x, focal_y,
 		radii,
+		radii_xy,
 		means2D,
 		depths,
 		cov3Ds,

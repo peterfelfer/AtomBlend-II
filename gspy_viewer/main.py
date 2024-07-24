@@ -297,7 +297,7 @@ def main():
                             pass
 
                 if imgui.button(label='open CuAl50_Ni COV'):
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_COV.ply'
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
 
                     if file_path:
                         try:
