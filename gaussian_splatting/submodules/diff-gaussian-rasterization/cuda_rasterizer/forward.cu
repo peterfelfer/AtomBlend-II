@@ -824,74 +824,74 @@ render_gaussianBall(
     int* radii,
 	float* __restrict__ out_color)
 {
-	// Identify current tile and associated min/max pixel range.
-	auto block = cg::this_thread_block();
-	uint32_t horizontal_blocks = (W + BLOCK_X - 1) / BLOCK_X;
-	uint2 pix_min = { block.group_index().x * BLOCK_X, block.group_index().y * BLOCK_Y };
-	uint2 pix_max = { min(pix_min.x + BLOCK_X, W), min(pix_min.y + BLOCK_Y , H) };
-	uint2 pix = { pix_min.x + block.thread_index().x, pix_min.y + block.thread_index().y };
-	uint32_t pix_id = W * pix.y + pix.x;
-	float2 pixf = { (float)pix.x, (float)pix.y };
+// Identify current tile and associated min/max pixel range.
+    auto block = cg::this_thread_block();
+    uint32_t horizontal_blocks = (W + BLOCK_X - 1) / BLOCK_X;
+    uint2 pix_min = { block.group_index().x * BLOCK_X, block.group_index().y * BLOCK_Y };
+    uint2 pix_max = { min(pix_min.x + BLOCK_X, W), min(pix_min.y + BLOCK_Y , H) };
+    uint2 pix = { pix_min.x + block.thread_index().x, pix_min.y + block.thread_index().y };
+    uint32_t pix_id = W * pix.y + pix.x;
+    float2 pixf = { (float)pix.x, (float)pix.y };
 
-	// Check if this thread is associated with a valid pixel or outside.
-	bool inside = pix.x < W&& pix.y < H;
-	// Done threads can help with fetching, but don't rasterize
-	bool done = !inside;
+    // Check if this thread is associated with a valid pixel or outside.
+    bool inside = pix.x < W&& pix.y < H;
+    // Done threads can help with fetching, but don't rasterize
+    bool done = !inside;
 
-	// Load start/end range of IDs to process in bit sorted list.
-	uint2 range = ranges[block.group_index().y * horizontal_blocks + block.group_index().x];
-	const int rounds = ((range.y - range.x + BLOCK_SIZE - 1) / BLOCK_SIZE);
-	int toDo = range.y - range.x;
+    // Load start/end range of IDs to process in bit sorted list.
+    uint2 range = ranges[block.group_index().y * horizontal_blocks + block.group_index().x];
+    const int rounds = ((range.y - range.x + BLOCK_SIZE - 1) / BLOCK_SIZE);
+    int toDo = range.y - range.x;
 
-	// Allocate storage for batches of collectively fetched data.
-	__shared__ int collected_id[BLOCK_SIZE];
-	__shared__ float2 collected_xy[BLOCK_SIZE];
-	__shared__ float4 collected_conic_opacity[BLOCK_SIZE];
+    // Allocate storage for batches of collectively fetched data.
+    __shared__ int collected_id[BLOCK_SIZE];
+    __shared__ float2 collected_xy[BLOCK_SIZE];
+    __shared__ float4 collected_conic_opacity[BLOCK_SIZE];
 
-	// Initialize helper variables
-	float T = 1.0f;
-	uint32_t contributor = 0;
-	uint32_t last_contributor = 0;
-	float C[CHANNELS] = { 0 };
+    // Initialize helper variables
+    float T = 1.0f;
+    uint32_t contributor = 0;
+    uint32_t last_contributor = 0;
+    float C[CHANNELS] = { 0 };
 
-	// Iterate over batches until all done or range is complete
-	for (int i = 0; i < rounds; i++, toDo -= BLOCK_SIZE)
-	{
-		// End if entire block votes that it is done rasterizing
-		int num_done = __syncthreads_count(done);
-		if (num_done == BLOCK_SIZE)
-			break;
+    // Iterate over batches until all done or range is complete
+    for (int i = 0; i < rounds; i++, toDo -= BLOCK_SIZE)
+    {
+        // End if entire block votes that it is done rasterizing
+        int num_done = __syncthreads_count(done);
+        if (num_done == BLOCK_SIZE)
+            break;
 
-		// Collectively fetch per-Gaussian data from global to shared
-		int progress = i * BLOCK_SIZE + block.thread_rank();
-		if (range.x + progress < range.y)
-		{
-			int coll_id = point_list[range.x + progress];
-			collected_id[block.thread_rank()] = coll_id;
-			collected_xy[block.thread_rank()] = points_xy_image[coll_id];
-			collected_conic_opacity[block.thread_rank()] = conic_opacity[coll_id];
-		}
-		block.sync();
+        // Collectively fetch per-Gaussian data from global to shared
+        int progress = i * BLOCK_SIZE + block.thread_rank();
+        if (range.x + progress < range.y)
+        {
+            int coll_id = point_list[range.x + progress];
+            collected_id[block.thread_rank()] = coll_id;
+            collected_xy[block.thread_rank()] = points_xy_image[coll_id];
+            collected_conic_opacity[block.thread_rank()] = conic_opacity[coll_id];
+        }
+        block.sync();
 
-		// Iterate over current batch
-		for (int j = 0; !done && j < min(BLOCK_SIZE, toDo); j++)
-		{
-			// Keep track of current position in range
-			contributor++;
+        // Iterate over current batch
+        for (int j = 0; !done && j < min(BLOCK_SIZE, toDo); j++)
+        {
+            // Keep track of current position in range
+            contributor++;
 
-			// Resample using conic matrix (cf. "Surface
-			// Splatting" by Zwicker et al., 2001)
-			float2 xy = collected_xy[j];
-			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
-			float4 con_o = collected_conic_opacity[j];
-			float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
+            // Resample using conic matrix (cf. "Surface
+            // Splatting" by Zwicker et al., 2001)
+            float2 xy = collected_xy[j];
+            float2 d = { xy.x - pixf.x, xy.y - pixf.y };
+            float4 con_o = collected_conic_opacity[j];
+            float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
             if (power > 0.0f)
                 continue;
 
-			// Eq. (2) from 3D Gaussian splatting paper.
-			// Obtain alpha by multiplying with Gaussian opacity
-			// and its exponential falloff from mean.
-			// Avoid numerical instabilities (see paper appendix).
+            // Eq. (2) from 3D Gaussian splatting paper.
+            // Obtain alpha by multiplying with Gaussian opacity
+            // and its exponential falloff from mean.
+            // Avoid numerical instabilities (see paper appendix).
             float alpha = min(0.99f, con_o.w * exp(power));
             if (alpha < 1.0f / 255.0f)
                 continue;
@@ -901,43 +901,29 @@ render_gaussianBall(
                 done = true;
                 continue;
             }
-            float radius = scale_modifier;
 
-            float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
-            glm::vec2 reltc = glm::vec2(d.x, d.y) * radius;
-            float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
-            dist_to_center = dist_to_center / r_in_pixels;
+            // Eq. (3) from 3D Gaussian splatting paper.
+            for (int ch = 0; ch < CHANNELS; ch++)
+                C[ch] += features[collected_id[j] * CHANNELS + ch] * T;
 
-            // Calculate the surface normal
-            float dx = reltc.x / r_in_pixels;  // X-distance from the pixel to the sphere center
-            float dy = reltc.y / r_in_pixels; // Y-distance from the pixel to the sphere center
+            T = test_T;
 
-            if (dist_to_center <= radius) {  // Check if the pixel is inside the sphere
-                float dz = sqrtf(radius * radius - dist_to_center);
-
-                C[0] = features[collected_id[j] * CHANNELS] * dz;
-                C[1] = features[collected_id[j] * CHANNELS + 1] * dz;
-                C[2] = features[collected_id[j] * CHANNELS + 2] * dz;
-            }
-
-			T = test_T;
-
-			// Keep track of last range entry to update this
-			// pixel.
-			last_contributor = contributor;
-		}
-	}
-
-	// All threads that treat valid pixel write out their final
-	// rendering data to the frame and auxiliary buffers.
-	if (inside)
-	{
-		final_T[pix_id] = T;
-		n_contrib[pix_id] = last_contributor;
-		for (int ch = 0; ch < CHANNELS; ch++) {
-            out_color[ch * H * W + pix_id] = C[ch]; // + bg_color[ch];
+            // Keep track of last range entry to update this
+            // pixel.
+            last_contributor = contributor;
         }
-	}
+    }
+
+    // All threads that treat valid pixel write out their final
+    // rendering data to the frame and auxiliary buffers.
+    if (inside)
+    {
+        final_T[pix_id] = T;
+        n_contrib[pix_id] = last_contributor;
+        for (int ch = 0; ch < CHANNELS; ch++) {
+            out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
+        }
+    }
 }
 
 
@@ -1024,6 +1010,9 @@ render_gaussianBallOpt(
             float2 xy = collected_xy[j];
             float2 d = { xy.x - pixf.x, xy.y - pixf.y };
             float4 con_o = collected_conic_opacity[j];
+            float con_o_x_tmp = con_o.x;
+            con_o.x = con_o.z;
+            con_o.z = con_o_x_tmp;
             float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
             if (power > 0.0f)
                 continue;

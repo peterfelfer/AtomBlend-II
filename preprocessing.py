@@ -328,6 +328,7 @@ def load_e_pos_file():
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = concat_data[concat_data[:, 3].argsort()]
+
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
     coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
@@ -370,7 +371,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 100
+    debug_nom = 10
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -378,9 +379,23 @@ def load_pos_file():
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
+
+    mn = sorted_by_mn[0][3]
+    sorted_by_mn[0] = [00, 00, 0, mn]
+    sorted_by_mn[1] = [10, 10, 0, mn]
+    sorted_by_mn[2] = [20, 20, 0, mn]
+    sorted_by_mn[3] = [30, 30, 0, mn]
+    sorted_by_mn[4] = [40, 40, 0, mn]
+    sorted_by_mn[5] = [50, 50, 0, mn]
+    sorted_by_mn[6] = [60, 60, 0, mn]
+    sorted_by_mn[7] = [70, 70, 0, mn]
+    sorted_by_mn[8] = [80, 80, 0, mn]
+    sorted_by_mn[9] = [90, 90, 0, mn]
+
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
     coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
+
 
     # add unknown element to the list
     unknown_element_dict = {}
@@ -414,10 +429,11 @@ def pca(point_cloud):
     pca = PCA(n_components=num_components)
 
     pca.fit(centered_point_cloud)
-    transformed_point_cloud = pca.transform(centered_point_cloud)
 
-    # covariance matrix of transformed data
-    transformed_cov_matrix = np.cov(transformed_point_cloud, rowvar=False)
+    components = pca.components_
+    explained_variance = pca.explained_variance_
+
+    transformed_cov_matrix = np.dot(components.T * explained_variance, components)
 
     if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
         mat_3x3 = np.zeros((3,3))
@@ -442,7 +458,7 @@ def find_nearest_neighbors():
             # get n nearest neighbors; only consider neighbors with distance < distance_upper_bound
             num_neighbors = 15
             num_neighbors = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
-            distance, indices = kdtree.query(query_coord, k=num_neighbors, distance_upper_bound=20.0)
+            distance, indices = kdtree.query(query_coord, k=num_neighbors, distance_upper_bound=1000.0)
 
             filter = indices < len(coords)
             indices = indices[filter]
@@ -452,7 +468,7 @@ def find_nearest_neighbors():
 
             cov_mat = pca(nn_coords).flatten()
 
-            # cov_mat = cov_mat / 100.0
+            cov_mat = cov_mat / 500.0
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 print(cov_mat)
