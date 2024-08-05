@@ -298,7 +298,7 @@ def main():
 
                 if imgui.button(label='open CuAl50_Ni COV'):
                     # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_normalized.ply'
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply'
 
                     if file_path:
                         try:
@@ -439,7 +439,7 @@ def main():
                     c6, debug_covmat[5] = imgui.slider_float(f"##cell{2}{2}", debug_covmat[5], -1, 1, format="%.3f")
 
                     if c1 or c2 or c3 or c4 or c5 or c6:
-                        gaussians.cov3D = np.tile(debug_covmat, (100, 1))
+                        gaussians.cov3D = np.tile(debug_covmat, (gaussians.opacity.shape[0], 1))
                         g_renderer.update_gaussian_data(gaussians)
                         # print(gaussians.cov3D)
 

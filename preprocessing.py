@@ -371,7 +371,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 10
+    debug_nom = 100000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -380,17 +380,17 @@ def load_pos_file():
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
 
-    mn = sorted_by_mn[0][3]
-    sorted_by_mn[0] = [00, 00, 0, mn]
-    sorted_by_mn[1] = [10, 10, 0, mn]
-    sorted_by_mn[2] = [20, 20, 0, mn]
-    sorted_by_mn[3] = [30, 30, 0, mn]
-    sorted_by_mn[4] = [40, 40, 0, mn]
-    sorted_by_mn[5] = [50, 50, 0, mn]
-    sorted_by_mn[6] = [60, 60, 0, mn]
-    sorted_by_mn[7] = [70, 70, 0, mn]
-    sorted_by_mn[8] = [80, 80, 0, mn]
-    sorted_by_mn[9] = [90, 90, 0, mn]
+    # mn = sorted_by_mn[0][3]
+    # sorted_by_mn[0] = [00, 00, 0, mn]
+    # sorted_by_mn[1] = [10, 10, 0, mn]
+    # sorted_by_mn[2] = [20, 20, 0, mn]
+    # sorted_by_mn[3] = [30, 30, 0, mn]
+    # sorted_by_mn[4] = [40, 40, 0, mn]
+    # sorted_by_mn[5] = [50, 50, 0, mn]
+    # sorted_by_mn[6] = [60, 60, 0, mn]
+    # sorted_by_mn[7] = [70, 70, 0, mn]
+    # sorted_by_mn[8] = [80, 80, 0, mn]
+    # sorted_by_mn[9] = [90, 90, 0, mn]
 
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
@@ -458,7 +458,7 @@ def find_nearest_neighbors():
             # get n nearest neighbors; only consider neighbors with distance < distance_upper_bound
             num_neighbors = 15
             num_neighbors = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
-            distance, indices = kdtree.query(query_coord, k=num_neighbors, distance_upper_bound=1000.0)
+            distance, indices = kdtree.query(query_coord, k=num_neighbors, distance_upper_bound=20.0)
 
             filter = indices < len(coords)
             indices = indices[filter]
@@ -492,7 +492,6 @@ def find_nearest_neighbors():
 
             cov_mat = reduced_covmat
 
-            print(np.max(cov_mat))
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 # print(cov_mat)
@@ -567,4 +566,4 @@ if __name__ == "__main__":
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_100_normalized.ply', colors, comments)
+    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply', colors, comments)
