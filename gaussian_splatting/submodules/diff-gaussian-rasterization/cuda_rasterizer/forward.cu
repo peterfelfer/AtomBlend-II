@@ -822,6 +822,7 @@ render_gaussianBall(
 	const float* orig_points,
 	const float scale_modifier,
     int* radii,
+    int* radii_xy,
 	float* __restrict__ out_color)
 {
     // Identify current tile and associated min/max pixel range.
@@ -885,21 +886,30 @@ render_gaussianBall(
             float2 d = { xy.x - pixf.x, xy.y - pixf.y };
             float4 con_o = collected_conic_opacity[j];
             float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
-            if (power > 0.0f)
+            if (power > 0.0f){
+                C[0] = 0.0f;
+                C[1] = 1.0f;
+                C[2] = 0.0f;
                 continue;
+            }
 
             // Eq. (2) from 3D Gaussian splatting paper.
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
-            float alpha = min(0.99f, con_o.w * exp(power));
-            if (alpha < 1.0f / 255.0f){
-                C[0] = 0;
-                C[1] = 1;
-                C[2] = 0;
-                continue;
+            float alpha_value = min(0.99f, con_o.w * exp(power));
+            float opaque_value = 1;
+            float alpha = alpha_value;
+            if(con_o.w > 0.5) {
+                float interp_value = con_o.w * 2 - 1;
+                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
             }
 
+            alpha = min(0.99f, alpha);
+            if (alpha < 1.0f / 255.0f)
+                continue;
+            if (alpha_value < 1.0f / 255.0f)
+                continue;
             float test_T = T * (1 - alpha);
             if (test_T < 0.0001f)
             {
@@ -907,17 +917,72 @@ render_gaussianBall(
                 continue;
             }
 
-            // Eq. (3) from 3D Gaussian splatting paper.
-//            for (int ch = 0; ch < CHANNELS; ch++)
-//                C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
+            float radius = scale_modifier;
+
+            float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
+
+            float r_in_pixels_x = float(radii_xy[collected_id[j] + 1]);
+            float r_in_pixels_y = float(radii_xy[collected_id[j]]);
+
+            if (r_in_pixels_x == 0.0f || r_in_pixels_y == 0.0f){
+//                printf("CONTINUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUE");
+                C[0] = 0.0f;
+                C[1] = 1.0f;
+                C[2] = 0.0f;
+                continue;
+            }
 
             glm::vec2 reltc = glm::vec2(d.x, d.y) * 2.0f - 1.0f;
 
-            C[0] = 1;
-            C[1] = 0;
-            C[2] = 1;
+//            printf("%f, %f d.x, d.y", d.x / r_in_pixels_x, d.y / r_in_pixels_y);
+//            reltc.x = reltc.x;// * r_in_pixels_x;
+//            reltc.y = reltc.y;// * r_in_pixels_y;
+            float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
+            dist_to_center = dist_to_center / r_in_pixels;
 
-            T = test_T;
+
+            // Calculate the surface normal
+//            float dx = (reltc.x / r_in_pixels_x);  // X-distance from the pixel to the sphere center
+//            float dy = (reltc.y / r_in_pixels_y); // Y-distance from the pixel to the sphere center
+
+            // Check if point is in the gaussian (ellipse)
+            float normalized_x = reltc.x / r_in_pixels_x;
+            float normalized_y = reltc.y / r_in_pixels_y;
+
+            bool inside_ellipse = (normalized_x * normalized_x + normalized_y * normalized_y) <= 1.0f;
+
+//            C[0] = con_o.x * d.x * d.x;
+//            C[1] = con_o.z * d.y * d.y;
+//            C[2] = 0;
+//            T = test_T;
+
+            inside_ellipse = exp(power) > 0.01f;
+
+            if (inside_ellipse) {  // Check if the pixel is inside the sphere
+//                float dz = sqrtf(radius - dist_to_center);
+//                float dz = sqrtf(radius * radius - glm::dot(reltc, reltc));
+//                float dz = sqrtf(radius * radius - (dx * dx + dy * dy));
+//                float dz = sqrtf(radius - dist_to_center);
+                float dz = exp(0.35 * power);
+
+                C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
+                C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
+                C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
+
+//                C[0] = exp(power);
+//                C[1] = 0.0f;
+//                C[2] = 0.0f;
+//                C[3] = 1.0f;
+
+                T = test_T;
+            }
+            else {
+                C[0] = 1.0f;
+                C[1] = 0.0f;
+                C[2] = 0.0f;
+                T = test_T;
+            }
+
 
             // Keep track of last range entry to update this
             // pixel.
@@ -1087,13 +1152,13 @@ render_gaussianBallOpt(
 
             bool inside_ellipse = (normalized_x * normalized_x + normalized_y * normalized_y) <= 1.0f;
 
-            if (inside_ellipse){
-//                printf("%f %f reltc xy\n", reltc.x, reltc.y);
-//                printf("%f %f rinpixels xy\n", r_in_pixels_x, r_in_pixels_y);
-//                printf("%f %f nromalized  xy\n", normalized_x, normalized_y);
-            }
+//            C[0] = con_o.x * d.x * d.x;
+//            C[1] = con_o.z * d.y * d.y;
+//            C[2] = 0;
+//            T = test_T;
 
-            if (inside_ellipse || true) {  // Check if the pixel is inside the sphere
+
+            if (inside_ellipse) {  // Check if the pixel is inside the sphere
 //                float dz = sqrtf(radius - dist_to_center);
 //                float dz = sqrtf(radius * radius - glm::dot(reltc, reltc));
 //                float dz = sqrtf(radius * radius - (dx * dx + dy * dy));
@@ -1104,11 +1169,9 @@ render_gaussianBallOpt(
                 C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
 //                C[3] = 1.0f;
 
-                C[0] = 1;
-                C[1] = 1;
-                C[2] = 0;
                 T = test_T;
-            } else {
+            }
+            else {
                 C[0] = 1.0f;
                 C[1] = 0.0f;
                 C[2] = 0.0f;
@@ -1216,6 +1279,7 @@ void FORWARD::render(int P,
             orig_points,
             scale_modifier,
             radii,
+            radii_xy,
             out_color
         );
     } else if (render_mode == 4) { // gaussian ball opt
