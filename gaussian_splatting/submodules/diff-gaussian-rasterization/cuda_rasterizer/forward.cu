@@ -184,9 +184,9 @@ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y,
 	glm::mat3 T = W * J;
 
 	glm::mat3 Vrk = glm::mat3(
-		cov3D[0] * scale, cov3D[1], cov3D[2],
-		cov3D[1], cov3D[3] * scale, cov3D[4],
-		cov3D[2], cov3D[4], cov3D[5] * scale);
+		cov3D[0] * scale, cov3D[1] * scale, cov3D[2] * scale,
+		cov3D[1] * scale, cov3D[3] * scale, cov3D[4] * scale,
+		cov3D[2] * scale, cov3D[4] * scale, cov3D[5] * scale);
 
 	glm::mat3 cov = glm::transpose(T) * glm::transpose(Vrk) * T;
 
@@ -895,7 +895,7 @@ render_gaussianBall(
             float alpha_value = min(0.99f, con_o.w * exp(power));
             float opaque_value = 1;
             float alpha = alpha_value;
-            if(con_o.w > 0.5) {
+            if(con_o.w > 0.8) {
                 float interp_value = con_o.w * 2 - 1;
                 alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
             }

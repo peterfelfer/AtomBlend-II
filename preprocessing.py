@@ -442,7 +442,7 @@ def pca(point_cloud):
 
     return transformed_cov_matrix
 
-def find_nearest_neighbors():
+def find_nearest_neighbors(num_neighbors, max_distance, normalization):
     global cov3D_list
 
     for elem in all_elements_by_name:
@@ -456,9 +456,8 @@ def find_nearest_neighbors():
             query_coord = np.array(c)
 
             # get n nearest neighbors; only consider neighbors with distance < distance_upper_bound
-            num_neighbors = 15
-            num_neighbors = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
-            distance, indices = kdtree.query(query_coord, k=num_neighbors, distance_upper_bound=20.0)
+            n = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
+            distance, indices = kdtree.query(query_coord, k=n, distance_upper_bound=max_distance)
 
             filter = indices < len(coords)
             indices = indices[filter]
@@ -468,7 +467,7 @@ def find_nearest_neighbors():
 
             cov_mat = pca(nn_coords).flatten()
 
-            cov_mat = cov_mat / 500.0
+            cov_mat = cov_mat / normalization
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 print(cov_mat)
@@ -552,7 +551,11 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
 
-    find_nearest_neighbors()
+    num_neighbors = 15
+    max_distance = 20
+    normalization = 500
+
+    find_nearest_neighbors(num_neighbors, max_distance, normalization)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
     gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), props)
@@ -565,5 +568,9 @@ if __name__ == "__main__":
         color = color.split(',')
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
+    comments.append('num_neighbors: ' + str(num_neighbors))
+    comments.append('max_distance: ' + str(max_distance))
+    comments.append('normalization: ' + str(normalization))
 
-    gaussians.save_ply('/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply', colors, comments)
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    gaussians.save_ply(file_name, colors, comments)
