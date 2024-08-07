@@ -39,12 +39,13 @@ g_show_camera_win = True
 g_show_atom_settings_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
 g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
-g_render_mode = 4
+g_render_mode = 3
 g_render_cov3D = True
 
 global_alpha = 1.0
 global_scale = 1.0
 render_all_elements = True
+file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 
@@ -204,7 +205,7 @@ def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
-        g_render_cov3D, debug_covmat, render_all_elements
+        g_render_cov3D, debug_covmat, render_all_elements, file_path
         
     imgui.create_context()
     if args.hidpi:
@@ -285,8 +286,11 @@ def main():
 
                 imgui.text(f"# of Gaus = {len(gaussians)}")
 
-                if imgui.button(label='open CuAl50_Ni'):
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply'
+                imgui.text("Loaded file: " + file_path.split('/')[-1])
+
+
+                if imgui.button(label='open 15 neighb'):
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_15_dist_20.ply'
 
                     if file_path:
                         try:
@@ -296,9 +300,9 @@ def main():
                         except RuntimeError as e:
                             pass
 
-                if imgui.button(label='open CuAl50_Ni COV'):
+                if imgui.button(label='open 50 neighb'):
                     # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_100K.ply'
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_50_dist_20.ply'
 
                     if file_path:
                         try:
@@ -331,7 +335,7 @@ def main():
                             g_renderer.sort_and_update(g_camera)
                         except RuntimeError as e:
                             pass
-                
+
                 # camera fov
                 changed, g_camera.fovy = imgui.slider_float(
                     "fov", g_camera.fovy, 0.001, np.pi - 0.001, "fov = %.3f"
@@ -471,7 +475,7 @@ def main():
                 g_camera.rot_sensitivity = 0.02
 
             changed, g_camera.trans_sensitivity = imgui.slider_float(
-                    "m", g_camera.trans_sensitivity, 0.001, 0.2, "move speed = %.3f"
+                    "m", g_camera.trans_sensitivity, 0.001, 1.0, "move speed = %.3f"
                 )
             imgui.same_line()
             if imgui.button(label="reset m"):

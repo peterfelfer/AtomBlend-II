@@ -371,7 +371,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 100000
+    debug_nom = 32
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -380,17 +380,42 @@ def load_pos_file():
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
 
-    # mn = sorted_by_mn[0][3]
-    # sorted_by_mn[0] = [00, 00, 0, mn]
-    # sorted_by_mn[1] = [10, 10, 0, mn]
-    # sorted_by_mn[2] = [20, 20, 0, mn]
-    # sorted_by_mn[3] = [30, 30, 0, mn]
-    # sorted_by_mn[4] = [40, 40, 0, mn]
-    # sorted_by_mn[5] = [50, 50, 0, mn]
-    # sorted_by_mn[6] = [60, 60, 0, mn]
-    # sorted_by_mn[7] = [70, 70, 0, mn]
-    # sorted_by_mn[8] = [80, 80, 0, mn]
-    # sorted_by_mn[9] = [90, 90, 0, mn]
+    mn = sorted_by_mn[0][3]
+    mn = 0.0
+    sorted_by_mn[0] = [0.0, 1.0, 0.0, mn]
+    sorted_by_mn[1] = [-0.19509032368659973, 0.9807852506637573, 0.0, mn]
+    sorted_by_mn[2] = [-0.3826834559440613, 0.9238795042037964, 0.0, mn]
+    sorted_by_mn[3] = [-0.5555702447891235, 0.8314695954322815, 0.0, mn]
+    sorted_by_mn[4] = [-0.7071067690849304, 0.7071067690849304, 0.0, mn]
+    sorted_by_mn[5] = [-0.8314695954322815, 0.5555702447891235, 0.0, mn]
+    sorted_by_mn[6] = [-0.9238795042037964, 0.3826834559440613, 0.0, mn]
+    sorted_by_mn[7] = [-0.9807852506637573, 0.19509032368659973, 0.0, mn]
+    sorted_by_mn[8] = [-1.0, 0.0, 0.0, mn]
+    sorted_by_mn[9] = [-0.9807852506637573, -0.19509032368659973, 0.0, mn]
+    sorted_by_mn[10] = [-0.9238795042037964, -0.3826834559440613, 0.0, mn]
+    sorted_by_mn[11] = [-0.8314695954322815, -0.5555702447891235, 0.0, mn]
+    sorted_by_mn[12] = [-0.7071067690849304, -0.7071067690849304, 0.0, mn]
+    sorted_by_mn[13] = [-0.5555702447891235, -0.8314695954322815, 0.0, mn]
+    sorted_by_mn[14] = [-0.3826834559440613, -0.9238795042037964, 0.0, mn]
+    sorted_by_mn[15] = [-0.19509032368659973, -0.9807852506637573, 0.0, mn]
+    sorted_by_mn[16] = [0.0, -1.0, 0.0, mn]
+    sorted_by_mn[17] = [0.19509032368659973, -0.9807852506637573, 0.0, mn]
+    sorted_by_mn[18] = [0.3826834559440613, -0.9238795042037964, 0.0, mn]
+    sorted_by_mn[19] = [0.5555702447891235, -0.8314695954322815, 0.0, mn]
+    sorted_by_mn[20] = [0.7071067690849304, -0.7071067690849304, 0.0, mn]
+    sorted_by_mn[21] = [0.8314695954322815, -0.5555702447891235, 0.0, mn]
+    sorted_by_mn[22] = [0.9238795042037964, -0.3826834559440613, 0.0, mn]
+    sorted_by_mn[23] = [0.9807852506637573, -0.19509032368659973, 0.0, mn]
+    sorted_by_mn[24] = [1.0, 0.0, 0.0, mn]
+    sorted_by_mn[25] = [0.9807852506637573, 0.19509032368659973, 0.0, mn]
+    sorted_by_mn[26] = [0.9238795042037964, 0.3826834559440613, 0.0, mn]
+    sorted_by_mn[27] = [0.8314695954322815, 0.5555702447891235, 0.0, mn]
+    sorted_by_mn[28] = [0.7071067690849304, 0.7071067690849304, 0.0, mn]
+    sorted_by_mn[29] = [0.5555702447891235, 0.8314695954322815, 0.0, mn]
+    sorted_by_mn[30] = [0.3826834559440613, 0.9238795042037964, 0.0, mn]
+    sorted_by_mn[31] = [0.19509032368659973, 0.9807852506637573, 0.0, mn]
+
+
 
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
@@ -551,7 +576,7 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
 
-    num_neighbors = 15
+    num_neighbors = 10
     max_distance = 20
     normalization = 500
 
@@ -572,5 +597,6 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(max_distance))
     comments.append('normalization: ' + str(normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_circle.ply'
     gaussians.save_ply(file_name, colors, comments)
