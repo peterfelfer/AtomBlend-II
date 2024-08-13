@@ -11,6 +11,7 @@ class GaussianData:
     sh: np.ndarray
     cov3D: np.ndarray
     num_of_atoms_by_element: dict
+    volume_opacity: np.ndarray
 
     def flat(self) -> np.ndarray:
         ret = np.concatenate([self.xyz, self.rot, self.scale, self.opacity, self.sh], axis=-1)
@@ -67,6 +68,8 @@ def naive_gaussian():
         [1, 0, 0, 1, 0, 1],
     ]).astype(np.float32).reshape(-1, 3)
 
+    gau_volume_opacity = np.array([1, 1, 1])
+
     return GaussianData(
         gau_xyz,
         gau_rot,
@@ -74,7 +77,8 @@ def naive_gaussian():
         gau_a,
         gau_c,
         gau_cov3D,
-        gau_num_of_atoms_by_element
+        gau_num_of_atoms_by_element,
+        gau_volume_opacity
     )
 
 
@@ -107,8 +111,8 @@ def load_ply(path):
     xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
-    opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
-    opacities = np.asarray([[1.0]] * len(xyz))
+    opacities = np.asarray(plydata.elements[0]["volume_opacity"])[..., np.newaxis]
+    # opacities = np.asarray([[1.0]] * len(xyz))
 
     features_dc = np.zeros((xyz.shape[0], 3, 1))
     features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
@@ -143,11 +147,10 @@ def load_ply(path):
     cov3D_names = sorted(cov3D_names, key = lambda x: int(x.split('_')[-1]))
     cov3Ds = np.zeros((xyz.shape[0], len(cov3D_names)))
     for idx, attr_name in enumerate(cov3D_names):
-        bla = np.asarray(plydata.elements[0][attr_name])
         cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
-        if np.isnan(bla).any():
-            print('NAN', bla)
+    volume_opacity = np.zeros((xyz.shape[0], 1, 1))
+    volume_opacity[:, 0, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
 
     # pass activate function
     xyz = xyz.astype(np.float32)
@@ -160,11 +163,11 @@ def load_ply(path):
     # shs = np.concatenate([features_dc.reshape(-1, 3),
     #                     features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
     # shs = shs.astype(np.float32)
-
+    volume_opacity = volume_opacity.astype(np.float32)
 
     shs = features_dc.reshape(-1, 3)
 
-    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element)
+    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, volume_opacity)
 
 if __name__ == "__main__":
     gs = load_ply("/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply")

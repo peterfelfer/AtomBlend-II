@@ -31,7 +31,7 @@ atom_color_list = []
 all_elems_sorted_by_mn = []
 unknown_label = 'n/a'
 cov3D_list = []
-
+volume_opacity_list = []
 
 def atom_color_update():
     global atom_color_list
@@ -371,7 +371,7 @@ def load_pos_file():
     # shuffling the data as they're kind of sorted by the z value
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 32
+    debug_nom = 100000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -379,43 +379,6 @@ def load_pos_file():
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
-
-    mn = sorted_by_mn[0][3]
-    mn = 0.0
-    sorted_by_mn[0] = [0.0, 1.0, 0.0, mn]
-    sorted_by_mn[1] = [-0.19509032368659973, 0.9807852506637573, 0.0, mn]
-    sorted_by_mn[2] = [-0.3826834559440613, 0.9238795042037964, 0.0, mn]
-    sorted_by_mn[3] = [-0.5555702447891235, 0.8314695954322815, 0.0, mn]
-    sorted_by_mn[4] = [-0.7071067690849304, 0.7071067690849304, 0.0, mn]
-    sorted_by_mn[5] = [-0.8314695954322815, 0.5555702447891235, 0.0, mn]
-    sorted_by_mn[6] = [-0.9238795042037964, 0.3826834559440613, 0.0, mn]
-    sorted_by_mn[7] = [-0.9807852506637573, 0.19509032368659973, 0.0, mn]
-    sorted_by_mn[8] = [-1.0, 0.0, 0.0, mn]
-    sorted_by_mn[9] = [-0.9807852506637573, -0.19509032368659973, 0.0, mn]
-    sorted_by_mn[10] = [-0.9238795042037964, -0.3826834559440613, 0.0, mn]
-    sorted_by_mn[11] = [-0.8314695954322815, -0.5555702447891235, 0.0, mn]
-    sorted_by_mn[12] = [-0.7071067690849304, -0.7071067690849304, 0.0, mn]
-    sorted_by_mn[13] = [-0.5555702447891235, -0.8314695954322815, 0.0, mn]
-    sorted_by_mn[14] = [-0.3826834559440613, -0.9238795042037964, 0.0, mn]
-    sorted_by_mn[15] = [-0.19509032368659973, -0.9807852506637573, 0.0, mn]
-    sorted_by_mn[16] = [0.0, -1.0, 0.0, mn]
-    sorted_by_mn[17] = [0.19509032368659973, -0.9807852506637573, 0.0, mn]
-    sorted_by_mn[18] = [0.3826834559440613, -0.9238795042037964, 0.0, mn]
-    sorted_by_mn[19] = [0.5555702447891235, -0.8314695954322815, 0.0, mn]
-    sorted_by_mn[20] = [0.7071067690849304, -0.7071067690849304, 0.0, mn]
-    sorted_by_mn[21] = [0.8314695954322815, -0.5555702447891235, 0.0, mn]
-    sorted_by_mn[22] = [0.9238795042037964, -0.3826834559440613, 0.0, mn]
-    sorted_by_mn[23] = [0.9807852506637573, -0.19509032368659973, 0.0, mn]
-    sorted_by_mn[24] = [1.0, 0.0, 0.0, mn]
-    sorted_by_mn[25] = [0.9807852506637573, 0.19509032368659973, 0.0, mn]
-    sorted_by_mn[26] = [0.9238795042037964, 0.3826834559440613, 0.0, mn]
-    sorted_by_mn[27] = [0.8314695954322815, 0.5555702447891235, 0.0, mn]
-    sorted_by_mn[28] = [0.7071067690849304, 0.7071067690849304, 0.0, mn]
-    sorted_by_mn[29] = [0.5555702447891235, 0.8314695954322815, 0.0, mn]
-    sorted_by_mn[30] = [0.3826834559440613, 0.9238795042037964, 0.0, mn]
-    sorted_by_mn[31] = [0.19509032368659973, 0.9807852506637573, 0.0, mn]
-
-
 
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
@@ -438,7 +401,7 @@ def load_pos_file():
 
     return coords
 
-def pca(point_cloud):
+def calc_pca(point_cloud):
     # center data
     mean = np.mean(point_cloud, axis=0)
     centered_point_cloud = point_cloud - mean
@@ -450,7 +413,12 @@ def pca(point_cloud):
     if len(centered_point_cloud.shape) == 1:
         centered_point_cloud = [centered_point_cloud]
 
-    num_components = 3 if len(centered_point_cloud) >= 3 else len(centered_point_cloud) # TODO for len < 3
+    # num_components = 3 if len(centered_point_cloud) >= 3 else len(centered_point_cloud) # TODO for len < 3
+    num_components = min(len(centered_point_cloud), 3)
+
+    if num_components < 3:
+        return np.asarray([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.1]])
+
     pca = PCA(n_components=num_components)
 
     pca.fit(centered_point_cloud)
@@ -468,7 +436,7 @@ def pca(point_cloud):
     return transformed_cov_matrix
 
 def find_nearest_neighbors(num_neighbors, max_distance, normalization):
-    global cov3D_list
+    global cov3D_list, volume_opacity_list
 
     for elem in all_elements_by_name:
         coords = all_elements_by_name[elem][('coordinates')]
@@ -490,9 +458,30 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             indices = [indices]
             nn_coords = coords[indices][0]
 
-            cov_mat = pca(nn_coords).flatten()
+            cov_mat = calc_pca(nn_coords)
+
+            if np.isnan(np.asarray(cov_mat)).any():
+                print(cov_mat)
+
+            # if np.isnan(cov_mat).any(): # TODO fix nan
+            #     # print(cov_mat)
+            #     cov_mat = np.asarray([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.1]])
+
+            # print(cov_mat, "\n")
+
+
+            eigenvalues, _ = np.linalg.eig(cov_mat)
+            volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
+
+            volume = volume / 50
+
+            opacity = 1 / volume
 
             cov_mat = cov_mat / normalization
+            # print(eigenvalues, "\n")
+            # print(volume, opacity, "\n")
+
+            cov_mat = cov_mat.flatten()
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 print(cov_mat)
@@ -516,12 +505,8 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
 
             cov_mat = reduced_covmat
 
-
-            if np.isnan(cov_mat).any(): # TODO fix nan
-                # print(cov_mat)
-                cov_mat = np.asarray([0.1, 0, 0, 0.1, 0, 0.1])
-
             cov3D_list.append(np.asarray(cov_mat))
+            volume_opacity_list.append([opacity])
 
 
 if __name__ == "__main__":
@@ -576,14 +561,14 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
 
-    num_neighbors = 10
+    num_neighbors = 15
     max_distance = 20
     normalization = 500
 
     find_nearest_neighbors(num_neighbors, max_distance, normalization)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), props)
+    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), props)
 
     # write numbers of atom elements as comment
     comments = []
@@ -597,6 +582,6 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(max_distance))
     comments.append('normalization: ' + str(normalization))
 
-    # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_circle.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_circle.ply'
     gaussians.save_ply(file_name, colors, comments)

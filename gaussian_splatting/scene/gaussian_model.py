@@ -42,6 +42,7 @@ class GaussianModel:
         self.rotation_activation = torch.nn.functional.normalize
 
     def __init__(self, sh_degree: int):
+        self.volume_opacity = torch.empty(0)
         self.active_sh_degree = 0
         self.max_sh_degree = sh_degree
         self._xyz = torch.empty(0)
@@ -222,6 +223,8 @@ class GaussianModel:
             l.append('rot_{}'.format(i))
         for i in range(self.cov3D.shape[1]):
             l.append('cov3D_{}'.format(i))
+
+        l.append('volume_opacity')
         return l
 
     def save_ply(self, path, colors, comments):
@@ -236,11 +239,12 @@ class GaussianModel:
         scale = self._scaling.detach().cpu().numpy()
         rotation = self._rotation.detach().cpu().numpy()
         cov3D = self.cov3D.detach().cpu().numpy()
+        volume_opacity = self.volume_opacity.detach().cpu().numpy()
 
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
 
         elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D), axis=1)
+        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D, volume_opacity), axis=1)
         elements[:] = list(map(tuple, attributes))
         el = PlyElement.describe(elements, 'vertex', comments=comments)
         PlyData([el]).write(path)
@@ -287,7 +291,7 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def load_ply_ab(self, path, atom_coords, atom_color_list, cov3D_list, props):
+    def load_ply_ab(self, path, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, props):
         plydata = PlyData.read(path)
 
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
@@ -338,6 +342,7 @@ class GaussianModel:
         self._scaling = nn.Parameter(torch.tensor(scales, dtype=torch.float, device="cuda").requires_grad_(True))
         self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
         self.cov3D = nn.Parameter(torch.tensor(cov3D_list, dtype=torch.float, device="cuda").requires_grad_(True))
+        self.volume_opacity = nn.Parameter(torch.tensor(volume_opacity_list, dtype=torch.float, device="cuda").requires_grad_(True))
 
         self.active_sh_degree = self.max_sh_degree
 
