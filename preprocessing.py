@@ -369,6 +369,7 @@ def load_pos_file():
     # ABGlobals.min_z = reshaped_data[:, 2].min()
 
     # shuffling the data as they're kind of sorted by the z value
+    np.random.seed(0)
     reshaped_data = np.random.permutation(reshaped_data)
 
     debug_nom = 100000
@@ -417,7 +418,7 @@ def calc_pca(point_cloud):
     num_components = min(len(centered_point_cloud), 3)
 
     if num_components < 3:
-        return np.asarray([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.1]])
+        return np.asarray([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.1]]), np.array([1,1,1])
 
     pca = PCA(n_components=num_components)
 
@@ -425,15 +426,21 @@ def calc_pca(point_cloud):
 
     components = pca.components_
     explained_variance = pca.explained_variance_
+    singular_values = pca.singular_values_
 
-    transformed_cov_matrix = np.dot(components.T * explained_variance, components)
+    volume_vec = explained_variance
 
-    if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
-        mat_3x3 = np.zeros((3,3))
-        mat_3x3[:2, :2] = transformed_cov_matrix
-        transformed_cov_matrix = mat_3x3
+    # transformed_cov_matrix = np.dot(components.T * explained_variance, components)
+    # transformed_cov_matrix = np.dot(components.T * explained_variance * explained_variance, components)
+    # transformed_cov_matrix = np.dot(components.T * singular_values, components)
+    transformed_cov_matrix = np.dot(components.T * singular_values * singular_values, components)
 
-    return transformed_cov_matrix
+    # if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
+    #     mat_3x3 = np.zeros((3,3))
+    #     mat_3x3[:2, :2] = transformed_cov_matrix
+    #     transformed_cov_matrix = mat_3x3
+
+    return transformed_cov_matrix, volume_vec
 
 def find_nearest_neighbors(num_neighbors, max_distance, normalization):
     global cov3D_list, volume_opacity_list
@@ -458,7 +465,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             indices = [indices]
             nn_coords = coords[indices][0]
 
-            cov_mat = calc_pca(nn_coords)
+            cov_mat, volume_vec = calc_pca(nn_coords)
 
             if np.isnan(np.asarray(cov_mat)).any():
                 print(cov_mat)
@@ -471,11 +478,16 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
 
 
             eigenvalues, _ = np.linalg.eig(cov_mat)
-            volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
+            # volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
+            volume = 4/3 * 3.14159 * volume_vec[0] * volume_vec[1] * volume_vec[2]
 
             volume = volume / 50
 
-            opacity = 1 / volume
+            opacity = 1 / (0.25*volume)
+
+            # opacity = 1 - opacity
+
+            # print(opacity, "\n")
 
             cov_mat = cov_mat / normalization
             # print(eigenvalues, "\n")
@@ -583,5 +595,5 @@ if __name__ == "__main__":
     comments.append('normalization: ' + str(normalization))
 
     file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
-    # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_circle.ply'
+    # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)

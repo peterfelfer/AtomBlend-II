@@ -149,8 +149,8 @@ def load_ply(path):
     for idx, attr_name in enumerate(cov3D_names):
         cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
-    volume_opacity = np.zeros((xyz.shape[0], 1, 1))
-    volume_opacity[:, 0, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
+    volume_opacity = np.zeros((xyz.shape[0], 1))
+    volume_opacity[:, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
 
     # pass activate function
     xyz = xyz.astype(np.float32)

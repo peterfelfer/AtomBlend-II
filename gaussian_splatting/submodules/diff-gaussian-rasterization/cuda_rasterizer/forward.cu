@@ -335,6 +335,14 @@ __global__ void preprocessCUDA(int P, int D, int M,
 		rgb[idx * C + 2] = result.z;
 	}
 
+    // Calculate opacity
+//    float volume = 4/3 * 3.14159 * cov3D[0] * cov3D[3] * cov3D[5];
+//    float opacity = 1 / volume;
+//
+//    printf("%f, %f, %f, %f \n", cov3D[0], cov3D[3], cov3D[5], volume);
+//    printf("%f \n", opacity);
+
+
 	// Store some useful helper data for the next steps.
 	depths[idx] = p_view.z;
 	radii[idx] = my_radius;
@@ -921,6 +929,10 @@ render_gaussianBall(
                 C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
                 C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
                 C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
+
+//                C[0] = 1 - con_o.w;
+//                C[1] = 0;
+//                C[2] = 0;
 
                 T = test_T;
             }

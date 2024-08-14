@@ -49,7 +49,7 @@ file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 volume_opacity = True
-volume_opacity_fac = 30.0
+volume_opacity_fac = 3.0
 
 def impl_glfw_init():
     window_name = "NeUVF editor"
@@ -156,6 +156,7 @@ def changed_render_all_elements(gaussians):
 
 def set_individual_opacity(gaussians):
     opacities = []
+    index = 0
 
     for key in gaussians.num_of_atoms_by_element:
         elem = gaussians.num_of_atoms_by_element[key]
@@ -163,13 +164,15 @@ def set_individual_opacity(gaussians):
         num = elem['num']
 
         if volume_opacity and is_rendered:
-            opacities.extend(gaussians.volume_opacity * volume_opacity_fac)
+            opacities.extend(gaussians.volume_opacity[index:index + num] * volume_opacity_fac)
         elif is_rendered:
             opacities.extend(np.asarray([[1.0]] * num))
         else:
             opacities.extend(np.asarray([[0.0]] * num))
 
-    gaussians.opacity = torch.tensor(np.asarray(opacities), dtype=torch.float32, device="cuda")
+        index = index + num
+    np_arr = np.asarray(opacities)
+    gaussians.opacity = torch.tensor(np_arr, dtype=torch.float32, device="cuda")
     g_renderer.update_gaussian_data(gaussians)
     g_renderer.sort_and_update(g_camera)
     g_renderer.need_rerender = True
