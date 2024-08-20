@@ -955,7 +955,6 @@ render_gaussianBall(
     }
 }
 
-
 // Main rasterization method. Collaboratively works on one tile per
 // block, each thread treats one pixel. Alternates between fetching
 // and rasterizing data.

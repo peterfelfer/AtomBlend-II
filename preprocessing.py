@@ -402,6 +402,36 @@ def load_pos_file():
 
     return coords
 
+def calc_standard_deviation(distances, indices):
+
+    # mean_x, mean_y, mean_z = np.mean(point_cloud, axis=0)
+    # std_x, std_y, std_z = np.std(point_cloud, axis=0)
+    #
+    # num_sd = 3
+    #
+    # sd_range_lower = [mean_x - std_x * num_sd, mean_y - std_y * num_sd, mean_z - std_z * num_sd]
+    # sd_range_upper = [mean_x + std_x * num_sd, mean_y + std_y * num_sd, mean_z + std_z * num_sd]
+    #
+    # within_std = point_cloud[
+    #     (point_cloud[:, 0] >= sd_range_lower[0]) & (point_cloud[:, 0] <= sd_range_upper[0]) &
+    #     (point_cloud[:, 1] >= sd_range_lower[1]) & (point_cloud[:, 1] <= sd_range_upper[1]) &
+    #     (point_cloud[:, 2] >= sd_range_lower[2]) & (point_cloud[:, 2] <= sd_range_upper[2])
+    # ]
+
+    mean = np.mean(distances, axis=0)
+    std = np.std(distances, axis=0)
+
+    num_sd = 1
+
+    sd_range_lower = mean - std * num_sd
+    sd_range_upper = mean + std * num_sd
+
+    within_std = indices[
+        (distances[:] >= sd_range_lower) & (distances[:] <= sd_range_upper)
+    ]
+
+    return within_std
+
 def calc_pca(point_cloud):
     # center data
     mean = np.mean(point_cloud, axis=0)
@@ -461,6 +491,9 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
 
             filter = indices < len(coords)
             indices = indices[filter]
+            distance = distance[filter]
+
+            indices = calc_standard_deviation(distance, indices)
 
             indices = [indices]
             nn_coords = coords[indices][0]
@@ -573,7 +606,7 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
 
-    num_neighbors = 15
+    num_neighbors = 50
     max_distance = 20
     normalization = 500
 
@@ -594,6 +627,7 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(max_distance))
     comments.append('normalization: ' + str(normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '_std_dev1' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)
