@@ -485,6 +485,7 @@ def main():
                     if c1 or c2 or c3 or c4 or c5 or c6:
                         gaussians.cov3D = np.tile(debug_covmat, (gaussians.opacity.shape[0], 1))
                         g_renderer.update_gaussian_data(gaussians)
+
                         # print(gaussians.cov3D)
 
                     imgui.end_table()

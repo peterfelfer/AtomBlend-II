@@ -95,6 +95,7 @@ class GaussianRasterizationSettingsStorage:
     campos : torch.Tensor
     prefiltered : bool
     debug : bool
+    index_colors : torch.Tensor
 
 
 def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
@@ -129,6 +130,7 @@ class CUDARenderer(GaussianRenderBase):
             "prefiltered": False,
             "debug": False,
             "render_mode": 0,
+            "index_colors": torch.Tensor([]),
         }
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
@@ -160,6 +162,13 @@ class CUDARenderer(GaussianRenderBase):
         self.need_rerender = True
         self.gaussians = gaus_cuda_from_cpu(gaus)
         self.raster_settings["sh_degree"] = int(np.round(np.sqrt(self.gaussians.sh_dim))) - 1
+
+        # set index colors
+        index_colors = []
+        for elem in gaus.num_of_atoms_by_element:
+            col = gaus.num_of_atoms_by_element[elem]['color']
+            index_colors.extend([col[0], col[1], col[2]])
+        self.raster_settings["index_colors"] = index_colors
 
     def sort_and_update(self, camera: util.Camera):
         self.need_rerender = True
@@ -255,7 +264,8 @@ class CUDARenderer(GaussianRenderBase):
                     # scales = self.gaussians.scale,
                     # rotations = self.gaussians.rot,
                     cov3D_precomp = self.gaussians.cov3D,
-                    indices = self.gaussians.indices
+                    indices = self.gaussians.indices,
+                    # index_colors = self.raster_settings["index_colors"]
                 )
         else:
             with torch.no_grad():
@@ -268,7 +278,8 @@ class CUDARenderer(GaussianRenderBase):
                     scales = self.gaussians.scale,
                     rotations = self.gaussians.rot,
                     cov3D_precomp = None,
-                    indices = self.gaussians.indices
+                    indices = self.gaussians.indices,
+                    # index_colors = self.raster_settings["index_colors"]
                 )
 
 
