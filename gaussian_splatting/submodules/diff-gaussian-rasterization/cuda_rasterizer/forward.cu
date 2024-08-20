@@ -1167,7 +1167,8 @@ void FORWARD::render(int P,
 	const float scale_modifier,
     int* radii,
     int* radii_xy,
-	float* out_color)
+    const float* indices,
+    float* out_color)
 {
     if (render_mode == 0){ // phong shading
         render_phongShadingCUDA<NUM_CHANNELS> << <grid, block >> > (

@@ -71,6 +71,7 @@ class GaussianDataCUDA:
     sh: torch.Tensor
     cov3D: torch.Tensor
     num_of_atoms_by_element: dict
+    indices: torch.Tensor
     
     def __len__(self):
         return len(self.xyz)
@@ -105,6 +106,7 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
         sh = torch.tensor(gau.sh).float().cuda().requires_grad_(False),
         cov3D = torch.tensor(gau.cov3D).float().cuda().requires_grad_(False),
         num_of_atoms_by_element = gau.num_of_atoms_by_element,
+        indices = torch.tensor(gau.indices).float().cuda().requires_grad_(False),
     )
     gaus.sh = gaus.sh.reshape(len(gaus), -1, 3).contiguous()
     return gaus
@@ -253,6 +255,7 @@ class CUDARenderer(GaussianRenderBase):
                     # scales = self.gaussians.scale,
                     # rotations = self.gaussians.rot,
                     cov3D_precomp = self.gaussians.cov3D,
+                    indices = self.gaussians.indices
                 )
         else:
             with torch.no_grad():
@@ -265,6 +268,7 @@ class CUDARenderer(GaussianRenderBase):
                     scales = self.gaussians.scale,
                     rotations = self.gaussians.rot,
                     cov3D_precomp = None,
+                    indices = self.gaussians.indices
                 )
 
 

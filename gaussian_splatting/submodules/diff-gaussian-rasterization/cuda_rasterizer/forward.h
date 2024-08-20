@@ -67,6 +67,7 @@ namespace FORWARD
         const float scale_modifier,
         int* radii,
         int* radii_xy,
+        const float* indices,
 		float* out_color
         );
 }

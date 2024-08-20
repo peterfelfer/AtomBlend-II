@@ -227,6 +227,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const bool prefiltered,
 	float* out_color,
 	const int render_mode,
+	const float* indices,
 	int* radii,
 	bool debug
 	)
@@ -364,6 +365,7 @@ int CudaRasterizer::Rasterizer::forward(
         scale_modifier,
         radii,
         radii_xy,
+        indices,
         out_color), debug)
 
 

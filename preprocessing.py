@@ -33,6 +33,17 @@ unknown_label = 'n/a'
 cov3D_list = []
 volume_opacity_list = []
 
+def get_indices():
+    atom_index_list = []
+    index = 0
+
+    for elem_name in all_elements_by_name:
+        num_displayed = all_elements_by_name[elem_name]['num_displayed']
+        atom_index_list.extend([[index]] * num_displayed)
+        index += 1
+
+    return atom_index_list
+
 def atom_color_update():
     global atom_color_list
 
@@ -592,13 +603,14 @@ if __name__ == "__main__":
     start = time.time()
     atom_coords = load_pos_file()
 
-
     print('load epos', time.time() - start)
     load_rrng_file()
     print('load rrng', time.time() - start)
     combine_rrng_and_e_pos_file()
     print('combine epos and rrng', time.time() - start)
     print('set colors', time.time() - start)
+
+    indices = get_indices()
 
     path = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply'
 
@@ -613,7 +625,7 @@ if __name__ == "__main__":
     find_nearest_neighbors(num_neighbors, max_distance, normalization)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), props)
+    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), props)
 
     # write numbers of atom elements as comment
     comments = []
