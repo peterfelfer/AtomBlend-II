@@ -383,7 +383,7 @@ def load_pos_file():
     np.random.seed(0)
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 100000
+    debug_nom = 500
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -640,6 +640,6 @@ if __name__ == "__main__":
     comments.append('normalization: ' + str(normalization))
 
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '_std_dev1' + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)

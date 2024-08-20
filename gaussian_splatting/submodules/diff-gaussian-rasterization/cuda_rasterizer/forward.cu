@@ -263,7 +263,9 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float4* conic_opacity,
 	const dim3 grid,
 	uint32_t* tiles_touched,
-	bool prefiltered)
+	bool prefiltered,
+	const float* indices,
+	const float* index_colors)
 {
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= P)
@@ -334,6 +336,13 @@ __global__ void preprocessCUDA(int P, int D, int M,
 		rgb[idx * C + 1] = result.y;
 		rgb[idx * C + 2] = result.z;
 	}
+
+	int index = indices[idx];
+	float3 col = { index_colors[index * 3], index_colors[index * 3 + 1], index_colors[index * 3 + 2] };
+
+    rgb[idx * C + 0] = col.x;
+    rgb[idx * C + 1] = col.y;
+    rgb[idx * C + 2] = 1;
 
     // Calculate opacity
 //    float volume = 4/3 * 3.14159 * cov3D[0] * cov3D[3] * cov3D[5];
@@ -1167,7 +1176,6 @@ void FORWARD::render(int P,
 	const float scale_modifier,
     int* radii,
     int* radii_xy,
-    const float* indices,
     float* out_color)
 {
     if (render_mode == 0){ // phong shading
@@ -1280,7 +1288,9 @@ void FORWARD::preprocess(int P, int D, int M,
 	float4* conic_opacity,
 	const dim3 grid,
 	uint32_t* tiles_touched,
-	bool prefiltered)
+	bool prefiltered,
+	const float* indices,
+	const float* index_colors)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
 		P, D, M,
@@ -1308,6 +1318,8 @@ void FORWARD::preprocess(int P, int D, int M,
 		conic_opacity,
 		grid,
 		tiles_touched,
-		prefiltered
+		prefiltered,
+		indices,
+		index_colors
 		);
 }

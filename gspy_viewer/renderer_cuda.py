@@ -168,7 +168,7 @@ class CUDARenderer(GaussianRenderBase):
         for elem in gaus.num_of_atoms_by_element:
             col = gaus.num_of_atoms_by_element[elem]['color']
             index_colors.extend([col[0], col[1], col[2]])
-        self.raster_settings["index_colors"] = index_colors
+        self.raster_settings["index_colors"] = torch.Tensor(index_colors).float().cuda()
 
     def sort_and_update(self, camera: util.Camera):
         self.need_rerender = True
@@ -265,7 +265,7 @@ class CUDARenderer(GaussianRenderBase):
                     # rotations = self.gaussians.rot,
                     cov3D_precomp = self.gaussians.cov3D,
                     indices = self.gaussians.indices,
-                    # index_colors = self.raster_settings["index_colors"]
+                    index_colors = self.raster_settings["index_colors"]
                 )
         else:
             with torch.no_grad():
@@ -279,7 +279,7 @@ class CUDARenderer(GaussianRenderBase):
                     rotations = self.gaussians.rot,
                     cov3D_precomp = None,
                     indices = self.gaussians.indices,
-                    # index_colors = self.raster_settings["index_colors"]
+                    index_colors = self.raster_settings["index_colors"]
                 )
 
 

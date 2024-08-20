@@ -228,6 +228,7 @@ int CudaRasterizer::Rasterizer::forward(
 	float* out_color,
 	const int render_mode,
 	const float* indices,
+	const float* index_colors,
 	int* radii,
 	bool debug
 	)
@@ -285,7 +286,9 @@ int CudaRasterizer::Rasterizer::forward(
 		geomState.conic_opacity,
 		tile_grid,
 		geomState.tiles_touched,
-		prefiltered
+		prefiltered,
+		indices,
+		index_colors
 	), debug)
 
 	// Compute prefix sum over full list of touched tile counts by Gaussians
@@ -365,7 +368,6 @@ int CudaRasterizer::Rasterizer::forward(
         scale_modifier,
         radii,
         radii_xy,
-        indices,
         out_color), debug)
 
 
@@ -423,7 +425,8 @@ void CudaRasterizer::Rasterizer::backward(
 	// Compute loss gradients w.r.t. 2D mean position, conic matrix,
 	// opacity and RGB of Gaussians from per-pixel loss gradients.
 	// If we were given precomputed colors and not SHs, use them.
-	const float* color_ptr = (colors_precomp != nullptr) ? colors_precomp : geomState.rgb;
+//	const float* color_ptr = (colors_precomp != nullptr) ? colors_precomp : geomState.rgb;
+	const float* color_ptr = geomState.rgb;
 	CHECK_CUDA(BACKWARD::render(
 		tile_grid,
 		block,

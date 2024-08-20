@@ -46,7 +46,9 @@ namespace FORWARD
 		float4* conic_opacity,
 		const dim3 grid,
 		uint32_t* tiles_touched,
-		bool prefiltered);
+		bool prefiltered,
+		const float* indices,
+		const float* index_colors);
 
 	// Main rasterization method.
 	void render(int P,
@@ -67,7 +69,6 @@ namespace FORWARD
         const float scale_modifier,
         int* radii,
         int* radii_xy,
-        const float* indices,
 		float* out_color
         );
 }
