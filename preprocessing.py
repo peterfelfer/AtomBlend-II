@@ -639,7 +639,9 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(max_distance))
     comments.append('normalization: ' + str(normalization))
 
-    # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)
+
+    print('wrote ply')

@@ -329,20 +329,20 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
 	// If colors have been precomputed, use them, otherwise convert
 	// spherical harmonics coefficients to RGB color.
-	if (colors_precomp == nullptr)
-	{
-		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
-		rgb[idx * C + 0] = result.x;
-		rgb[idx * C + 1] = result.y;
-		rgb[idx * C + 2] = result.z;
-	}
+//	if (colors_precomp == nullptr)
+//	{
+//		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
+//		rgb[idx * C + 0] = result.x;
+//		rgb[idx * C + 1] = result.y;
+//		rgb[idx * C + 2] = result.z;
+//	}
 
 	int index = indices[idx];
 	float3 col = { index_colors[index * 3], index_colors[index * 3 + 1], index_colors[index * 3 + 2] };
 
     rgb[idx * C + 0] = col.x;
     rgb[idx * C + 1] = col.y;
-    rgb[idx * C + 2] = 1;
+    rgb[idx * C + 2] = col.z;
 
     // Calculate opacity
 //    float volume = 4/3 * 3.14159 * cov3D[0] * cov3D[3] * cov3D[5];
