@@ -22,7 +22,6 @@ def rasterize_gaussians(
     means3D,
     means2D,
     sh,
-    colors_precomp,
     opacities,
     scales,
     rotations,
@@ -35,7 +34,6 @@ def rasterize_gaussians(
         means3D,
         means2D,
         sh,
-        colors_precomp,
         opacities,
         scales,
         rotations,
@@ -52,7 +50,6 @@ class _RasterizeGaussians(torch.autograd.Function):
         means3D,
         means2D,
         sh,
-        colors_precomp,
         opacities,
         scales,
         rotations,
@@ -66,7 +63,6 @@ class _RasterizeGaussians(torch.autograd.Function):
         args = (
             raster_settings.bg, 
             means3D,
-            colors_precomp,
             opacities,
             scales,
             rotations,
@@ -103,7 +99,7 @@ class _RasterizeGaussians(torch.autograd.Function):
         # Keep relevant tensors for backward
         ctx.raster_settings = raster_settings
         ctx.num_rendered = num_rendered
-        ctx.save_for_backward(colors_precomp, means3D, scales, rotations, cov3Ds_precomp, radii, sh, geomBuffer, binningBuffer, imgBuffer)
+        # ctx.save_for_backward(colors_precomp, means3D, scales, rotations, cov3Ds_precomp, radii, sh, geomBuffer, binningBuffer, imgBuffer)
         return color, radii
 
     @staticmethod
@@ -225,7 +221,6 @@ class GaussianRasterizer(nn.Module):
             means3D,
             means2D,
             shs,
-            colors_precomp,
             opacities,
             scales, 
             rotations,

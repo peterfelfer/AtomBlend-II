@@ -247,7 +247,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const float* shs,
 	bool* clamped,
 	const float* cov3D_precomp,
-	const float* colors_precomp,
 	const float* viewmatrix,
 	const float* projmatrix,
 	const glm::vec3* cam_pos,
@@ -326,16 +325,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
 	if ((rect_max.x - rect_min.x) * (rect_max.y - rect_min.y) == 0)
 		return;
-
-	// If colors have been precomputed, use them, otherwise convert
-	// spherical harmonics coefficients to RGB color.
-//	if (colors_precomp == nullptr)
-//	{
-//		glm::vec3 result = computeColorFromSH(idx, D, M, (glm::vec3*)orig_points, *cam_pos, shs, clamped);
-//		rgb[idx * C + 0] = result.x;
-//		rgb[idx * C + 1] = result.y;
-//		rgb[idx * C + 2] = result.z;
-//	}
 
 	int index = indices[idx];
 	float3 col = { index_colors[index * 3], index_colors[index * 3 + 1], index_colors[index * 3 + 2] };
@@ -1272,7 +1261,6 @@ void FORWARD::preprocess(int P, int D, int M,
 	const float* shs,
 	bool* clamped,
 	const float* cov3D_precomp,
-	const float* colors_precomp,
 	const float* viewmatrix,
 	const float* projmatrix,
 	const glm::vec3* cam_pos,
@@ -1302,8 +1290,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		shs,
 		clamped,
 		cov3D_precomp,
-		colors_precomp,
-		viewmatrix, 
+		viewmatrix,
 		projmatrix,
 		cam_pos,
 		W, H,

@@ -214,7 +214,6 @@ int CudaRasterizer::Rasterizer::forward(
 	const int width, int height,
 	const float* means3D,
 	const float* shs,
-	const float* colors_precomp,
 	const float* opacities,
 	const float* scales,
 	const float scale_modifier,
@@ -255,10 +254,10 @@ int CudaRasterizer::Rasterizer::forward(
 	char* img_chunkptr = imageBuffer(img_chunk_size);
 	ImageState imgState = ImageState::fromChunk(img_chunkptr, width * height);
 
-	if (NUM_CHANNELS != 3 && colors_precomp == nullptr)
-	{
-		throw std::runtime_error("For non-RGB, provide precomputed Gaussian colors!");
-	}
+//	if (NUM_CHANNELS != 3 && colors_precomp == nullptr)
+//	{
+//		throw std::runtime_error("For non-RGB, provide precomputed Gaussian colors!");
+//	}
 
 	// Run preprocessing per-Gaussian (transformation, bounding, conversion of SHs to RGB)
 	CHECK_CUDA(FORWARD::preprocess(
@@ -271,7 +270,6 @@ int CudaRasterizer::Rasterizer::forward(
 		shs,
 		geomState.clamped,
 		cov3D_precomp,
-		colors_precomp,
 		viewmatrix, projmatrix,
 		(glm::vec3*)cam_pos,
 		width, height,
