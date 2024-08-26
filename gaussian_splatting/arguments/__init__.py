@@ -45,7 +45,7 @@ class ParamGroup:
         return group
 
 class ModelParams(ParamGroup):
-    def __init__(self, parser, sentinel=False):
+    def __init__(self, sentinel=False):
         self.sh_degree = 3
         self._source_path = ""
         self._model_path = ""
@@ -58,7 +58,7 @@ class ModelParams(ParamGroup):
 
     def extract(self, args):
         g = super().extract(args)
-        g.source_path = os.path.abspath(g.source_path)
+        # g.source_path = os.path.abspath(g.source_path)
         return g
 
 class PipelineParams(ParamGroup):

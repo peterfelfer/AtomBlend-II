@@ -569,12 +569,11 @@ if __name__ == "__main__":
     from argparse import Namespace
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
-                     images='images', iteration=-1, model_path='/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/', quiet=False, resolution=-1, sh_degree=3,
-                     skip_test=False, skip_train=False, source_path='/home/qa43nawu/temp/qa43nawu/input_files/voldata',
+                     images='images', iteration=-1, quiet=False, resolution=-1, sh_degree=3,
+                     skip_test=False, skip_train=False,
                      white_background=False)
 
-    ply_model = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/'
-    model = ModelParams(ply_model)
+    model = ModelParams()
     dataset = model.extract(args)
     gaussians = GaussianModel(dataset.sh_degree)
 

@@ -52,7 +52,7 @@ volume_opacity = True
 volume_opacity_fac = 3.0
 
 def impl_glfw_init():
-    window_name = "NeUVF editor"
+    window_name = "Atom Probe Rendering"
 
     if not glfw.init():
         print("Could not initialize OpenGL context")
@@ -68,6 +68,7 @@ def impl_glfw_init():
     window = glfw.create_window(
         g_camera.w, g_camera.h, window_name, None, None
     )
+    glfw.maximize_window(window)
     glfw.make_context_current(window)
     glfw.swap_interval(0)
     # glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_NORMAL);
@@ -112,6 +113,8 @@ def key_callback(window, key, scancode, action, mods):
             g_camera.process_move_key(0, 0, 1)
         elif key == glfw.KEY_F:
             g_camera.process_move_key(0, 0, -1)
+        elif key == glfw.KEY_ESCAPE:
+            glfw.set_window_should_close(window, True)
 
 def update_camera_pose_lazy():
     if g_camera.is_pose_dirty:
