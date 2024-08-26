@@ -48,7 +48,6 @@ RasterizeGaussiansCUDA(
 	const float tan_fovy,
     const int image_height,
     const int image_width,
-	const torch::Tensor& sh,
 	const int degree,
 	const torch::Tensor& campos,
 	const bool prefiltered,
@@ -84,10 +83,6 @@ RasterizeGaussiansCUDA(
   if(P != 0)
   {
 	  int M = 0;
-	  if(sh.size(0) != 0)
-	  {
-		M = sh.size(1);
-      }
 
 	  rendered = CudaRasterizer::Rasterizer::forward(
 	    geomFunc,
@@ -97,7 +92,6 @@ RasterizeGaussiansCUDA(
 		background.contiguous().data<float>(),
 		W, H,
 		means3D.contiguous().data<float>(),
-		sh.contiguous().data_ptr<float>(),
 		opacity.contiguous().data<float>(), 
 		scales.contiguous().data_ptr<float>(),
 		scale_modifier,

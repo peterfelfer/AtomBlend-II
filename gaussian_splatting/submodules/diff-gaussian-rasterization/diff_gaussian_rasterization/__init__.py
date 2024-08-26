@@ -21,7 +21,6 @@ def cpu_deep_copy_tuple(input_tuple):
 def rasterize_gaussians(
     means3D,
     means2D,
-    sh,
     opacities,
     scales,
     rotations,
@@ -33,7 +32,6 @@ def rasterize_gaussians(
     return _RasterizeGaussians.apply(
         means3D,
         means2D,
-        sh,
         opacities,
         scales,
         rotations,
@@ -49,7 +47,6 @@ class _RasterizeGaussians(torch.autograd.Function):
         ctx,
         means3D,
         means2D,
-        sh,
         opacities,
         scales,
         rotations,
@@ -74,7 +71,6 @@ class _RasterizeGaussians(torch.autograd.Function):
             raster_settings.tanfovy,
             raster_settings.image_height,
             raster_settings.image_width,
-            sh,
             raster_settings.sh_degree,
             raster_settings.campos,
             raster_settings.prefiltered,
@@ -220,7 +216,6 @@ class GaussianRasterizer(nn.Module):
         return rasterize_gaussians(
             means3D,
             means2D,
-            shs,
             opacities,
             scales, 
             rotations,
