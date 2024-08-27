@@ -46,7 +46,7 @@ namespace FORWARD
 		uint32_t* tiles_touched,
 		bool prefiltered,
 		const float* indices,
-		const float* index_colors);
+		const float* index_properties);
 
 	// Main rasterization method.
 	void render(int P,

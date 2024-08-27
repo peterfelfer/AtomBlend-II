@@ -95,7 +95,7 @@ class GaussianRasterizationSettingsStorage:
     campos : torch.Tensor
     prefiltered : bool
     debug : bool
-    index_colors : torch.Tensor
+    index_properties : torch.Tensor
 
 
 def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
@@ -130,7 +130,7 @@ class CUDARenderer(GaussianRenderBase):
             "prefiltered": False,
             "debug": False,
             "render_mode": 0,
-            "index_colors": torch.Tensor([]),
+            "index_properties": torch.Tensor([]),
         }
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
@@ -164,12 +164,12 @@ class CUDARenderer(GaussianRenderBase):
         self.raster_settings["sh_degree"] = int(np.round(np.sqrt(self.gaussians.sh_dim))) - 1
 
         # set index colors
-        index_colors = []
+        index_properties = []
         for elem in gaus.num_of_atoms_by_element:
             col = gaus.num_of_atoms_by_element[elem]['color']
-            index_colors.extend([col[0], col[1], col[2]])
+            index_properties.extend([col[0], col[1], col[2]])
 
-        self.raster_settings["index_colors"] = torch.Tensor(index_colors).float().cuda()
+        self.raster_settings["index_properties"] = torch.Tensor(index_properties).float().cuda()
 
     def sort_and_update(self, camera: util.Camera):
         self.need_rerender = True
@@ -266,7 +266,7 @@ class CUDARenderer(GaussianRenderBase):
                     # rotations = self.gaussians.rot,
                     cov3D_precomp = self.gaussians.cov3D,
                     indices = self.gaussians.indices,
-                    index_colors = self.raster_settings["index_colors"]
+                    index_properties = self.raster_settings["index_properties"]
                 )
         else:
             with torch.no_grad():
@@ -280,7 +280,7 @@ class CUDARenderer(GaussianRenderBase):
                     rotations = self.gaussians.rot,
                     cov3D_precomp = None,
                     indices = self.gaussians.indices,
-                    index_colors = self.raster_settings["index_colors"]
+                    index_properties = self.raster_settings["index_properties"]
                 )
 
 

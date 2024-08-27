@@ -263,7 +263,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	uint32_t* tiles_touched,
 	bool prefiltered,
 	const float* indices,
-	const float* index_colors)
+	const float* index_properties)
 {
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= P)
@@ -326,7 +326,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 		return;
 
 	int index = indices[idx];
-	float3 col = { index_colors[index * 3], index_colors[index * 3 + 1], index_colors[index * 3 + 2] };
+	float3 col = { index_properties[index * 3], index_properties[index * 3 + 1], index_properties[index * 3 + 2] };
 
     rgb[idx * C + 0] = col.x;
     rgb[idx * C + 1] = col.y;
@@ -1276,7 +1276,7 @@ void FORWARD::preprocess(int P, int D, int M,
 	uint32_t* tiles_touched,
 	bool prefiltered,
 	const float* indices,
-	const float* index_colors)
+	const float* index_properties)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
 		P, D, M,
@@ -1304,6 +1304,6 @@ void FORWARD::preprocess(int P, int D, int M,
 		tiles_touched,
 		prefiltered,
 		indices,
-		index_colors
+		index_properties
 		);
 }
