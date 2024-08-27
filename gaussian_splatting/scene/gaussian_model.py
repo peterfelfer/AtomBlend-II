@@ -294,7 +294,7 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def load_ply_ab(self, path, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, indices, props):
+    def load_ply_ab(self, path, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, indices, scale_list, props):
         plydata = PlyData.read(path)
 
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
@@ -342,7 +342,7 @@ class GaussianModel:
         #     torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
         #         True))
         self._opacity = nn.Parameter(torch.tensor(opacities, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._scaling = nn.Parameter(torch.tensor(scales, dtype=torch.float, device="cuda").requires_grad_(True))
+        self._scaling = nn.Parameter(torch.tensor(scale_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
         self.cov3D = nn.Parameter(torch.tensor(cov3D_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.volume_opacity = nn.Parameter(torch.tensor(volume_opacity_list, dtype=torch.float, device="cuda").requires_grad_(True))

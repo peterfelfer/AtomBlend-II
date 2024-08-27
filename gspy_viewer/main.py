@@ -366,11 +366,11 @@ def main():
                             pass
 
                 # camera fov
-                changed, g_camera.fovy = imgui.slider_float(
-                    "fov", g_camera.fovy, 0.001, np.pi - 0.001, "fov = %.3f"
-                )
+                # changed, g_camera.fovy = imgui.slider_float(
+                #     "fov", g_camera.fovy, 0.001, np.pi - 0.001, "fov = %.3f"
+                # )
                 changed, g_camera.zoom_sensitivity = imgui.slider_float(
-                    "move sensitivity", g_camera.zoom_sensitivity, 0.001, 10, "zoom_sensitivity = %.3f"
+                    "", g_camera.zoom_sensitivity, 0.001, 10, "move sensitivity = %.3f"
                 )
                 # changed, g_camera.position = imgui.slider_float3(
                 #     "camera position", g_camera.position[0], g_camera.position[1], g_camera.position[2], np.pi - 0.001, 10000.0

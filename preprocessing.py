@@ -32,6 +32,8 @@ all_elems_sorted_by_mn = []
 unknown_label = 'n/a'
 cov3D_list = []
 volume_opacity_list = []
+scale_list = []
+volume_list = []
 
 def get_indices():
     atom_index_list = []
@@ -383,7 +385,7 @@ def load_pos_file():
     np.random.seed(0)
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 500
+    debug_nom = 100000
 
     reshaped_data = reshaped_data[:debug_nom]
     num_of_atoms = debug_nom
@@ -469,7 +471,8 @@ def calc_pca(point_cloud):
     explained_variance = pca.explained_variance_
     singular_values = pca.singular_values_
 
-    volume_vec = explained_variance
+    # volume_vec = explained_variance
+    volume_vec = singular_values
 
     # transformed_cov_matrix = np.dot(components.T * explained_variance, components)
     # transformed_cov_matrix = np.dot(components.T * explained_variance * explained_variance, components)
@@ -484,7 +487,7 @@ def calc_pca(point_cloud):
     return transformed_cov_matrix, volume_vec
 
 def find_nearest_neighbors(num_neighbors, max_distance, normalization):
-    global cov3D_list, volume_opacity_list
+    global cov3D_list, volume_opacity_list, scale_list, volume_list
 
     for elem in all_elements_by_name:
         coords = all_elements_by_name[elem][('coordinates')]
@@ -520,7 +523,6 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
 
             # print(cov_mat, "\n")
 
-
             eigenvalues, _ = np.linalg.eig(cov_mat)
             # volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
             volume = 4/3 * 3.14159 * volume_vec[0] * volume_vec[1] * volume_vec[2]
@@ -528,6 +530,10 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             volume = volume / 50
 
             opacity = 1 / (0.25*volume)
+
+            # scale = 50000 / (volume)
+            scale = 1 / volume
+            # scale = 1
 
             # opacity = 1 - opacity
 
@@ -563,6 +569,8 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
 
             cov3D_list.append(np.asarray(cov_mat))
             volume_opacity_list.append([opacity])
+            scale_list.append([scale])
+            volume_list.append([volume])
 
 
 if __name__ == "__main__":
@@ -624,7 +632,7 @@ if __name__ == "__main__":
     find_nearest_neighbors(num_neighbors, max_distance, normalization)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), props)
+    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
 
     # write numbers of atom elements as comment
     comments = []
@@ -644,3 +652,12 @@ if __name__ == "__main__":
     gaussians.save_ply(file_name, colors, comments)
 
     print('wrote ply')
+
+    # debug
+    volume_scale = zip(volume_list, scale_list)
+    volume_scale = np.array(volume_scale)
+
+    plt.xlabel('volume')
+    plt.ylabel('scale')
+    plt.plot(volume_list, scale_list, 'ro')
+    plt.show()

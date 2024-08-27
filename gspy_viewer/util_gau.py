@@ -163,7 +163,7 @@ def load_ply(path):
     xyz = xyz.astype(np.float32)
     # rots = rots / np.linalg.norm(rots, axis=-1, keepdims=True)
     rots = rots.astype(np.float32)
-    scales = np.exp(scales)
+    # scales = np.exp(scales)
     scales = scales.astype(np.float32)
     # opacities = 1/(1 + np.exp(- opacities))  # sigmoid
     opacities = opacities.astype(np.float32)
