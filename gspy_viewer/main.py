@@ -181,6 +181,14 @@ def set_individual_opacity(gaussians):
     g_renderer.need_rerender = True
 
 
+def set_gaussians(gaussians):
+    if not g_render_cov3D:
+        gaussians.cov3D = torch.Tensor([])
+
+    g_renderer.set_scale_modifier(0.5)
+    g_renderer.update_gaussian_data(gaussians)
+
+
 def set_colors(gaussians, global_alpha=None, changed_render_checkbox=False):
     colors = []
     opacities = []
@@ -217,6 +225,8 @@ def set_colors(gaussians, global_alpha=None, changed_render_checkbox=False):
 
 
 def set_radius(gaussians, global_scale=None):
+    return
+    '''
     scales = []
     for key in gaussians.num_of_atoms_by_element:
         if global_scale is not None:
@@ -229,6 +239,7 @@ def set_radius(gaussians, global_scale=None):
     gaussians.scale = torch.tensor(scales, dtype=torch.float32, device="cuda")
     g_renderer.update_gaussian_data(gaussians)
     g_renderer.sort_and_update(g_camera)
+    '''
 
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
@@ -384,9 +395,14 @@ def main():
                 
                 # scale modifier
                 imgui.push_id("0")
-                changed, g_scale_modifier = imgui.slider_float(
-                    "", g_scale_modifier, 0, 200, "scale modifier = %.3f"
-                )
+                if g_render_cov3D:
+                    changed, g_scale_modifier = imgui.slider_float(
+                        "", g_scale_modifier, 0, 200, "scale modifier = %.3f"
+                    )
+                else:
+                    changed, g_scale_modifier = imgui.slider_float(
+                        "", g_scale_modifier, 0, 5, "scale modifier = %.3f"
+                    )
                 imgui.same_line()
                 if imgui.button(label="reset"):
                     g_scale_modifier = 1.
@@ -558,6 +574,7 @@ def main():
                 changed, g_render_cov3D = imgui.core.checkbox('Render cov3D', g_render_cov3D)
                 if changed:
                     g_renderer.need_rerender = True
+                    set_gaussians(gaussians)
 
                 imgui.core.push_item_width(500)
                 changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)

@@ -303,8 +303,7 @@ def load_rrng_file():
     combine_rrng_and_e_pos_file()
 
 
-def load_e_pos_file():
-    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/voldata.epos'
+def load_e_pos_file(num_atoms, file_path):
     # reading the given binary file and store it into a numpy array
     # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
     data_in_bytes_float = np.fromfile(file_path, dtype='>f')
@@ -333,10 +332,10 @@ def load_e_pos_file():
     # ABGlobals.min_z = concat_data[:, 2].min()
 
     # shuffling the data as they're kind of sorted by the z value
+    np.random.seed(0)
     concat_data = np.random.permutation(concat_data)
 
-    num_of_atoms = int(num_of_atoms)
-    concat_data = concat_data[:num_of_atoms]
+    concat_data = concat_data[:num_atoms]
 
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
@@ -352,8 +351,8 @@ def load_e_pos_file():
     unknown_element_dict['element_name'] = 'Unknown'
     unknown_element_dict['color'] = (255, 0, 0, 1)
     unknown_element_dict['coordinates'] = []
-    unknown_element_dict['num_of_atoms'] = len(atom_coords)
-    unknown_element_dict['num_displayed'] = len(atom_coords)
+    unknown_element_dict['num_of_atoms'] = num_atoms
+    unknown_element_dict['num_displayed'] = num_atoms
     all_elements_by_name[unknown_label] = unknown_element_dict
 
     atom_coords = coords
@@ -362,9 +361,7 @@ def load_e_pos_file():
 
     return coords
 
-def load_pos_file():
-    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos'
-    # file_path = '/home/qa43nawu/Downloads/R14_27263-v01.pos'
+def load_pos_file(num_atoms, file_path):
 
     data_in_bytes = np.fromfile(file_path, dtype='>f')
     data_as_float = data_in_bytes.view()
@@ -385,10 +382,8 @@ def load_pos_file():
     np.random.seed(0)
     reshaped_data = np.random.permutation(reshaped_data)
 
-    debug_nom = 100000
-
-    reshaped_data = reshaped_data[:debug_nom]
-    num_of_atoms = debug_nom
+    reshaped_data = reshaped_data[:num_atoms]
+    num_of_atoms = num_atoms
 
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
@@ -532,8 +527,8 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             opacity = 1 / (0.25*volume)
 
             # scale = 50000 / (volume)
-            scale = 1 / volume
-            # scale = 1
+            # scale = 1 / volume
+            scale = 1
 
             # opacity = 1 - opacity
 
@@ -576,6 +571,17 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
 if __name__ == "__main__":
     from argparse import Namespace
 
+    # parse arguments
+    parser = ArgumentParser(description="Preprocessing script paramters")
+    parser.add_argument("--num_neighbors", default=50, type=int, help="Number of neighbors that should be considered for PCA.")
+    parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
+    parser.add_argument("--normalization", default=500, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
+    parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
+    parser.add_argument("--epos_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos', type=str, help="The file path to the .pos or .epos file.")
+    parser.add_argument("--rrng_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng', type=str, help="The file path to the .rrng file.")
+    parser.add_argument("--out_path", default= '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply', type=str, help="The file path for the .ply file that will be written")
+    parsed_args = parser.parse_args()
+
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
                      images='images', iteration=-1, quiet=False, resolution=-1, sh_degree=3,
                      skip_test=False, skip_train=False,
@@ -608,7 +614,11 @@ if __name__ == "__main__":
     }
 
     start = time.time()
-    atom_coords = load_pos_file()
+
+    if parsed_args.epos_path.endswith('.pos'):
+        atom_coords = load_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
+    else:
+        atom_coords = load_e_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
 
     print('load epos', time.time() - start)
     load_rrng_file()
@@ -625,14 +635,10 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
 
-    num_neighbors = 50
-    max_distance = 20
-    normalization = 500
-
-    find_nearest_neighbors(num_neighbors, max_distance, normalization)
+    find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    gaussians.load_ply_ab(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
+    gaussians.store_data(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
 
     # write numbers of atom elements as comment
     comments = []
@@ -642,11 +648,11 @@ if __name__ == "__main__":
         color = color.split(',')
         comments.append(elem_name + "//" + str(num_displayed) + ' ' + str(color[0] + str(color[1]) + str(color[2])))
 
-    comments.append('num_neighbors: ' + str(num_neighbors))
-    comments.append('max_distance: ' + str(max_distance))
-    comments.append('normalization: ' + str(normalization))
+    comments.append('num_neighbors: ' + str(parsed_args.num_neighbors))
+    comments.append('max_distance: ' + str(parsed_args.max_distance))
+    comments.append('normalization: ' + str(parsed_args.normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(num_neighbors) + '_dist_' + str(max_distance) + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)

@@ -209,7 +209,7 @@ __device__ void computeCov3D(const glm::vec3 scale, float mod, const glm::vec4 r
 	S[2][2] = mod * scale.z;
 
 	// Normalize quaternion to get valid rotation
-	glm::vec4 q = rot;// / glm::length(rot);
+	glm::vec4 q = glm::vec4(0.0f); //rot;// / glm::length(rot);
 	float r = q.x;
 	float x = q.y;
 	float y = q.z;
@@ -222,7 +222,7 @@ __device__ void computeCov3D(const glm::vec3 scale, float mod, const glm::vec4 r
 		2.f * (x * z - r * y), 2.f * (y * z + r * x), 1.f - 2.f * (x * x + y * y)
 	);
 
-	glm::mat3 M = S * R;
+	glm::mat3 M = S; // * R;
 
 	// Compute 3D world covariance matrix Sigma
 	glm::mat3 Sigma = glm::transpose(M) * M;
@@ -290,13 +290,16 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const float* cov3D;
 	if (cov3D_precomp != nullptr)
 	{
+
 		cov3D = cov3D_precomp + idx * 6;
 	}
 	else
 	{
 		computeCov3D(scales[idx], scale_modifier, rotations[idx], cov3Ds + idx * 6);
 		cov3D = cov3Ds + idx * 6;
+
 	}
+    printf("cov3d %f, %f, %f, %f, %f, %f \n", cov3D[0], cov3D[1], cov3D[2], cov3D[3], cov3D[4], cov3D[5]);
 
 	// Compute 2D screen-space covariance matrix
 	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale_modifier);

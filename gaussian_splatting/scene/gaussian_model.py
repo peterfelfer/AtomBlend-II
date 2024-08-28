@@ -294,7 +294,7 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def load_ply_ab(self, path, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, indices, scale_list, props):
+    def store_data(self, path, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, indices, scale_list, props):
         plydata = PlyData.read(path)
 
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
