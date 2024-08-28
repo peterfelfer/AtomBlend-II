@@ -299,7 +299,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 		cov3D = cov3Ds + idx * 6;
 
 	}
-    printf("cov3d %f, %f, %f, %f, %f, %f \n", cov3D[0], cov3D[1], cov3D[2], cov3D[3], cov3D[4], cov3D[5]);
+//    printf("cov3d %f, %f, %f, %f, %f, %f \n", cov3D[0], cov3D[1], cov3D[2], cov3D[3], cov3D[4], cov3D[5]);
 
 	// Compute 2D screen-space covariance matrix
 	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale_modifier);
