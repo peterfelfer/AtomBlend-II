@@ -659,12 +659,12 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(parsed_args.max_distance))
     comments.append('normalization: ' + str(parsed_args.normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + 'test' + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)
 
-    print('wrote ply')
+    print('wrote ply', time.time() - start)
 
     # debug
     # volume_scale = zip(volume_list, scale_list)
