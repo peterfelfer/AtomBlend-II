@@ -164,12 +164,13 @@ class CUDARenderer(GaussianRenderBase):
         self.raster_settings["sh_degree"] = int(np.round(np.sqrt(self.gaussians.sh_dim))) - 1
 
         # set index colors
-        index_properties = []
-        for elem in gaus.num_of_atoms_by_element:
-            col = gaus.num_of_atoms_by_element[elem]['color']
-            index_properties.extend([col[0], col[1], col[2]])
-
-        self.raster_settings["index_properties"] = torch.Tensor(index_properties).float().cuda()
+        # index_properties = []
+        # for elem in gaus.num_of_atoms_by_element:
+        #     col = gaus.num_of_atoms_by_element[elem]['color']
+        #     scale = gaus.num_of_atoms_by_element[elem]['scale']
+        #     index_properties.extend([col[0], col[1], col[2], scale])
+        #
+        # self.raster_settings["index_properties"] = torch.Tensor(index_properties).float().cuda()
 
     def sort_and_update(self, camera: util.Camera):
         self.need_rerender = True

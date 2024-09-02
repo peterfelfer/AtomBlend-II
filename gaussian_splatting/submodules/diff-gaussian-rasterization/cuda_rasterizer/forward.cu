@@ -285,6 +285,11 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float p_w = 1.0f / (p_hom.w + 0.0000001f);
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
+    // Get color and scale for corresponding index
+	int index = indices[idx];
+	float3 col = { index_properties[index * 4], index_properties[index * 4 + 1], index_properties[index * 4 + 2] };
+    const float scale = index_properties[index * 4 + 3];
+
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
 	const float* cov3D;
@@ -302,7 +307,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 //    printf("cov3d %f, %f, %f, %f, %f, %f \n", cov3D[0], cov3D[1], cov3D[2], cov3D[3], cov3D[4], cov3D[5]);
 
 	// Compute 2D screen-space covariance matrix
-	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale_modifier);
+	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale);
 
 	// Invert covariance (EWA algorithm)
 	float det = (cov.x * cov.z - cov.y * cov.y);
@@ -327,9 +332,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
 	if ((rect_max.x - rect_min.x) * (rect_max.y - rect_min.y) == 0)
 		return;
-
-	int index = indices[idx];
-	float3 col = { index_properties[index * 3], index_properties[index * 3 + 1], index_properties[index * 3 + 2] };
 
     rgb[idx * C + 0] = col.x;
     rgb[idx * C + 1] = col.y;

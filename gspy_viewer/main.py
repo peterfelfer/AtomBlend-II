@@ -48,7 +48,7 @@ render_all_elements = True
 file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
-volume_opacity = True
+volume_opacity = False
 volume_opacity_fac = 3.0
 
 def impl_glfw_init():
@@ -157,6 +157,20 @@ def changed_render_all_elements(gaussians):
     g_renderer.update_gaussian_data(gaussians)
     g_renderer.sort_and_update(g_camera)
 
+def set_index_properties(gaussians):
+    index_properties = []
+    for elem in gaussians.num_of_atoms_by_element:
+        col = gaussians.num_of_atoms_by_element[elem]['color']
+        scale = gaussians.num_of_atoms_by_element[elem]['scale']
+        index_properties.extend([col[0], col[1], col[2], scale])
+
+    g_renderer.raster_settings["index_properties"] = torch.Tensor(index_properties).float().cuda()
+
+    g_renderer.update_gaussian_data(gaussians)
+    g_renderer.sort_and_update(g_camera)
+
+    print('index properties', index_properties)
+
 def set_individual_opacity(gaussians):
     opacities = []
     index = 0
@@ -187,7 +201,6 @@ def set_gaussians(gaussians):
     else:
         g_renderer.set_scale_modifier(20.0)
     g_renderer.update_gaussian_data(gaussians)
-
 
 def set_colors(gaussians, global_alpha=None, changed_render_checkbox=False):
     colors = []
@@ -277,6 +290,7 @@ def main():
     # gaussian data
     gaussians = util_gau.naive_gaussian()
     update_activated_renderer_state(gaussians)
+    set_index_properties(gaussians)
 
     # settings
     while not glfw.window_should_close(window):
@@ -328,36 +342,14 @@ def main():
 
                 imgui.text("Loaded file: " + file_path.split('/')[-1])
 
-
-                if imgui.button(label='open 15 neighb'):
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_15_dist_20.ply'
-
-                    if file_path:
-                        try:
-                            gaussians = util_gau.load_ply(file_path)
-                            g_renderer.update_gaussian_data(gaussians)
-                            g_renderer.sort_and_update(g_camera)
-                        except RuntimeError as e:
-                            pass
-
                 if imgui.button(label='open 50 neighb'):
                     # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_50_dist_20.ply'
+                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_50_dist_20_100K.ply'
 
                     if file_path:
                         try:
                             gaussians = util_gau.load_ply(file_path)
-                            g_renderer.update_gaussian_data(gaussians)
-                            g_renderer.sort_and_update(g_camera)
-                        except RuntimeError as e:
-                            pass
-
-                if imgui.button(label='open train'):
-                    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/trained_data/train/point_cloud/iteration_30000/point_cloud.ply'
-
-                    if file_path:
-                        try:
-                            gaussians = util_gau.load_ply(file_path)
+                            set_index_properties(gaussians)
                             g_renderer.update_gaussian_data(gaussians)
                             g_renderer.sort_and_update(g_camera)
                         except RuntimeError as e:
@@ -371,6 +363,7 @@ def main():
                     if file_path:
                         try:
                             gaussians = util_gau.load_ply(file_path)
+                            set_index_properties(gaussians)
                             g_renderer.update_gaussian_data(gaussians)
                             g_renderer.sort_and_update(g_camera)
                         except RuntimeError as e:
@@ -600,8 +593,7 @@ def main():
                     changed, gaussians.num_of_atoms_by_element[elem]['is_rendered'] = imgui.core.checkbox('##' + elem, gaussians.num_of_atoms_by_element[elem]['is_rendered'])
 
                     if changed:
-                        set_colors(gaussians, changed_render_checkbox=True)
-                        changed = False
+                        set_colors(gaussians, changed_render_checkbox=True) # TODO
 
                     imgui.same_line()
 
@@ -617,7 +609,7 @@ def main():
                     changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4('', *gaussians.num_of_atoms_by_element[elem]['color'])
 
                     if changed:
-                        set_colors(gaussians)
+                        set_index_properties(gaussians)
 
                     # imgui.table_set_column_index(2)
                     imgui.same_line(spacing=50)
@@ -627,7 +619,7 @@ def main():
                     changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 10.0)
 
                     if changed:
-                        set_radius(gaussians)
+                        set_index_properties(gaussians)
 
                     imgui.pop_id()
 
