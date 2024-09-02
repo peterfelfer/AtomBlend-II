@@ -584,9 +584,10 @@ if __name__ == "__main__":
     parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
     parser.add_argument("--normalization", default=500, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
     parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
+    parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
     parser.add_argument("--epos_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos', type=str, help="The file path to the .pos or .epos file.")
     parser.add_argument("--rrng_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng', type=str, help="The file path to the .rrng file.")
-    parser.add_argument("--out_path", default= '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply', type=str, help="The file path for the .ply file that will be written")
+    parser.add_argument("--out_path", default= '', type=str, help="The file path for the .ply file that will be written")
     parsed_args = parser.parse_args()
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
@@ -636,16 +637,15 @@ if __name__ == "__main__":
 
     indices = get_indices()
 
-    path = '/home/qa43nawu/temp/qa43nawu/gaussian_splatting/output/9224d987-c/point_cloud/iteration_30000/point_cloud.ply'
-
     atom_color_list = atom_color_update()
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
 
-    find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization)
+    if not parsed_args.skip_pca:
+        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    gaussians.store_data(path, np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
+    gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
 
     # write numbers of atom elements as comment
     comments = []
@@ -659,7 +659,7 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(parsed_args.max_distance))
     comments.append('normalization: ' + str(parsed_args.normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + 'test' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)
@@ -667,10 +667,10 @@ if __name__ == "__main__":
     print('wrote ply')
 
     # debug
-    volume_scale = zip(volume_list, scale_list)
-    volume_scale = np.array(volume_scale)
+    # volume_scale = zip(volume_list, scale_list)
+    # volume_scale = np.array(volume_scale)
 
-    plt.xlabel('volume')
-    plt.ylabel('scale')
-    plt.plot(volume_list, scale_list, 'ro')
-    plt.show()
+    # plt.xlabel('volume')
+    # plt.ylabel('scale')
+    # plt.plot(volume_list, scale_list, 'ro')
+    # plt.show()

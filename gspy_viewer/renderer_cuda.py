@@ -283,8 +283,6 @@ class CUDARenderer(GaussianRenderBase):
                     index_properties = self.raster_settings["index_properties"]
                 )
 
-
-
         # print('viewmatrix', raster_settings.viewmatrix)
         # print('projmatrix', raster_settings.projmatrix)
 

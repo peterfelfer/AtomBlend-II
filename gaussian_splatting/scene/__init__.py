@@ -75,7 +75,7 @@ class Scene:
             self.test_cameras[resolution_scale] = cameraList_from_camInfos(scene_info.test_cameras, resolution_scale, args)
 
         if self.loaded_iter:
-            self.gaussians.store_data(os.path.join(self.model_path, "point_cloud", "iteration_" + str(self.loaded_iter), "point_cloud.ply"), atom_coords, props)
+            self.gaussians.store_data(atom_coords, props)
             # self.gaussians.load_atoms(os.path.join(self.model_path, "point_cloud", "iteration_" + str(self.loaded_iter), "point_cloud.ply"))
 
 

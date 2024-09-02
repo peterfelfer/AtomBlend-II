@@ -485,7 +485,7 @@ if __name__ == "__main__":
     atom_color_list = atom_color_update()
     atom_coords_list = atom_coords_update()
     colors = np.asarray(atom_color_list)[:, :3]
-    gaussians.store_data(path, np.asarray(atom_coords), np.asarray(atom_color_list), props)
+    gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), props)
 
     # write numbers of atom elements as comment
     comments = []

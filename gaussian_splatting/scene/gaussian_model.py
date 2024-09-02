@@ -238,10 +238,24 @@ class GaussianModel:
         f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         # f_rest = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
         opacities = self._opacity.detach().cpu().numpy()
+
+        if len(self._scaling) == 0:
+            dummy_scale = np.array([[1.0, 1.0, 1.0]] * len(self._xyz))
+            self._scaling = torch.tensor(dummy_scale).float().cuda().requires_grad_(False)
         scale = self._scaling.detach().cpu().numpy()
+
         rotation = self._rotation.detach().cpu().numpy()
+
+        if len(self.cov3D) == 0:
+            dummy_cov3D = np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 1.0]] * len(self._xyz))
+            self.cov3D = torch.tensor(dummy_cov3D).float().cuda().requires_grad_(False)
         cov3D = self.cov3D.detach().cpu().numpy()
+
+        if len(self.volume_opacity) == 0:
+            dummy_volume_opacity = np.array([[1.0]] * len(self._xyz))
+            self.volume_opacity = torch.tensor(dummy_volume_opacity).float().cuda().requires_grad_(False)
         volume_opacity = self.volume_opacity.detach().cpu().numpy()
+
         indices = self.indices.detach().cpu().numpy()
 
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
@@ -294,9 +308,7 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def store_data(self, path, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, indices, scale_list, props):
-        plydata = PlyData.read(path)
-
+    def store_data(self, atom_coords, atom_color_list, cov3D_list, volume_opacity_list, indices, scale_list, props):
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),
                         np.asarray(atom_coords[:, 2])), axis=1)
@@ -318,7 +330,7 @@ class GaussianModel:
         # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
         # features_extra = features_extra.reshape((features_extra.shape[0], 3, (self.max_sh_degree + 1) ** 2 - 1))
 
-        scale_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("scale_")]
+        scale_names = ['scale_0', 'scale_1', 'scale_2']
         scale_names = sorted(scale_names, key=lambda x: int(x.split('_')[-1]))
         scales = np.zeros((xyz.shape[0], len(scale_names)))
         for idx, attr_name in enumerate(scale_names):
@@ -327,7 +339,7 @@ class GaussianModel:
 
         scales = [[props['scale'], props['scale'], props['scale']]] * len(atom_coords)
 
-        rot_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("rot")]
+        rot_names = ['rot_0', 'rot_1', 'rot_2', 'rot_3']
         rot_names = sorted(rot_names, key=lambda x: int(x.split('_')[-1]))
         rots = np.zeros((xyz.shape[0], len(rot_names)))
         for idx, attr_name in enumerate(rot_names):
