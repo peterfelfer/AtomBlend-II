@@ -32,6 +32,8 @@ class Camera:
         self.zoom_sensitivity = 5.00
         self.roll_sensitivity = 0.03
         self.target_dist = 3.
+
+        self.is_orthographic = False
     
     def _global_rot_mat(self):
         x = np.array([1, 0, 0])

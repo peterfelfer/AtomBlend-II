@@ -31,7 +31,7 @@ g_renderer_list = [
 ]
 g_renderer_idx = BACKEND_OGL
 g_renderer: GaussianRenderBase = g_renderer_list[g_renderer_idx]
-g_scale_modifier = 20.
+g_scale_modifier = 1.
 g_auto_sort = False
 g_show_control_win = True
 g_show_help_win = False
@@ -597,10 +597,11 @@ def main():
                     # imgui.table_next_row()
                     # imgui.table_set_column_index(0)
 
-                    changed, gaussians.num_of_atoms_by_element[elem]['is_rendered'] = imgui.core.checkbox('', gaussians.num_of_atoms_by_element[elem]['is_rendered'])
+                    changed, gaussians.num_of_atoms_by_element[elem]['is_rendered'] = imgui.core.checkbox('##' + elem, gaussians.num_of_atoms_by_element[elem]['is_rendered'])
 
                     if changed:
                         set_colors(gaussians, changed_render_checkbox=True)
+                        changed = False
 
                     imgui.same_line()
 
@@ -622,14 +623,15 @@ def main():
                     imgui.same_line(spacing=50)
 
                     imgui.core.push_item_width(200)
-                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 10.0)
-                    imgui.pop_id()
 
+                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 10.0)
 
                     if changed:
                         set_radius(gaussians)
 
-                # imgui.end_table()
+                    imgui.pop_id()
+
+
             imgui.end()
         
         imgui.render()
