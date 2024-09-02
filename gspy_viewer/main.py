@@ -183,9 +183,9 @@ def set_individual_opacity(gaussians):
 
 def set_gaussians(gaussians):
     if not g_render_cov3D:
-        gaussians.cov3D = torch.Tensor([])
-
-    g_renderer.set_scale_modifier(0.5)
+        g_renderer.set_scale_modifier(0.01)
+    else:
+        g_renderer.set_scale_modifier(20.0)
     g_renderer.update_gaussian_data(gaussians)
 
 

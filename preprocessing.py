@@ -1,3 +1,4 @@
+import argparse
 import math
 
 import numpy as np
@@ -498,6 +499,12 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             n = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
             distance, indices = kdtree.query(query_coord, k=n, distance_upper_bound=max_distance)
 
+            if isinstance(distance, float):
+                distance = np.array([distance])
+
+            if not isinstance(indices, np.ndarray):
+                indices = np.array([indices])
+
             filter = indices < len(coords)
             indices = indices[filter]
             distance = distance[filter]
@@ -572,7 +579,7 @@ if __name__ == "__main__":
     from argparse import Namespace
 
     # parse arguments
-    parser = ArgumentParser(description="Preprocessing script paramters")
+    parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--num_neighbors", default=50, type=int, help="Number of neighbors that should be considered for PCA.")
     parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
     parser.add_argument("--normalization", default=500, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
