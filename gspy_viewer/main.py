@@ -37,6 +37,7 @@ g_show_control_win = True
 g_show_help_win = False
 g_show_camera_win = True
 g_show_atom_settings_win = True
+g_show_debug_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
 g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
 g_render_mode = 3
@@ -231,7 +232,7 @@ def set_global_scale(gaussians, scale):
 
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
-        g_show_control_win, g_show_help_win, g_show_camera_win, \
+        g_show_control_win, g_show_help_win, g_show_camera_win, g_show_debug_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
         g_render_cov3D, debug_covmat, render_all_elements, file_path, volume_opacity_fac, volume_opacity
         
@@ -301,181 +302,95 @@ def main():
 
                 imgui.core.set_window_font_scale(2.0)
 
-                # rendering backend
-                changed, g_renderer_idx = imgui.combo("backend", g_renderer_idx, ["ogl", "cuda"][:len(g_renderer_list)])
-                if changed:
-                    g_renderer = g_renderer_list[g_renderer_idx]
-                    update_activated_renderer_state(gaussians)
+                if imgui.collapsing_header("Load file")[0]:
+                    if imgui.button(label='open 50 neighb'):
+                        # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
+                        file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_50_dist_20_100K.ply'
 
-                imgui.text(f"fps = {imgui.get_io().framerate:.1f}")
+                        if file_path:
+                            try:
+                                gaussians = util_gau.load_ply(file_path)
+                                set_index_properties(gaussians)
+                                g_renderer.update_gaussian_data(gaussians)
+                                g_renderer.sort_and_update(g_camera)
+                            except RuntimeError as e:
+                                pass
 
-                changed, g_renderer.reduce_updates = imgui.checkbox(
+                    if imgui.button(label='open custom .ply'):
+                        file_path = filedialog.askopenfilename(title="open ply",
+                            initialdir="/home/qa43nawu/temp/qa43nawu/out/",
+                            filetypes=[('ply file', '.ply')]
+                            )
+                        if file_path:
+                            try:
+                                gaussians = util_gau.load_ply(file_path)
+                                set_index_properties(gaussians)
+                                g_renderer.update_gaussian_data(gaussians)
+                                g_renderer.sort_and_update(g_camera)
+                            except RuntimeError as e:
+                                pass
+
+                    imgui.text("Loaded file: " + file_path.split('/')[-1])
+                    imgui.text(f"Number of Atoms = {len(gaussians)}")
+
+                imgui.spacing()
+                imgui.separator()
+                imgui.spacing()
+
+                if imgui.collapsing_header("Rendering")[0]:
+                    # render mode
+                    if g_renderer_idx == 0:  # ogl
+                        changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_ogl)
+                    else:  # cuda
+                        changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_cuda)
+
+                    if changed:
+                        if g_renderer_idx == 0:  # ogl
+                            g_renderer.set_render_mod(g_render_mode - 4)
+                        else:  # cuda
+                            g_renderer.set_render_mod(g_render_mode)
+                
+                imgui.spacing()
+                imgui.separator()
+                imgui.spacing()
+
+                if imgui.collapsing_header("Save image")[0]:
+                    if imgui.button(label='save image'):
+                        width, height = glfw.get_framebuffer_size(window)
+                        nrChannels = 3;
+                        stride = nrChannels * width;
+                        stride += (4 - stride % 4) if stride % 4 else 0
+                        gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
+                        gl.glReadBuffer(gl.GL_FRONT)
+                        bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+                        img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
+                        imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
+                        # save intermediate information
+                        # np.savez(
+                        #     "save.npz",
+                        #     gau_xyz=gaussians.xyz,
+                        #     gau_s=gaussians.scale,
+                        #     gau_rot=gaussians.rot,
+                        #     gau_c=gaussians.sh,
+                        #     gau_a=gaussians.opacity,
+                        #     viewmat=g_camera.get_view_matrix(),
+                        #     projmat=g_camera.get_project_matrix(),
+                        #     hfovxyfocal=g_camera.get_htanfovxy_focal()
+                        # )
+
+                        ########################
+                        # matrix = [[0.0 for _ in range(3)] for _ in range(3)]
+
+                imgui.spacing()
+                imgui.separator()
+                imgui.spacing()
+
+                if imgui.collapsing_header("Statistics")[0]:
+                    imgui.text(f"fps = {imgui.get_io().framerate:.1f}")
+
+                    changed, g_renderer.reduce_updates = imgui.checkbox(
                         "reduce updates", g_renderer.reduce_updates,
                     )
-
-                imgui.text(f"# of Gaus = {len(gaussians)}")
-
-                imgui.text("Loaded file: " + file_path.split('/')[-1])
-
-                if imgui.button(label='open 50 neighb'):
-                    # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
-                    file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_50_dist_20_100K.ply'
-
-                    if file_path:
-                        try:
-                            gaussians = util_gau.load_ply(file_path)
-                            set_index_properties(gaussians)
-                            g_renderer.update_gaussian_data(gaussians)
-                            g_renderer.sort_and_update(g_camera)
-                        except RuntimeError as e:
-                            pass
-
-                if imgui.button(label='open ply'):
-                    file_path = filedialog.askopenfilename(title="open ply",
-                        initialdir="/home/qa43nawu/temp/qa43nawu/out/",
-                        filetypes=[('ply file', '.ply')]
-                        )
-                    if file_path:
-                        try:
-                            gaussians = util_gau.load_ply(file_path)
-                            set_index_properties(gaussians)
-                            g_renderer.update_gaussian_data(gaussians)
-                            g_renderer.sort_and_update(g_camera)
-                        except RuntimeError as e:
-                            pass
-
-                # camera fov
-                # changed, g_camera.fovy = imgui.slider_float(
-                #     "fov", g_camera.fovy, 0.001, np.pi - 0.001, "fov = %.3f"
-                # )
-                changed, g_camera.zoom_sensitivity = imgui.slider_float(
-                    "", g_camera.zoom_sensitivity, 0.001, 10, "move sensitivity = %.3f"
-                )
-                # changed, g_camera.position = imgui.slider_float3(
-                #     "camera position", g_camera.position[0], g_camera.position[1], g_camera.position[2], np.pi - 0.001, 10000.0
-                # )
-                # changed, g_camera.position[2] = imgui.slider_float(
-                #     "campos2", g_camera.position[2], 0.001, np.pi - 0.001, "cam_pos = %.3f"
-                # )
-
-                g_camera.is_intrin_dirty = changed
-                update_camera_intrin_lazy()
-                
-                # scale modifier
-                imgui.push_id("0")
-                if g_render_cov3D:
-                    changed, g_scale_modifier = imgui.slider_float(
-                        "", g_scale_modifier, 0, 200, "scale modifier = %.3f"
-                    )
-                else:
-                    changed, g_scale_modifier = imgui.slider_float(
-                        "", g_scale_modifier, 0, 5, "scale modifier = %.3f"
-                    )
-                imgui.same_line()
-                if imgui.button(label="reset"):
-                    g_scale_modifier = 1.
-                    changed = True
-
-                if changed:
-                    g_renderer.set_scale_modifier(g_scale_modifier)
-                imgui.pop_id()
-
-                # individual opacities depending on size of gaussians
-                imgui.core.push_id("1")
-                changed_fac, volume_opacity_fac = imgui.slider_float(
-                    "", volume_opacity_fac, 0, 50, "volume opacity factor = %.3f"
-                )
-                imgui.same_line()
-                changed_check, volume_opacity = imgui.checkbox("Individual opacities depending on size", volume_opacity)
-
-                if changed_fac or changed_check:
-                    set_individual_opacity(gaussians)
-                imgui.pop_id()
-
-                # render mode
-                if g_renderer_idx == 0:  # ogl
-                    changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_ogl)
-                else:  # cuda
-                    changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_cuda)
-
-                if changed:
-                    if g_renderer_idx == 0:  # ogl
-                        g_renderer.set_render_mod(g_render_mode - 4)
-                    else:  # cuda
-                        g_renderer.set_render_mod(g_render_mode)
-                
-                # sort button
-                if imgui.button(label='sort Gaussians'):
-                    g_renderer.sort_and_update(g_camera)
-                imgui.same_line()
-                changed, g_auto_sort = imgui.checkbox(
-                        "auto sort", g_auto_sort,
-                    )
-                if g_auto_sort:
-                    g_renderer.sort_and_update(g_camera)
-                
-                if imgui.button(label='save image'):
-                    width, height = glfw.get_framebuffer_size(window)
-                    nrChannels = 3;
-                    stride = nrChannels * width;
-                    stride += (4 - stride % 4) if stride % 4 else 0
-                    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
-                    gl.glReadBuffer(gl.GL_FRONT)
-                    bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
-                    img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
-                    imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
-                    # save intermediate information
-                    # np.savez(
-                    #     "save.npz",
-                    #     gau_xyz=gaussians.xyz,
-                    #     gau_s=gaussians.scale,
-                    #     gau_rot=gaussians.rot,
-                    #     gau_c=gaussians.sh,
-                    #     gau_a=gaussians.opacity,
-                    #     viewmat=g_camera.get_view_matrix(),
-                    #     projmat=g_camera.get_project_matrix(),
-                    #     hfovxyfocal=g_camera.get_htanfovxy_focal()
-                    # )
-
-                    ########################
-                    # matrix = [[0.0 for _ in range(3)] for _ in range(3)]
-
-                if imgui.begin_table("matrix_table", 3):
-                    # Fill the table with matrix data
-                    # for row in range(3):
-                    #     imgui.table_next_row()
-                    #     for col in range(3):
-                    #         imgui.table_set_column_index(col)
-                            # changed, debug_covmat[row][col] = imgui.slider_float(f"##cell{row}{col}", debug_covmat[row][col], -1, 1, format="%.3f")
-
-                    c1, c2, c3, c4, c5, c6 = False, False, False, False, False, False
-
-                    imgui.table_next_row()
-
-                    imgui.table_set_column_index(0)
-                    c1, debug_covmat[0] = imgui.slider_float(f"##cell{0}{0}", debug_covmat[0], -1, 1, format="%.3f")
-                    imgui.table_set_column_index(1)
-                    c2, debug_covmat[1] = imgui.slider_float(f"##cell{0}{1}", debug_covmat[1], -1, 1, format="%.3f")
-                    imgui.table_set_column_index(2)
-                    c3, debug_covmat[2] = imgui.slider_float(f"##cell{0}{2}", debug_covmat[2], -1, 1, format="%.3f")
-
-                    imgui.table_next_row()
-                    imgui.table_set_column_index(1)
-                    c4, debug_covmat[3] = imgui.slider_float(f"##cell{1}{1}", debug_covmat[3], -1, 1, format="%.3f")
-                    imgui.table_set_column_index(2)
-                    c5, debug_covmat[4] = imgui.slider_float(f"##cell{1}{2}", debug_covmat[4], -1, 1, format="%.3f")
-
-                    imgui.table_next_row()
-                    imgui.table_set_column_index(2)
-                    c6, debug_covmat[5] = imgui.slider_float(f"##cell{2}{2}", debug_covmat[5], -1, 1, format="%.3f")
-
-                    if c1 or c2 or c3 or c4 or c5 or c6:
-                        gaussians.cov3D = np.tile(debug_covmat, (gaussians.opacity.shape[0], 1))
-                        g_renderer.update_gaussian_data(gaussians)
-
-                        # print(gaussians.cov3D)
-
-                    imgui.end_table()
 
 
                 imgui.end()
@@ -594,6 +509,81 @@ def main():
 
                     imgui.pop_id()
 
+            imgui.end()
+
+        if g_show_debug_win:
+            if imgui.begin("Debug", True):
+                imgui.core.set_window_font_scale(2.0)
+
+                #### rendering backend ####
+                changed, g_renderer_idx = imgui.combo("backend", g_renderer_idx, ["ogl", "cuda"][:len(g_renderer_list)])
+                if changed:
+                    g_renderer = g_renderer_list[g_renderer_idx]
+                    update_activated_renderer_state(gaussians)
+
+                #### covmat ####
+                imgui.text('Debug CovMat:')
+                if imgui.begin_table("matrix_table", 3):
+                    # Fill the table with matrix data
+                    # for row in range(3):
+                    #     imgui.table_next_row()
+                    #     for col in range(3):
+                    #         imgui.table_set_column_index(col)
+                            # changed, debug_covmat[row][col] = imgui.slider_float(f"##cell{row}{col}", debug_covmat[row][col], -1, 1, format="%.3f")
+
+                    c1, c2, c3, c4, c5, c6 = False, False, False, False, False, False
+
+                    imgui.table_next_row()
+
+                    imgui.table_set_column_index(0)
+                    c1, debug_covmat[0] = imgui.slider_float(f"##cell{0}{0}", debug_covmat[0], -1, 1, format="%.3f")
+                    imgui.table_set_column_index(1)
+                    c2, debug_covmat[1] = imgui.slider_float(f"##cell{0}{1}", debug_covmat[1], -1, 1, format="%.3f")
+                    imgui.table_set_column_index(2)
+                    c3, debug_covmat[2] = imgui.slider_float(f"##cell{0}{2}", debug_covmat[2], -1, 1, format="%.3f")
+
+                    imgui.table_next_row()
+                    imgui.table_set_column_index(1)
+                    c4, debug_covmat[3] = imgui.slider_float(f"##cell{1}{1}", debug_covmat[3], -1, 1, format="%.3f")
+                    imgui.table_set_column_index(2)
+                    c5, debug_covmat[4] = imgui.slider_float(f"##cell{1}{2}", debug_covmat[4], -1, 1, format="%.3f")
+
+                    imgui.table_next_row()
+                    imgui.table_set_column_index(2)
+                    c6, debug_covmat[5] = imgui.slider_float(f"##cell{2}{2}", debug_covmat[5], -1, 1, format="%.3f")
+
+                    if c1 or c2 or c3 or c4 or c5 or c6:
+                        gaussians.cov3D = np.tile(debug_covmat, (gaussians.opacity.shape[0], 1))
+                        g_renderer.update_gaussian_data(gaussians)
+
+                        # print(gaussians.cov3D)
+
+                    imgui.end_table()
+
+                    #### sort button ####
+                    if imgui.button(label='sort Gaussians'):
+                        g_renderer.sort_and_update(g_camera)
+                    imgui.same_line()
+                    changed, g_auto_sort = imgui.checkbox(
+                        "auto sort", g_auto_sort,
+                    )
+                    if g_auto_sort:
+                        g_renderer.sort_and_update(g_camera)
+
+
+                    #### individual opacity ####
+                    # individual opacities depending on size of gaussians
+                    imgui.core.push_id("1")
+                    changed_fac, volume_opacity_fac = imgui.slider_float(
+                        "", volume_opacity_fac, 0, 50, "volume opacity factor = %.3f"
+                    )
+                    imgui.same_line()
+                    changed_check, volume_opacity = imgui.checkbox("Individual opacities depending on size",
+                                                                   volume_opacity)
+
+                    if changed_fac or changed_check:
+                        set_individual_opacity(gaussians)
+                    imgui.pop_id()
 
             imgui.end()
         
