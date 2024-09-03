@@ -290,6 +290,40 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3] };
     const float scale = index_properties[index * 5 + 4];
 
+
+    ////// DEBUG
+
+//    float opacity = opacities[idx];
+//    opacity = opacity / 1000;
+//    opacity = 1 / opacity;
+////    col = { 1, 1, 1, 1 };
+//    col.x = opacity;
+//    col.y = 0.0f;
+//    col.z = 0.0f;
+//
+//    if (opacity < 0.5){
+//        col.x = 0.0f;
+//        col.y = 1.0f;
+//        col.z = 0.0f;
+//    }
+
+//    if (opacity < 1){
+//        col = { 1, 0, 0, 1 };
+//    }
+//    if (opacity < 0.8){
+//        col = { 0, 1, 0, 1 };
+//    }
+//    if (opacity < 0.6){
+//        col = { 0, 0, 1, 1 };
+//    }
+//    if (opacity < 0.4){
+//        col = { 1, 1, 0, 1 };
+//    }
+//    if (opacity < 0.2){
+//        col = { 0, 1, 1, 1 };
+//    }
+
+
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
 	const float* cov3D;

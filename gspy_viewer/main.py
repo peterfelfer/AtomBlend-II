@@ -397,10 +397,7 @@ def main():
                         "reduce updates", g_renderer.reduce_updates,
                     )
 
-
                 imgui.end()
-
-
 
 
         if g_show_camera_win:
@@ -464,7 +461,7 @@ def main():
                 changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
-                changed, global_scale = imgui.core.slider_float('Global scale', global_scale, 0.0, 10.0)
+                changed, global_scale = imgui.core.slider_float('Global scale', global_scale, 0.0, 30.0)
                 if changed:
                     set_global_scale(gaussians, global_scale)
 

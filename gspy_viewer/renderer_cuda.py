@@ -272,7 +272,7 @@ class CUDARenderer(GaussianRenderBase):
                     means3D = self.gaussians.xyz,
                     means2D = None,
                     opacities = self.gaussians.opacity,
-                    scales = self.gaussians.scale,
+                    scales = None,
                     cov3D_precomp = None,
                     indices = self.gaussians.indices,
                     index_properties = self.raster_settings["index_properties"]

@@ -3,6 +3,8 @@ import math
 
 import numpy as np
 import torch
+from sklearn.preprocessing import StandardScaler
+
 from gaussian_splatting.scene import Scene
 import os
 from tqdm import tqdm
@@ -514,6 +516,17 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             indices = [indices]
             nn_coords = coords[indices][0]
 
+            # standardization step
+            # means = np.mean(nn_coords, axis=0) # mean of each axis x,y,z
+            # std_dev = np.std(nn_coords, axis=0) # standard deviation of each axis x,y,z
+            # standardized = (nn_coords - means) / std_dev
+            # nn_coords = standardized
+
+            # alternative standardization step
+            scaler = StandardScaler()
+            scaled = scaler.fit_transform(nn_coords)
+            nn_coords = scaled
+
             cov_mat, volume_vec = calc_pca(nn_coords)
 
             if np.isnan(np.asarray(cov_mat)).any():
@@ -529,7 +542,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             # volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
             volume = 4/3 * 3.14159 * volume_vec[0] * volume_vec[1] * volume_vec[2]
 
-            volume = volume / 50
+            # volume = volume / 50
 
             opacity = 1 / (0.25*volume)
 
@@ -570,9 +583,11 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             cov_mat = reduced_covmat
 
             cov3D_list.append(np.asarray(cov_mat))
-            volume_opacity_list.append([opacity])
+            volume_opacity_list.append([volume])
             scale_list.append([scale])
             volume_list.append([volume])
+
+
 
 
 if __name__ == "__main__":
@@ -582,8 +597,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--num_neighbors", default=50, type=int, help="Number of neighbors that should be considered for PCA.")
     parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
-    parser.add_argument("--normalization", default=500, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
-    parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
+    parser.add_argument("--normalization", default=1, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
+    parser.add_argument("--num_atoms", default=10000, type=int, help="The numbers of atoms that the .ply file should contain.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
     parser.add_argument("--epos_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos', type=str, help="The file path to the .pos or .epos file.")
     parser.add_argument("--rrng_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng', type=str, help="The file path to the .rrng file.")
@@ -659,7 +674,7 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(parsed_args.max_distance))
     comments.append('normalization: ' + str(parsed_args.normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + 'test' + '.ply'
+    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_test' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(file_name, colors, comments)
@@ -667,10 +682,15 @@ if __name__ == "__main__":
     print('wrote ply', time.time() - start)
 
     # debug
-    # volume_scale = zip(volume_list, scale_list)
-    # volume_scale = np.array(volume_scale)
+    volume_scale = zip(volume_list, scale_list)
+    volume_scale = np.array(volume_scale)
 
-    # plt.xlabel('volume')
-    # plt.ylabel('scale')
-    # plt.plot(volume_list, scale_list, 'ro')
-    # plt.show()
+    cov3d_sum = [sum(i) for i in cov3D_list]
+    volume_sum = [sum(i) for i in volume_list]
+
+    counts, bins = np.histogram(volume_sum)
+    plt.stairs(counts, bins)
+    plt.xlabel('value')
+    plt.ylabel('frequency')
+    # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
+    plt.show()

@@ -115,8 +115,8 @@ def load_ply(path):
     xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
-    # opacities = np.asarray(plydata.elements[0]["volume_opacity"])[..., np.newaxis]
-    opacities = np.asarray([[1.0]] * len(xyz))
+    opacities = np.asarray(plydata.elements[0]["volume_opacity"])[..., np.newaxis]
+    # opacities = np.asarray([[1.0]] * len(xyz))
 
     features_dc = np.zeros((xyz.shape[0], 3, 1))
     features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
