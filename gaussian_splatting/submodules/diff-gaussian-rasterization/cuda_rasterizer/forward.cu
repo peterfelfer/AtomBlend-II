@@ -287,8 +287,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
     // Get color and scale for corresponding index
 	int index = indices[idx];
-	float3 col = { index_properties[index * 4], index_properties[index * 4 + 1], index_properties[index * 4 + 2] };
-    const float scale = index_properties[index * 4 + 3];
+	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3] };
+    const float scale = index_properties[index * 5 + 4];
 
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
@@ -352,7 +352,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
     radii_xy[idx + 1] = my_radius_y;
 	points_xy_image[idx] = point_image;
 	// Inverse 2D covariance and opacity neatly pack into one float4
-	conic_opacity[idx] = { conic.x, conic.y, conic.z, opacities[idx] };
+//	conic_opacity[idx] = { conic.x, conic.y, conic.z, opacities[idx] };
+	conic_opacity[idx] = { conic.x, conic.y, conic.z, col.w };
 	tiles_touched[idx] = (rect_max.y - rect_min.y) * (rect_max.x - rect_min.x);
 }
 
