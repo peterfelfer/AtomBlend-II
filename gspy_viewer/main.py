@@ -169,30 +169,29 @@ def set_index_properties(gaussians):
     g_renderer.update_gaussian_data(gaussians)
     g_renderer.sort_and_update(g_camera)
 
-    print('index properties', index_properties)
-
 def set_individual_opacity(gaussians):
-    opacities = []
-    index = 0
-
-    for key in gaussians.num_of_atoms_by_element:
-        elem = gaussians.num_of_atoms_by_element[key]
-        is_rendered = gaussians.num_of_atoms_by_element[key]['is_rendered']
-        num = elem['num']
-
-        if volume_opacity and is_rendered:
-            opacities.extend(gaussians.volume_opacity[index:index + num] * volume_opacity_fac)
-        elif is_rendered:
-            opacities.extend(np.asarray([[1.0]] * num))
-        else:
-            opacities.extend(np.asarray([[0.0]] * num))
-
-        index = index + num
-    np_arr = np.asarray(opacities)
-    gaussians.opacity = torch.tensor(np_arr, dtype=torch.float32, device="cuda")
-    g_renderer.update_gaussian_data(gaussians)
-    g_renderer.sort_and_update(g_camera)
-    g_renderer.need_rerender = True
+    pass
+    # opacities = []
+    # index = 0
+    #
+    # for key in gaussians.num_of_atoms_by_element:
+    #     elem = gaussians.num_of_atoms_by_element[key]
+    #     is_rendered = gaussians.num_of_atoms_by_element[key]['is_rendered']
+    #     num = elem['num']
+    #
+    #     if volume_opacity and is_rendered:
+    #         opacities.extend(gaussians.volume_opacity[index:index + num] * volume_opacity_fac)
+    #     elif is_rendered:
+    #         opacities.extend(np.asarray([[1.0]] * num))
+    #     else:
+    #         opacities.extend(np.asarray([[0.0]] * num))
+    #
+    #     index = index + num
+    # np_arr = np.asarray(opacities)
+    # gaussians.opacity = torch.tensor(np_arr, dtype=torch.float32, device="cuda")
+    # g_renderer.update_gaussian_data(gaussians)
+    # g_renderer.sort_and_update(g_camera)
+    # g_renderer.need_rerender = True
 
 
 def set_gaussians(gaussians):

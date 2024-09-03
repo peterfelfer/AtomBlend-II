@@ -115,8 +115,8 @@ def load_ply(path):
     xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
-    opacities = np.asarray(plydata.elements[0]["volume_opacity"])[..., np.newaxis]
-    # opacities = np.asarray([[1.0]] * len(xyz))
+    # opacities = np.asarray(plydata.elements[0]["volume_opacity"])[..., np.newaxis]
+    opacities = np.asarray([[1.0]] * len(xyz))
 
     features_dc = np.zeros((xyz.shape[0], 3, 1))
     features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
@@ -155,8 +155,8 @@ def load_ply(path):
     for idx, attr_name in enumerate(cov3D_names):
         cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
-    volume_opacity = np.zeros((xyz.shape[0], 1))
-    volume_opacity[:, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
+    volume_opacity = np.ones((xyz.shape[0], 1))
+    # volume_opacity[:, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
 
     indices = np.zeros((xyz.shape[0], 1))
     indices[:, 0] = np.asarray(plydata.elements[0]["indices"])
