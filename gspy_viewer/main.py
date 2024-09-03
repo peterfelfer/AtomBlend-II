@@ -338,7 +338,7 @@ def main():
                 imgui.spacing()
 
                 if imgui.collapsing_header("Rendering")[0]:
-                    # render mode
+                    #### render mode ####
                     if g_renderer_idx == 0:  # ogl
                         changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_ogl)
                     else:  # cuda
@@ -349,6 +349,11 @@ def main():
                             g_renderer.set_render_mod(g_render_mode - 4)
                         else:  # cuda
                             g_renderer.set_render_mod(g_render_mode)
+
+                    #### cov3d ####
+                    changed, g_render_cov3D = imgui.core.checkbox('Shape atoms (use covariance matrices)', g_render_cov3D)
+                    if changed:
+                        set_cov3D_changes(gaussians)
                 
                 imgui.spacing()
                 imgui.separator()
@@ -454,10 +459,6 @@ def main():
                 imgui.core.set_window_font_scale(2.0)
 
                 imgui.text('Display settings:')
-
-                changed, g_render_cov3D = imgui.core.checkbox('Render cov3D', g_render_cov3D)
-                if changed:
-                    set_cov3D_changes(gaussians)
 
                 imgui.core.push_item_width(500)
                 changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)

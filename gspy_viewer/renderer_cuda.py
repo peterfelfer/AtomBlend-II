@@ -260,11 +260,8 @@ class CUDARenderer(GaussianRenderBase):
                 img, radii = rasterizer(
                     means3D = self.gaussians.xyz,
                     means2D = None,
-                    # shs = self.gaussians.sh,
-                    # colors_precomp = self.gaussians.sh[:, 0],
                     opacities = self.gaussians.opacity,
                     scales = self.gaussians.scale,
-                    # rotations = self.gaussians.rot,
                     cov3D_precomp = self.gaussians.cov3D,
                     indices = self.gaussians.indices,
                     index_properties = self.raster_settings["index_properties"]
@@ -274,11 +271,8 @@ class CUDARenderer(GaussianRenderBase):
                 img, radii = rasterizer(
                     means3D = self.gaussians.xyz,
                     means2D = None,
-                    # shs = self.gaussians.sh,
-                    # colors_precomp = self.gaussians.sh[:, 0],
                     opacities = self.gaussians.opacity,
                     scales = self.gaussians.scale,
-                    # rotations = self.gaussians.rot,
                     cov3D_precomp = None,
                     indices = self.gaussians.indices,
                     index_properties = self.raster_settings["index_properties"]

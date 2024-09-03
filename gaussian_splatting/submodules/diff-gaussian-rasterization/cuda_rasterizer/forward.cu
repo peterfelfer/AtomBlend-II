@@ -293,18 +293,22 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
 	const float* cov3D;
-	if (cov3D_precomp != nullptr)
+	if (cov3D_precomp != nullptr) // precomputed cov3D
 	{
-
 		cov3D = cov3D_precomp + idx * 6;
 	}
-	else
+	else // using identity matrix as cov3D
 	{
-		computeCov3D(scales[idx], scale_modifier, rotations[idx], cov3Ds + idx * 6);
+//		computeCov3D(scales[idx], scale_modifier, rotations[idx], cov3Ds + idx * 6);
+		int cov3D_idx = idx * 6;
+        cov3Ds[cov3D_idx] = 1.0f;
+        cov3Ds[cov3D_idx + 1] = 0.0f;
+        cov3Ds[cov3D_idx + 2] = 0.0f;
+        cov3Ds[cov3D_idx + 3] = 1.0f;
+        cov3Ds[cov3D_idx + 4] = 0.0f;
+        cov3Ds[cov3D_idx + 5] = 1.0f;
 		cov3D = cov3Ds + idx * 6;
-
 	}
-//    printf("cov3d %f, %f, %f, %f, %f, %f \n", cov3D[0], cov3D[1], cov3D[2], cov3D[3], cov3D[4], cov3D[5]);
 
 	// Compute 2D screen-space covariance matrix
 	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale);
