@@ -227,6 +227,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const int render_mode,
 	const float* indices,
 	const float* index_properties,
+	bool orthographic_cam,
 	int* radii,
 	bool debug
 	)
@@ -284,7 +285,8 @@ int CudaRasterizer::Rasterizer::forward(
 		geomState.tiles_touched,
 		prefiltered,
 		indices,
-		index_properties
+		index_properties,
+		orthographic_cam
 	), debug)
 
 	// Compute prefix sum over full list of touched tile counts by Gaussians

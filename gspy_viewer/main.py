@@ -440,6 +440,12 @@ def main():
             if imgui.button(label="reset ro"):
                 g_camera.roll_sensitivity = 0.03
 
+            changed, new = imgui.core.checkbox("Orthographic camera", g_renderer.raster_settings["orthographic_cam"])
+
+            if changed:
+                g_renderer.raster_settings["orthographic_cam"] = new
+                g_renderer.sort_and_update(g_camera)
+
         if g_show_help_win:
             imgui.begin("Help", True)
             imgui.core.set_window_font_scale(2.0)

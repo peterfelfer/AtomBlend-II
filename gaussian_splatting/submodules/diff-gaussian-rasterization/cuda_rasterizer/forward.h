@@ -46,7 +46,8 @@ namespace FORWARD
 		uint32_t* tiles_touched,
 		bool prefiltered,
 		const float* indices,
-		const float* index_properties);
+		const float* index_properties,
+		const bool orthographic_cam);
 
 	// Main rasterization method.
 	void render(int P,
