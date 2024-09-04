@@ -432,7 +432,7 @@ def calc_standard_deviation(distances, indices):
     mean = np.mean(distances, axis=0)
     std = np.std(distances, axis=0)
 
-    num_sd = 1
+    num_sd = 3
 
     sd_range_lower = mean - std * num_sd
     sd_range_upper = mean + std * num_sd
@@ -484,7 +484,7 @@ def calc_pca(point_cloud):
 
     return transformed_cov_matrix, volume_vec
 
-def find_nearest_neighbors(num_neighbors, max_distance, normalization):
+def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_dev=False):
     global cov3D_list, volume_opacity_list, scale_list, volume_list
 
     for elem in all_elements_by_name:
@@ -511,7 +511,8 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization):
             indices = indices[filter]
             distance = distance[filter]
 
-            indices = calc_standard_deviation(distance, indices)
+            if not skip_std_dev:
+                indices = calc_standard_deviation(distance, indices)
 
             indices = [indices]
             nn_coords = coords[indices][0]
@@ -600,9 +601,11 @@ if __name__ == "__main__":
     parser.add_argument("--normalization", default=1, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
     parser.add_argument("--num_atoms", default=10000, type=int, help="The numbers of atoms that the .ply file should contain.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
+    parser.add_argument("--skip_std_dev", default=False, type=bool, help="If set to true, the all neighbors will be considered, not just them within the standard deviation.")
     parser.add_argument("--epos_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos', type=str, help="The file path to the .pos or .epos file.")
     parser.add_argument("--rrng_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng', type=str, help="The file path to the .rrng file.")
-    parser.add_argument("--out_path", default= '', type=str, help="The file path for the .ply file that will be written")
+    parser.add_argument("--out_dir", default= '/home/qa43nawu/temp/qa43nawu/out/', type=str, help="The directory in that the .ply file will be written.")
+    parser.add_argument("--out_file_name", default= '', type=str, help="The file name of the .ply file that will be written.")
     parsed_args = parser.parse_args()
 
     args = Namespace(compute_cov3D_python=False, convert_SHs_python=True, data_device='cuda', debug=False, eval=False,
@@ -657,7 +660,7 @@ if __name__ == "__main__":
     colors = np.asarray(atom_color_list)[:, :3]
 
     if not parsed_args.skip_pca:
-        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization)
+        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
     gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
@@ -674,10 +677,16 @@ if __name__ == "__main__":
     comments.append('max_distance: ' + str(parsed_args.max_distance))
     comments.append('normalization: ' + str(parsed_args.normalization))
 
-    file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_test' + '.ply'
+    if not parsed_args.out_file_name:
+        file_name = 'point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_test' + '.ply'
+    else:
+        file_name = parsed_args.out_file_name
+
+    out_path = os.path.join(parsed_args.out_dir, file_name)
+
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
-    gaussians.save_ply(file_name, colors, comments)
+    gaussians.save_ply(out_path, colors, comments)
 
     print('wrote ply', time.time() - start)
 
