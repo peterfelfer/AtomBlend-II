@@ -693,13 +693,19 @@ if __name__ == "__main__":
     print('wrote ply', time.time() - start)
 
     # debug
-    # volume_scale = zip(volume_list, scale_list)
-    volume_scale = np.array(volume_opacity_list)
+    from scipy.stats import norm
+    import matplotlib.mlab as mlab
+    import matplotlib.pyplot as plt
 
-    cov3d_sum = [sum(i) for i in cov3D_list]
-    volume_sum = [sum(i) for i in volume_list]
+    # best fit of the data
+    (mu, sigma) = norm.fit(volume_opacity_list)
 
     counts, bins = np.histogram(volume_opacity_list, bins=1000)
+
+    # add a 'best fit' line
+    y = norm.pdf(bins, mu, sigma)
+    l = plt.plot(bins, y, 'r--', linewidth=2)
+
     plt.stairs(counts, bins)
     plt.xlabel('value')
     plt.ylabel('frequency')
