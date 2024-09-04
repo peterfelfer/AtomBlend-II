@@ -171,9 +171,14 @@ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y,
 	t.x = min(limx, max(-limx, txtz)) * t.z;
 	t.y = min(limy, max(-limy, tytz)) * t.z;
 
+//	glm::mat3 J = glm::mat3(
+//		focal_x / t.z, 0.0f, -(focal_x * t.x) / (t.z * t.z),
+//		0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
+//		0, 0, 0);
+
 	glm::mat3 J = glm::mat3(
-		focal_x / t.z, 0.0f, -(focal_x * t.x) / (t.z * t.z),
-		0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
+		1, 0, 0,
+		0, 1, 0,
 		0, 0, 0);
 
 	glm::mat3 W = glm::mat3(

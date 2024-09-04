@@ -37,6 +37,7 @@ cov3D_list = []
 volume_opacity_list = []
 scale_list = []
 volume_list = []
+distance_list = []
 
 def get_indices():
     atom_index_list = []
@@ -413,7 +414,7 @@ def load_pos_file(num_atoms, file_path):
 
     return coords
 
-def calc_standard_deviation(distances, indices):
+def calc_standard_deviation(distances, indices, num_sd):
 
     # mean_x, mean_y, mean_z = np.mean(point_cloud, axis=0)
     # std_x, std_y, std_z = np.std(point_cloud, axis=0)
@@ -431,8 +432,6 @@ def calc_standard_deviation(distances, indices):
 
     mean = np.mean(distances, axis=0)
     std = np.std(distances, axis=0)
-
-    num_sd = 3
 
     sd_range_lower = mean - std * num_sd
     sd_range_upper = mean + std * num_sd
@@ -484,8 +483,8 @@ def calc_pca(point_cloud):
 
     return transformed_cov_matrix, volume_vec
 
-def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_dev=False):
-    global cov3D_list, volume_opacity_list, scale_list, volume_list
+def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_dev=False, num_sd = 1):
+    global cov3D_list, volume_opacity_list, scale_list, volume_list, distance_list
 
     for elem in all_elements_by_name:
         coords = all_elements_by_name[elem][('coordinates')]
@@ -512,10 +511,11 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             distance = distance[filter]
 
             if not skip_std_dev:
-                indices = calc_standard_deviation(distance, indices)
+                indices = calc_standard_deviation(distance, indices, num_sd)
 
             indices = [indices]
             nn_coords = coords[indices][0]
+            distance = distance[:len(indices[0])]
 
             # standardization step
             # means = np.mean(nn_coords, axis=0) # mean of each axis x,y,z
@@ -587,6 +587,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             volume_opacity_list.append([volume])
             scale_list.append([scale])
             volume_list.append([volume])
+            distance_list.append(np.sum(distance / len(distance)))
 
 
 
@@ -600,6 +601,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
     parser.add_argument("--normalization", default=1, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
     parser.add_argument("--num_atoms", default=10000, type=int, help="The numbers of atoms that the .ply file should contain.")
+    parser.add_argument("--num_sd", default=10000, type=int, help="The number of standard deviations that determines the neighbors that should be considered.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
     parser.add_argument("--skip_std_dev", default=False, type=bool, help="If set to true, the all neighbors will be considered, not just them within the standard deviation.")
     parser.add_argument("--epos_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos', type=str, help="The file path to the .pos or .epos file.")
@@ -660,7 +662,7 @@ if __name__ == "__main__":
     colors = np.asarray(atom_color_list)[:, :3]
 
     if not parsed_args.skip_pca:
-        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev)
+        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
     gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
@@ -691,13 +693,13 @@ if __name__ == "__main__":
     print('wrote ply', time.time() - start)
 
     # debug
-    volume_scale = zip(volume_list, scale_list)
-    volume_scale = np.array(volume_scale)
+    # volume_scale = zip(volume_list, scale_list)
+    volume_scale = np.array(volume_opacity_list)
 
     cov3d_sum = [sum(i) for i in cov3D_list]
     volume_sum = [sum(i) for i in volume_list]
 
-    counts, bins = np.histogram(volume_sum)
+    counts, bins = np.histogram(volume_opacity_list, bins=1000)
     plt.stairs(counts, bins)
     plt.xlabel('value')
     plt.ylabel('frequency')

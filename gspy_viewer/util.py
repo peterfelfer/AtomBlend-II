@@ -60,6 +60,7 @@ class Camera:
             self.znear,
             self.zfar
         )
+        # glm.ortho(-self.w/2, self.w/2, -self.h/2, self.h/2, self.znear, self.zfar)
         return np.array(project_mat).astype(np.float32)
 
     def get_htanfovxy_focal(self):
