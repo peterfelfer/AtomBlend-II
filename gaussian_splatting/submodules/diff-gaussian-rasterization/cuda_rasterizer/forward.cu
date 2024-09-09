@@ -302,6 +302,9 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3] };
     const float scale = index_properties[index * 5 + 4];
 
+    if (col.w != 0.0){
+        col.w = opacities[idx];
+    }
 
     ////// DEBUG
 

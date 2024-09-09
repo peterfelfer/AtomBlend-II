@@ -22,6 +22,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 import numpy as np
 from scipy.spatial import KDTree
+from scipy.stats import norm
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
 import time
 
@@ -34,7 +37,7 @@ atom_color_list = []
 all_elems_sorted_by_mn = []
 unknown_label = 'n/a'
 cov3D_list = []
-volume_opacity_list = []
+volume_opacity_list = np.array([])
 scale_list = []
 volume_list = []
 distance_list = []
@@ -498,7 +501,11 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
 
             # get n nearest neighbors; only consider neighbors with distance < distance_upper_bound
             n = num_neighbors if all_elements_by_name[elem]['num_of_atoms'] >= num_neighbors else all_elements_by_name[elem]['num_of_atoms']
-            distance, indices = kdtree.query(query_coord, k=n, distance_upper_bound=max_distance)
+            distance, indices = kdtree.query(query_coord, k=n+1, distance_upper_bound=max_distance)
+
+             # first point will be the query point
+            distance = distance[1:]
+            indices = indices[1:]
 
             if isinstance(distance, float):
                 distance = np.array([distance])
@@ -510,12 +517,35 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             indices = indices[filter]
             distance = distance[filter]
 
+            # skip if no neighbors are found
+            if len(distance) == 0:
+                cov_mat = np.zeros(6)
+                cov_mat[0] = 0.1
+                cov_mat[1] = 0.0
+                cov_mat[2] = 0.0
+                cov_mat[3] = 0.1
+                cov_mat[4] = 0.0
+                cov_mat[5] = 0.1
+
+                volume = 4 / 3 * 3.14159 * 1
+                scale = 1
+                distance = 0.0
+
+                cov3D_list.append(np.asarray(cov_mat))
+                scale_list.append([scale])
+                volume_list.append([volume])
+                distance_list.append(distance)
+                continue
+
             if not skip_std_dev:
                 indices = calc_standard_deviation(distance, indices, num_sd)
 
             indices = [indices]
             nn_coords = coords[indices][0]
             distance = distance[:len(indices[0])]
+
+            if len(nn_coords) == 0:
+                pass
 
             # standardization step
             # means = np.mean(nn_coords, axis=0) # mean of each axis x,y,z
@@ -584,12 +614,42 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             cov_mat = reduced_covmat
 
             cov3D_list.append(np.asarray(cov_mat))
-            volume_opacity_list.append([volume])
             scale_list.append([scale])
             volume_list.append([volume])
             distance_list.append(np.sum(distance / len(distance)))
 
 
+def fit():
+    global volume_list, volume_opacity_list
+    # best fit of the data
+    (mu, sigma) = norm.fit(volume_list)
+
+    # if the standard deviation lies within the data, we normalize by the first standard deviation
+    max_distance = np.max(volume_list)
+    if mu + sigma < max_distance:
+        max_distance = mu + sigma
+
+    print('max distance: ', max_distance)
+
+    volume_opacity_list = volume_list / max_distance
+    volume_opacity_list = 1.5 - volume_opacity_list
+    # volume_opacity_list = np.clip(volume_opacity_list, 0.0, 1.0)
+
+    counts, bins = np.histogram(volume_opacity_list, bins=1000)
+
+    # add a 'best fit' line
+    y = norm.pdf(bins, mu, sigma)
+    l = plt.plot(bins, y, 'r--', linewidth=2)
+
+    # plt.axvline(mu, color='r', linestyle='--', label=f'Peak at {mu:.2f}')
+    # plt.axvline(mu + sigma, color='b', linestyle='--', label='sigma1')
+    # plt.axvline(mu - sigma, color='b', linestyle='--', label='sigma1')
+
+    plt.stairs(counts, bins)
+    plt.xlabel('value')
+    plt.ylabel('frequency')
+    # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -665,6 +725,9 @@ if __name__ == "__main__":
         find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
+    fit()
+
+    ### ply writing
     gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
 
     # write numbers of atom elements as comment
@@ -692,22 +755,3 @@ if __name__ == "__main__":
 
     print('wrote ply', time.time() - start)
 
-    # debug
-    from scipy.stats import norm
-    import matplotlib.mlab as mlab
-    import matplotlib.pyplot as plt
-
-    # best fit of the data
-    (mu, sigma) = norm.fit(volume_opacity_list)
-
-    counts, bins = np.histogram(volume_opacity_list, bins=1000)
-
-    # add a 'best fit' line
-    y = norm.pdf(bins, mu, sigma)
-    l = plt.plot(bins, y, 'r--', linewidth=2)
-
-    plt.stairs(counts, bins)
-    plt.xlabel('value')
-    plt.ylabel('frequency')
-    # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
-    plt.show()
