@@ -633,7 +633,7 @@ def fit():
 
     volume_opacity_list = volume_list / max_distance
     volume_opacity_list = 1.5 - volume_opacity_list
-    # volume_opacity_list = np.clip(volume_opacity_list, 0.0, 1.0)
+    volume_opacity_list = np.clip(volume_opacity_list, 0.0, 1.0)
 
     counts, bins = np.histogram(volume_opacity_list, bins=1000)
 
@@ -743,7 +743,7 @@ if __name__ == "__main__":
     comments.append('normalization: ' + str(parsed_args.normalization))
 
     if not parsed_args.out_file_name:
-        file_name = 'point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_test' + '.ply'
+        file_name = 'point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_0_to_1.5' + '.ply'
     else:
         file_name = parsed_args.out_file_name
 
