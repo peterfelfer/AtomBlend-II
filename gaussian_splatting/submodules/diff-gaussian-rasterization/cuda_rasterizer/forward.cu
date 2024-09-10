@@ -959,7 +959,7 @@ render_gaussianBall(
             float alpha_value = min(0.99f, con_o.w * exp(power));
             float opaque_value = 1;
             float alpha = alpha_value;
-            if(con_o.w > 0.5) {
+            if(con_o.w > 1.0) {
                 float interp_value = con_o.w * 2 - 1;
                 alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
             }

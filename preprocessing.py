@@ -534,7 +534,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
                 cov3D_list.append(np.asarray(cov_mat))
                 scale_list.append([scale])
                 volume_list.append([volume])
-                distance_list.append(distance)
+                distance_list.append([distance])
                 continue
 
             if not skip_std_dev:
@@ -616,26 +616,26 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             cov3D_list.append(np.asarray(cov_mat))
             scale_list.append([scale])
             volume_list.append([volume])
-            distance_list.append(np.sum(distance / len(distance)))
+            distance_list.append([np.sum(distance / len(distance))])
 
 
 def fit():
-    global volume_list, volume_opacity_list
+    global volume_list, volume_opacity_list, distance_list
     # best fit of the data
-    (mu, sigma) = norm.fit(volume_list)
+    (mu, sigma) = norm.fit(distance_list)
 
     # if the standard deviation lies within the data, we normalize by the first standard deviation
-    max_distance = np.max(volume_list)
+    max_distance = np.max(distance_list)
     if mu + sigma < max_distance:
         max_distance = mu + sigma
 
     print('max distance: ', max_distance)
 
-    volume_opacity_list = volume_list / max_distance
-    volume_opacity_list = 1.5 - volume_opacity_list
+    distance_list = distance_list / max_distance
+    volume_opacity_list = 1.5 - distance_list
     volume_opacity_list = np.clip(volume_opacity_list, 0.0, 1.0)
 
-    counts, bins = np.histogram(volume_opacity_list, bins=1000)
+    counts, bins = np.histogram(distance_list, bins=1000)
 
     # add a 'best fit' line
     y = norm.pdf(bins, mu, sigma)
@@ -650,6 +650,7 @@ def fit():
     plt.ylabel('frequency')
     # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
     plt.show()
+
 
 
 if __name__ == "__main__":

@@ -337,6 +337,10 @@ def main():
                 imgui.separator()
                 imgui.spacing()
 
+                if imgui.collapsing_header("Individual opacity")[0]:
+                    imgui.core.slider_float("Intensity", )
+                    pass
+
                 if imgui.collapsing_header("Rendering")[0]:
                     #### render mode ####
                     if g_renderer_idx == 0:  # ogl
