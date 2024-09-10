@@ -72,6 +72,8 @@ class GaussianDataCUDA:
     cov3D: torch.Tensor
     num_of_atoms_by_element: dict
     indices: torch.Tensor
+    volume_opacity: torch.Tensor
+    distance_opacity: torch.Tensor
     
     def __len__(self):
         return len(self.xyz)
@@ -108,6 +110,9 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
         cov3D = torch.tensor(gau.cov3D).float().cuda().requires_grad_(False),
         num_of_atoms_by_element = gau.num_of_atoms_by_element,
         indices = torch.tensor(gau.indices).float().cuda().requires_grad_(False),
+        volume_opacity=torch.tensor(gau.volume_opacity).float().cuda().requires_grad_(False),
+        distance_opacity=torch.tensor(gau.distance_opacity).float().cuda().requires_grad_(False),
+
     )
     gaus.sh = gaus.sh.reshape(len(gaus), -1, 3).contiguous()
     return gaus
@@ -238,7 +243,7 @@ class CUDARenderer(GaussianRenderBase):
         self.raster_settings["tanfovx"] = hfovx
         self.raster_settings["tanfovy"] = hfovy
 
-    def draw(self, g_render_cov3D=False):
+    def draw(self, g_render_cov3D=False, opac_state = 2):
         if self.reduce_updates and not self.need_rerender:
             gl.glUseProgram(self.program)
             gl.glBindTexture(gl.GL_TEXTURE_2D, self.tex)
@@ -257,28 +262,23 @@ class CUDARenderer(GaussianRenderBase):
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
-        if g_render_cov3D:
-            with torch.no_grad():
-                img, radii = rasterizer(
-                    means3D = self.gaussians.xyz,
-                    means2D = None,
-                    opacities = self.gaussians.opacity,
-                    scales = self.gaussians.scale,
-                    cov3D_precomp = self.gaussians.cov3D,
-                    indices = self.gaussians.indices,
-                    index_properties = self.raster_settings["index_properties"]
-                )
-        else:
-            with torch.no_grad():
-                img, radii = rasterizer(
-                    means3D = self.gaussians.xyz,
-                    means2D = None,
-                    opacities = self.gaussians.opacity,
-                    scales = None,
-                    cov3D_precomp = None,
-                    indices = self.gaussians.indices,
-                    index_properties = self.raster_settings["index_properties"]
-                )
+        opacity_param = None
+        if opac_state == 0:
+            opacity_param = self.gaussians.volume_opacity
+        elif opac_state == 1:
+            opacity_param = self.gaussians.distance_opacity
+
+        # if g_render_cov3D:
+        with torch.no_grad():
+            img, radii = rasterizer(
+                means3D = self.gaussians.xyz,
+                means2D = None,
+                opacities = opacity_param,
+                scales = self.gaussians.scale,
+                cov3D_precomp = self.gaussians.cov3D if g_render_cov3D else None,
+                indices = self.gaussians.indices,
+                index_properties = self.raster_settings["index_properties"]
+            )
 
         # print('viewmatrix', raster_settings.viewmatrix)
         # print('projmatrix', raster_settings.projmatrix)

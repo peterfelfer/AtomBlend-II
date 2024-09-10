@@ -37,7 +37,6 @@ atom_color_list = []
 all_elems_sorted_by_mn = []
 unknown_label = 'n/a'
 cov3D_list = []
-volume_opacity_list = np.array([])
 scale_list = []
 volume_list = []
 distance_list = []
@@ -487,7 +486,7 @@ def calc_pca(point_cloud):
     return transformed_cov_matrix, volume_vec
 
 def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_dev=False, num_sd = 1):
-    global cov3D_list, volume_opacity_list, scale_list, volume_list, distance_list
+    global cov3D_list, scale_list, volume_list, distance_list
 
     for elem in all_elements_by_name:
         coords = all_elements_by_name[elem][('coordinates')]
@@ -619,8 +618,41 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             distance_list.append([np.sum(distance / len(distance))])
 
 
-def fit():
-    global volume_list, volume_opacity_list, distance_list
+def fit_volume():
+    global volume_list
+    # best fit of the data
+    (mu, sigma) = norm.fit(volume_list)
+
+    # if the standard deviation lies within the data, we normalize by the first standard deviation
+    max_distance = np.max(volume_list)
+    if mu + sigma < max_distance:
+        max_distance = mu + sigma
+
+    print('max volume: ', max_distance)
+
+    counts, bins = np.histogram(volume_list, bins=1000)
+
+    volume_list = volume_list / max_distance
+    volume_list = 1.0 - volume_list
+    volume_list = np.clip(volume_list, 0.0, 1.0)
+
+    # add a 'best fit' line
+    y = norm.pdf(bins, mu, sigma) * 100000
+    l = plt.plot(bins, y, 'r--', linewidth=2)
+
+    plt.axvline(mu, color='r', linestyle='--', label=f'Peak at {mu:.2f}')
+    plt.axvline(mu + sigma, color='b', linestyle='--', label='sigma1')
+    plt.axvline(mu - sigma, color='b', linestyle='--', label='sigma1')
+
+    plt.stairs(counts, bins)
+    plt.xlabel('volume')
+    plt.ylabel('frequency')
+    # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
+    plt.show()
+
+
+def fit_distance():
+    global distance_list
     # best fit of the data
     (mu, sigma) = norm.fit(distance_list)
 
@@ -631,22 +663,22 @@ def fit():
 
     print('max distance: ', max_distance)
 
-    distance_list = distance_list / max_distance
-    volume_opacity_list = 1.5 - distance_list
-    volume_opacity_list = np.clip(volume_opacity_list, 0.0, 1.0)
-
     counts, bins = np.histogram(distance_list, bins=1000)
 
+    distance_list = distance_list / max_distance
+    distance_list = 1.0 - distance_list
+    distance_list = np.clip(distance_list, 0.0, 1.0)
+
     # add a 'best fit' line
-    y = norm.pdf(bins, mu, sigma)
+    y = norm.pdf(bins, mu, sigma) * 100
     l = plt.plot(bins, y, 'r--', linewidth=2)
 
-    # plt.axvline(mu, color='r', linestyle='--', label=f'Peak at {mu:.2f}')
-    # plt.axvline(mu + sigma, color='b', linestyle='--', label='sigma1')
-    # plt.axvline(mu - sigma, color='b', linestyle='--', label='sigma1')
+    plt.axvline(mu, color='r', linestyle='--', label=f'Peak at {mu:.2f}')
+    plt.axvline(mu + sigma, color='b', linestyle='--', label='sigma1')
+    plt.axvline(mu - sigma, color='b', linestyle='--', label='sigma1')
 
     plt.stairs(counts, bins)
-    plt.xlabel('value')
+    plt.xlabel('distance')
     plt.ylabel('frequency')
     # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
     plt.show()
@@ -726,10 +758,11 @@ if __name__ == "__main__":
         find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    fit()
+    fit_volume()
+    fit_distance()
 
     ### ply writing
-    gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_opacity_list), np.asarray(indices), np.asarray(scale_list), props)
+    gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_list), np.asarray(distance_list), np.asarray(indices), np.asarray(scale_list), props)
 
     # write numbers of atom elements as comment
     comments = []

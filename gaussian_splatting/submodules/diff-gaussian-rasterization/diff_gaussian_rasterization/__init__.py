@@ -216,6 +216,8 @@ class GaussianRasterizer(nn.Module):
             cov3D_precomp = torch.Tensor([])
         if indices is None:
             indices = torch.Tensor([])
+        if opacities is None:
+            opacities = torch.Tensor([])
 
         # Invoke C++/CUDA rasterization routine
         return rasterize_gaussians(

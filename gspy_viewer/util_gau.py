@@ -12,6 +12,7 @@ class GaussianData:
     cov3D: np.ndarray
     num_of_atoms_by_element: dict
     volume_opacity: np.ndarray
+    distance_opacity: np.ndarray
     indices: np.ndarray
 
     def flat(self) -> np.ndarray:
@@ -70,6 +71,7 @@ def naive_gaussian():
     ]).astype(np.float32).reshape(-1, 3)
 
     gau_volume_opacity = np.array([1, 1, 1])
+    gau_distance_opacity = np.array([1, 1, 1])
 
     gau_indices = np.array([[1], [1], [1], [1]])
 
@@ -82,6 +84,7 @@ def naive_gaussian():
         gau_cov3D,
         gau_num_of_atoms_by_element,
         gau_volume_opacity,
+        gau_distance_opacity,
         gau_indices
     )
 
@@ -156,7 +159,10 @@ def load_ply(path):
         cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
     volume_opacity = np.ones((xyz.shape[0], 1))
-    # volume_opacity[:, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
+    volume_opacity[:, 0] = np.asarray(plydata.elements[0]["volume_opacity"])
+
+    distance_opacity = np.ones((xyz.shape[0], 1))
+    distance_opacity[:, 0] = np.asarray(plydata.elements[0]["distance_opacity"])
 
     indices = np.zeros((xyz.shape[0], 1))
     indices[:, 0] = np.asarray(plydata.elements[0]["indices"])
@@ -173,11 +179,12 @@ def load_ply(path):
     #                     features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
     # shs = shs.astype(np.float32)
     volume_opacity = volume_opacity.astype(np.float32)
+    distance_opacity = distance_opacity.astype(np.float32)
     indices = indices.astype(np.float32)
 
     shs = features_dc.reshape(-1, 3)
 
-    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, volume_opacity, indices)
+    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, volume_opacity, distance_opacity, indices)
 
 if __name__ == "__main__":
     gs = load_ply("/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply")

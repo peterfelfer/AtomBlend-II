@@ -300,10 +300,10 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
     // Get color and scale for corresponding index
 	int index = indices[idx];
-	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3] };
+	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3]};
     const float scale = index_properties[index * 5 + 4];
 
-    if (col.w != 0.0){
+    if (col.w != 0.0 && opacities != nullptr){
         col.w = opacities[idx] + individual_opacity_factor;
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
     }

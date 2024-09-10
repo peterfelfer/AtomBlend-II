@@ -51,6 +51,7 @@ file_path = ''
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 volume_opacity = False
 volume_opacity_fac = 3.0
+individual_opacity_state = 2
 
 def impl_glfw_init():
     window_name = "Atom Probe Rendering"
@@ -234,7 +235,8 @@ def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, g_show_debug_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
-        g_render_cov3D, debug_covmat, render_all_elements, file_path, volume_opacity_fac, volume_opacity
+        g_render_cov3D, debug_covmat, render_all_elements, file_path, volume_opacity_fac, volume_opacity, \
+        individual_opacity_state
         
     imgui.create_context()
     if args.hidpi:
@@ -280,7 +282,7 @@ def main():
         update_camera_pose_lazy()
         update_camera_intrin_lazy()
 
-        g_renderer.draw(g_render_cov3D)
+        g_renderer.draw(g_render_cov3D, individual_opacity_state)
 
         # imgui ui
         if imgui.begin_main_menu_bar():
@@ -338,6 +340,19 @@ def main():
                 imgui.spacing()
 
                 if imgui.collapsing_header("Individual opacity")[0]:
+                    changed = imgui.radio_button("Depending on volume", individual_opacity_state == 0)
+                    if changed:
+                        individual_opacity_state = 0
+                        g_renderer.sort_and_update(g_camera)
+                    changed = imgui.radio_button("Depending on distance to neighbors", individual_opacity_state == 1)
+                    if changed:
+                        individual_opacity_state = 1
+                        g_renderer.sort_and_update(g_camera)
+                    changed = imgui.radio_button("No individual opacity", individual_opacity_state == 2)
+                    if changed:
+                        individual_opacity_state = 2
+                        g_renderer.sort_and_update(g_camera)
+
                     changed, new = imgui.core.slider_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], -1.0, 1.0)
 
                     if changed:
