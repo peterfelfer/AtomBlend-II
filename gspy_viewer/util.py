@@ -44,6 +44,7 @@ class Camera:
 
     def get_view_matrix(self):
         return np.array(glm.lookAt(self.position, self.target, self.up))
+        # return np.array(glm.translate(glm.mat4(1.0), -self.position))
 
     def get_project_matrix(self):
         # htanx, htany, focal = self.get_htanfovxy_focal()
@@ -60,7 +61,7 @@ class Camera:
             self.znear,
             self.zfar
         )
-        # glm.ortho(-self.w/2, self.w/2, -self.h/2, self.h/2, self.znear, self.zfar)
+        # project_mat = glm.ortho(0, 384, 0, 216, self.znear, self.zfar)
         return np.array(project_mat).astype(np.float32)
 
     def get_htanfovxy_focal(self):

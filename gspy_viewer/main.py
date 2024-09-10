@@ -327,7 +327,7 @@ def main():
                         individual_opacity_state = 2
                         g_renderer.sort_and_update(g_camera)
 
-                    changed, new = imgui.core.slider_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], -1.0, 1.0)
+                    changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 0.01, -1.0, 1.0)
 
                     if changed:
                         g_renderer.raster_settings["individual_opacity_factor"] = new
@@ -406,35 +406,35 @@ def main():
             if imgui.button(label='rot 180'):
                 g_camera.flip_ground()
 
-            changed, g_camera.target_dist = imgui.slider_float(
-                    "t", g_camera.target_dist, 1., 8., "target dist = %.3f"
+            changed, g_camera.target_dist = imgui.drag_float(
+                    "t", g_camera.target_dist, 0.1, 1., 8., "target dist = %.3f"
                 )
             if changed:
                 g_camera.update_target_distance()
 
-            changed, g_camera.rot_sensitivity = imgui.slider_float(
-                    "r", g_camera.rot_sensitivity, 0.002, 0.1, "rotate speed = %.3f"
+            changed, g_camera.rot_sensitivity = imgui.drag_float(
+                    "r", g_camera.rot_sensitivity, 0.1, 0.002, 0.1, "rotate speed = %.3f"
                 )
             imgui.same_line()
             if imgui.button(label="reset r"):
                 g_camera.rot_sensitivity = 0.02
 
-            changed, g_camera.trans_sensitivity = imgui.slider_float(
-                    "m", g_camera.trans_sensitivity, 0.001, 1.0, "move speed = %.3f"
+            changed, g_camera.trans_sensitivity = imgui.drag_float(
+                    "m", g_camera.trans_sensitivity, 0.01, 0.001, 1.0, "move speed = %.3f"
                 )
             imgui.same_line()
             if imgui.button(label="reset m"):
                 g_camera.trans_sensitivity = 0.01
 
-            changed, g_camera.zoom_sensitivity = imgui.slider_float(
-                    "z", g_camera.zoom_sensitivity, 0.001, 0.05, "zoom speed = %.3f"
+            changed, g_camera.zoom_sensitivity = imgui.drag_float(
+                    "z", g_camera.zoom_sensitivity, 0.001, 0.001, 0.05, "zoom speed = %.3f"
                 )
             imgui.same_line()
             if imgui.button(label="reset z"):
                 g_camera.zoom_sensitivity = 0.01
 
-            changed, g_camera.roll_sensitivity = imgui.slider_float(
-                    "ro", g_camera.roll_sensitivity, 0.003, 0.1, "roll speed = %.3f"
+            changed, g_camera.roll_sensitivity = imgui.drag_float(
+                    "ro", g_camera.roll_sensitivity, 0.001, 0.003, 0.1, "roll speed = %.3f"
                 )
             imgui.same_line()
             if imgui.button(label="reset ro"):
@@ -464,10 +464,10 @@ def main():
                 imgui.text('Display settings:')
 
                 imgui.core.push_item_width(500)
-                changed, global_alpha = imgui.core.slider_float('Global alpha', global_alpha, 0.0, 1.0)
+                changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
-                changed, global_scale = imgui.core.slider_float('Global scale', global_scale, 0.0, 30.0)
+                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.1, 0.0, 30.0)
                 if changed:
                     set_global_scale(gaussians, global_scale)
 
@@ -506,7 +506,7 @@ def main():
 
                     imgui.core.push_item_width(200)
 
-                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.slider_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.0, 10.0)
+                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.drag_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.01, 0.0, 10.0)
 
                     if changed:
                         set_index_properties(gaussians)
@@ -540,21 +540,21 @@ def main():
                     imgui.table_next_row()
 
                     imgui.table_set_column_index(0)
-                    c1, debug_covmat[0] = imgui.slider_float(f"##cell{0}{0}", debug_covmat[0], -1, 1, format="%.3f")
+                    c1, debug_covmat[0] = imgui.drag_float(f"##cell{0}{0}", debug_covmat[0], 0.01, -1, 1, format="%.3f")
                     imgui.table_set_column_index(1)
-                    c2, debug_covmat[1] = imgui.slider_float(f"##cell{0}{1}", debug_covmat[1], -1, 1, format="%.3f")
+                    c2, debug_covmat[1] = imgui.drag_float(f"##cell{0}{1}", debug_covmat[1], 0.01, -1, 1, format="%.3f")
                     imgui.table_set_column_index(2)
-                    c3, debug_covmat[2] = imgui.slider_float(f"##cell{0}{2}", debug_covmat[2], -1, 1, format="%.3f")
+                    c3, debug_covmat[2] = imgui.drag_float(f"##cell{0}{2}", debug_covmat[2], 0.01, -1, 1, format="%.3f")
 
                     imgui.table_next_row()
                     imgui.table_set_column_index(1)
-                    c4, debug_covmat[3] = imgui.slider_float(f"##cell{1}{1}", debug_covmat[3], -1, 1, format="%.3f")
+                    c4, debug_covmat[3] = imgui.drag_float(f"##cell{1}{1}", debug_covmat[3], 0.01, -1, 1, format="%.3f")
                     imgui.table_set_column_index(2)
-                    c5, debug_covmat[4] = imgui.slider_float(f"##cell{1}{2}", debug_covmat[4], -1, 1, format="%.3f")
+                    c5, debug_covmat[4] = imgui.drag_float(f"##cell{1}{2}", debug_covmat[4], 0.01, -1, 1, format="%.3f")
 
                     imgui.table_next_row()
                     imgui.table_set_column_index(2)
-                    c6, debug_covmat[5] = imgui.slider_float(f"##cell{2}{2}", debug_covmat[5], -1, 1, format="%.3f")
+                    c6, debug_covmat[5] = imgui.drag_float(f"##cell{2}{2}", debug_covmat[5], 0.01, -1, 1, format="%.3f")
 
                     if c1 or c2 or c3 or c4 or c5 or c6:
                         gaussians.cov3D = np.tile(debug_covmat, (gaussians.opacity.shape[0], 1))
