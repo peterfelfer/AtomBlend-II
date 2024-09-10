@@ -131,8 +131,7 @@ class CUDARenderer(GaussianRenderBase):
             "debug": False,
             "render_mode": 0,
             "index_properties": torch.Tensor([]),
-            "orthographic_cam": False,
-            "individual_opacity_intensity": 1.0,
+            "orthographic_cam": False
         }
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
