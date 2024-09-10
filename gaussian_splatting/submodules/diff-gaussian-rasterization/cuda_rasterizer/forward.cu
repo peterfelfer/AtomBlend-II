@@ -275,7 +275,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const bool orthographic_cam)
+	const bool orthographic_cam,
+	const float individual_opacity_factor)
 {
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= P)
@@ -303,7 +304,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
     const float scale = index_properties[index * 5 + 4];
 
     if (col.w != 0.0){
-        col.w = opacities[idx];
+        col.w = opacities[idx] + individual_opacity_factor;
+        col.w = glm::clamp(col.w, 0.0f, 1.0f);
     }
 
     ////// DEBUG
@@ -1336,7 +1338,8 @@ void FORWARD::preprocess(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const bool orthographic_cam)
+	const bool orthographic_cam,
+	const float individual_opacity_factor)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
 		P, D, M,
@@ -1365,6 +1368,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		prefiltered,
 		indices,
 		index_properties,
-		orthographic_cam
+		orthographic_cam,
+		individual_opacity_factor
 		);
 }

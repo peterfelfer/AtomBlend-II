@@ -338,8 +338,15 @@ def main():
                 imgui.spacing()
 
                 if imgui.collapsing_header("Individual opacity")[0]:
-                    imgui.core.slider_float("Intensity", )
-                    pass
+                    changed, new = imgui.core.slider_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], -1.0, 1.0)
+
+                    if changed:
+                        g_renderer.raster_settings["individual_opacity_factor"] = new
+                        g_renderer.sort_and_update(g_camera)
+
+                imgui.spacing()
+                imgui.separator()
+                imgui.spacing()
 
                 if imgui.collapsing_header("Rendering")[0]:
                     #### render mode ####

@@ -47,7 +47,8 @@ namespace FORWARD
 		bool prefiltered,
 		const float* indices,
 		const float* index_properties,
-		const bool orthographic_cam);
+		const bool orthographic_cam,
+		const float individual_opacity_factor);
 
 	// Main rasterization method.
 	void render(int P,

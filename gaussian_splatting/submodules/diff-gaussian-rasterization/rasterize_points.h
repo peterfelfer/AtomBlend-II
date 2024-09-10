@@ -37,7 +37,8 @@ RasterizeGaussiansCUDA(
 	const int render_mode,
 	const torch::Tensor& indices,
 	const torch::Tensor& index_properties,
-	const bool orthographic_cam);
+	const bool orthographic_cam,
+	const float individual_opacity_factor);
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
  RasterizeGaussiansBackwardCUDA(
