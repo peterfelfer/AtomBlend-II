@@ -50,7 +50,6 @@ file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 volume_opacity = False
-volume_opacity_fac = 3.0
 individual_opacity_state = 2
 
 def impl_glfw_init():
@@ -172,31 +171,6 @@ def set_index_properties(gaussians):
     g_renderer.update_gaussian_data(gaussians)
     g_renderer.sort_and_update(g_camera)
 
-def set_individual_opacity(gaussians):
-    pass
-    # opacities = []
-    # index = 0
-    #
-    # for key in gaussians.num_of_atoms_by_element:
-    #     elem = gaussians.num_of_atoms_by_element[key]
-    #     is_rendered = gaussians.num_of_atoms_by_element[key]['is_rendered']
-    #     num = elem['num']
-    #
-    #     if volume_opacity and is_rendered:
-    #         opacities.extend(gaussians.volume_opacity[index:index + num] * volume_opacity_fac)
-    #     elif is_rendered:
-    #         opacities.extend(np.asarray([[1.0]] * num))
-    #     else:
-    #         opacities.extend(np.asarray([[0.0]] * num))
-    #
-    #     index = index + num
-    # np_arr = np.asarray(opacities)
-    # gaussians.opacity = torch.tensor(np_arr, dtype=torch.float32, device="cuda")
-    # g_renderer.update_gaussian_data(gaussians)
-    # g_renderer.sort_and_update(g_camera)
-    # g_renderer.need_rerender = True
-
-
 def set_cov3D_changes(gaussians):
     if not g_render_cov3D:
         g_renderer.set_scale_modifier(0.1)
@@ -235,7 +209,7 @@ def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, g_show_debug_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
-        g_render_cov3D, debug_covmat, render_all_elements, file_path, volume_opacity_fac, volume_opacity, \
+        g_render_cov3D, debug_covmat, render_all_elements, file_path, volume_opacity, \
         individual_opacity_state
         
     imgui.create_context()
@@ -600,20 +574,6 @@ def main():
                     if g_auto_sort:
                         g_renderer.sort_and_update(g_camera)
 
-
-                    #### individual opacity ####
-                    # individual opacities depending on size of gaussians
-                    imgui.core.push_id("1")
-                    changed_fac, volume_opacity_fac = imgui.slider_float(
-                        "", volume_opacity_fac, 0, 50, "volume opacity factor = %.3f"
-                    )
-                    imgui.same_line()
-                    changed_check, volume_opacity = imgui.checkbox("Individual opacities depending on size",
-                                                                   volume_opacity)
-
-                    if changed_fac or changed_check:
-                        set_individual_opacity(gaussians)
-                    imgui.pop_id()
 
             imgui.end()
         
