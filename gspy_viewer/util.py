@@ -30,13 +30,20 @@ class Camera:
         self.is_leftmouse_pressed = False
         self.is_rightmouse_pressed = False
         
-        self.rot_sensitivity = 0.02
-        self.trans_sensitivity = 0.1
-        self.zoom_sensitivity = 5.00
-        self.roll_sensitivity = 0.03
+        self.rot_sensitivity = 0.5
+        self.trans_sensitivity = 0.5
+        self.zoom_sensitivity = 0.5
+        self.roll_sensitivity = 0.5
         self.target_dist = 3.
 
         self.is_orthographic = False
+
+        # the sensitivity settings have a very different range such that the movement seems normal
+        # -> use adaptions to scale them all in a range of [0,1]
+        self.rot_sensitivity_adaption = 0.01
+        self.trans_sensitivity_wasd_adaption = 20.0
+        self.zoom_sensitivity_adaption = 10.0
+        self.roll_sensitivity_adaption = 0.1
     
     def _global_rot_mat(self):
         x = np.array([1, 0, 0])
@@ -88,8 +95,8 @@ class Camera:
         self.last_y = ypos
 
         if self.is_leftmouse_pressed:
-            self.yaw += xoffset * self.rot_sensitivity
-            self.pitch += yoffset * self.rot_sensitivity
+            self.yaw += xoffset * self.rot_sensitivity * self.rot_sensitivity_adaption
+            self.pitch += yoffset * self.rot_sensitivity * self.rot_sensitivity_adaption
 
             self.pitch = np.clip(self.pitch, -np.pi / 2, np.pi / 2)
 
@@ -117,14 +124,14 @@ class Camera:
     def process_wheel(self, dx, dy):
         front = self.target - self.position
         front = front / np.linalg.norm(front)
-        self.position += front * dy * self.zoom_sensitivity
-        self.target += front * dy * self.zoom_sensitivity
+        self.position += front * dy * self.zoom_sensitivity * self.zoom_sensitivity_adaption
+        self.target += front * dy * self.zoom_sensitivity * self.zoom_sensitivity_adaption
         self.is_pose_dirty = True
         
     def process_roll_key(self, d):
         front = self.target - self.position
         right = np.cross(front, self.up)
-        new_up = self.up + right * (d * self.roll_sensitivity / np.linalg.norm(right))
+        new_up = self.up + right * (d * (self.roll_sensitivity * self.roll_sensitivity_adaption) / np.linalg.norm(right))
         self.up = new_up / np.linalg.norm(new_up)
         self.is_pose_dirty = True
 
@@ -136,9 +143,9 @@ class Camera:
         right = np.cross(front, up)
         right = right / (np.linalg.norm(right) + 1e-8)
 
-        self.position += right * dx * self.zoom_sensitivity
-        self.position += front * dy * self.zoom_sensitivity
-        self.position += up * dz * self.zoom_sensitivity
+        self.position += right * dx * self.trans_sensitivity * self.trans_sensitivity_wasd_adaption
+        self.position += front * dy * self.trans_sensitivity * self.trans_sensitivity_wasd_adaption
+        self.position += up * dz * self.trans_sensitivity * self.trans_sensitivity_wasd_adaption
 
         self.target = self.position + front
         self.is_pose_dirty = True

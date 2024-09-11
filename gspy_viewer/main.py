@@ -34,7 +34,7 @@ g_renderer: GaussianRenderBase = g_renderer_list[g_renderer_idx]
 g_scale_modifier = 1.
 g_auto_sort = False
 g_show_control_win = True
-g_show_help_win = False
+g_show_help_win = True
 g_show_camera_win = True
 g_show_atom_settings_win = True
 g_show_debug_win = True
@@ -53,7 +53,7 @@ volume_opacity = False
 individual_opacity_state = 2
 
 def impl_glfw_init():
-    window_name = "Atom Probe Rendering"
+    window_name = "Interactive Gaussian Splatting Atom Probe Set Viewer"
 
     if not glfw.init():
         print("Could not initialize OpenGL context")
@@ -239,8 +239,11 @@ def main():
 
     g_renderer = g_renderer_list[g_renderer_idx]
 
-    # gaussian data
-    gaussians = util_gau.naive_gaussian()
+    # gaussian data; naive gaussian
+    # gaussians = util_gau.naive_gaussian()
+
+    # load "dummy" ply
+    gaussians = util_gau.load_ply('/home/qa43nawu/temp/qa43nawu/out/test.ply')
     update_activated_renderer_state(gaussians)
     set_index_properties(gaussians)
 
@@ -272,10 +275,84 @@ def main():
                 )
                 imgui.end_menu()
             imgui.end_main_menu_bar()
-        
-        if g_show_control_win:
-            if imgui.begin("Control", True):
 
+        if g_show_atom_settings_win:
+            imgui.core.set_next_window_position(0, 0, imgui.ONCE)
+            imgui.core.set_next_window_size(720, 1200, imgui.ONCE)
+            if imgui.begin("Atom Settings", True):
+                imgui.core.set_window_font_scale(2.0)
+
+                imgui.text('Display settings:')
+
+                imgui.core.push_item_width(500)
+                changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
+                if changed:
+                    set_global_alpha(gaussians, global_alpha)
+                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.01, 0.0, 10.0)
+                if changed:
+                    set_global_scale(gaussians, global_scale)
+
+                imgui.text('Element settings:')
+
+                changed, render_all_elements = imgui.core.checkbox('', render_all_elements)
+                if changed:
+                    changed_render_all_elements(gaussians)
+
+                imgui.same_line()
+                imgui.text('Name')
+
+                imgui.same_line(80, 50)
+                imgui.text('#Atoms')
+
+                imgui.same_line(200, 50)
+                imgui.text('Color (R, G, B, A)')
+
+                imgui.same_line(580)
+                imgui.text('Scale')
+
+                for elem in gaussians.num_of_atoms_by_element:
+                    imgui.push_id(elem)
+
+                    changed, gaussians.num_of_atoms_by_element[elem]['is_rendered'] = imgui.core.checkbox('##' + elem, gaussians.num_of_atoms_by_element[elem]['is_rendered'])
+
+                    if changed:
+                        set_color(gaussians, elem)
+
+                    imgui.same_line()
+
+                    imgui.text(elem)
+                    imgui.same_line(80, 50)
+
+                    imgui.text(str(gaussians.num_of_atoms_by_element[elem]['num']))
+                    imgui.same_line(200, 50)
+
+                    imgui.core.push_item_width(300)
+
+                    # imgui.table_set_column_index(1)
+                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4('##slider_scale' + elem, *gaussians.num_of_atoms_by_element[elem]['color'])
+
+                    if changed:
+                        set_index_properties(gaussians)
+
+                    # imgui.table_set_column_index(2)
+                    imgui.same_line(spacing=25)
+
+                    imgui.core.push_item_width(100)
+
+                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.drag_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.01, 0.0, 10.0)
+
+                    if changed:
+                        set_index_properties(gaussians)
+
+                    imgui.pop_id()
+
+            imgui.end()
+
+
+        if g_show_control_win:
+            imgui.core.set_next_window_position(0, 1200, imgui.ONCE)
+            imgui.core.set_next_window_size(720, 1200, imgui.ONCE)
+            if imgui.begin("Control", True):
                 imgui.core.set_window_font_scale(2.0)
 
                 if imgui.collapsing_header("Load file")[0]:
@@ -292,11 +369,11 @@ def main():
                             except RuntimeError as e:
                                 pass
 
-                    if imgui.button(label='open custom .ply'):
+                    if imgui.button(label='open .ply'):
                         file_path = filedialog.askopenfilename(title="open ply",
-                            initialdir="/home/qa43nawu/temp/qa43nawu/out/",
-                            filetypes=[('ply file', '.ply')]
-                            )
+                                                               initialdir="/home/qa43nawu/temp/qa43nawu/out/",
+                                                               filetypes=[('ply file', '.ply')]
+                                                               )
                         if file_path:
                             try:
                                 gaussians = util_gau.load_ply(file_path)
@@ -337,6 +414,63 @@ def main():
                 imgui.separator()
                 imgui.spacing()
 
+                if imgui.collapsing_header("Camera settings")[0]:
+                    # if imgui.button(label='rot 180'):
+                    #     g_camera.flip_ground()
+
+                    # changed, g_camera.target_dist = imgui.drag_float(
+                    #     "t", g_camera.target_dist, 0.1, 1., 8., "target dist = %.3f"
+                    # )
+                    # if changed:
+                    #     g_camera.update_target_distance()
+
+                    imgui.push_id("0")
+                    changed, g_camera.rot_sensitivity = imgui.drag_float(
+                        "##r", g_camera.rot_sensitivity, 0.01, 0.001, 1.0, "rotate speed = %.3f"
+                    )
+                    imgui.same_line()
+                    if imgui.button(label="reset"):
+                        g_camera.rot_sensitivity = 0.5
+                    imgui.pop_id()
+
+                    imgui.push_id("1")
+                    changed, g_camera.trans_sensitivity = imgui.drag_float(
+                        "##m", g_camera.trans_sensitivity, 0.01, 0.001, 1.0, "move speed = %.3f"
+                    )
+                    imgui.same_line()
+                    if imgui.button(label="reset"):
+                        g_camera.trans_sensitivity = 0.5
+                    imgui.pop_id()
+
+                    imgui.push_id("2")
+                    changed, g_camera.zoom_sensitivity = imgui.drag_float(
+                        "##z", g_camera.zoom_sensitivity, 0.01, 0.01, 1.0, "zoom speed = %.3f"
+                    )
+                    imgui.same_line()
+                    if imgui.button(label="reset"):
+                        g_camera.zoom_sensitivity = 0.5
+                    imgui.pop_id()
+
+                    imgui.push_id("3")
+                    changed, g_camera.roll_sensitivity = imgui.drag_float(
+                        "##ro", g_camera.roll_sensitivity, 0.01, 0.01, 1.0, "roll speed = %.3f"
+                    )
+                    imgui.same_line()
+                    if imgui.button(label="reset"):
+                        g_camera.roll_sensitivity = 0.03
+                    imgui.pop_id()
+
+                    changed, new = imgui.core.checkbox("Orthographic camera",
+                                                       g_renderer.raster_settings["orthographic_cam"])
+
+                    if changed:
+                        g_renderer.raster_settings["orthographic_cam"] = new
+                        g_renderer.sort_and_update(g_camera)
+
+                imgui.spacing()
+                imgui.separator()
+                imgui.spacing()
+
                 if imgui.collapsing_header("Rendering")[0]:
                     #### render mode ####
                     if g_renderer_idx == 0:  # ogl
@@ -354,7 +488,7 @@ def main():
                     changed, g_render_cov3D = imgui.core.checkbox('Shape atoms (use covariance matrices)', g_render_cov3D)
                     if changed:
                         set_cov3D_changes(gaussians)
-                
+
                 imgui.spacing()
                 imgui.separator()
                 imgui.spacing()
@@ -390,130 +524,43 @@ def main():
                 imgui.separator()
                 imgui.spacing()
 
-                if imgui.collapsing_header("Statistics")[0]:
-                    imgui.text(f"fps = {imgui.get_io().framerate:.1f}")
-
-                    changed, g_renderer.reduce_updates = imgui.checkbox(
-                        "reduce updates", g_renderer.reduce_updates,
-                    )
+                imgui.text(f"fps = {imgui.get_io().framerate:.1f}")
+                changed, g_renderer.reduce_updates = imgui.checkbox(
+                    "reduce updates", g_renderer.reduce_updates,
+                )
+                _, g_show_debug_win = imgui.checkbox("Show debug window", g_show_debug_win)
+                _, g_show_help_win = imgui.checkbox("Show help window", g_show_help_win)
 
                 imgui.end()
 
 
         if g_show_camera_win:
-            imgui.core.set_window_font_scale(2.0)
-
-            if imgui.button(label='rot 180'):
-                g_camera.flip_ground()
-
-            changed, g_camera.target_dist = imgui.drag_float(
-                    "t", g_camera.target_dist, 0.1, 1., 8., "target dist = %.3f"
-                )
-            if changed:
-                g_camera.update_target_distance()
-
-            changed, g_camera.rot_sensitivity = imgui.drag_float(
-                    "r", g_camera.rot_sensitivity, 0.1, 0.002, 0.1, "rotate speed = %.3f"
-                )
-            imgui.same_line()
-            if imgui.button(label="reset r"):
-                g_camera.rot_sensitivity = 0.02
-
-            changed, g_camera.trans_sensitivity = imgui.drag_float(
-                    "m", g_camera.trans_sensitivity, 0.01, 0.001, 1.0, "move speed = %.3f"
-                )
-            imgui.same_line()
-            if imgui.button(label="reset m"):
-                g_camera.trans_sensitivity = 0.01
-
-            changed, g_camera.zoom_sensitivity = imgui.drag_float(
-                    "z", g_camera.zoom_sensitivity, 0.001, 0.001, 0.05, "zoom speed = %.3f"
-                )
-            imgui.same_line()
-            if imgui.button(label="reset z"):
-                g_camera.zoom_sensitivity = 0.01
-
-            changed, g_camera.roll_sensitivity = imgui.drag_float(
-                    "ro", g_camera.roll_sensitivity, 0.001, 0.003, 0.1, "roll speed = %.3f"
-                )
-            imgui.same_line()
-            if imgui.button(label="reset ro"):
-                g_camera.roll_sensitivity = 0.03
-
-            changed, new = imgui.core.checkbox("Orthographic camera", g_renderer.raster_settings["orthographic_cam"])
-
-            if changed:
-                g_renderer.raster_settings["orthographic_cam"] = new
-                g_renderer.sort_and_update(g_camera)
+            pass
 
         if g_show_help_win:
+            imgui.core.set_next_window_position(720, 0, imgui.ONCE)
+            imgui.core.set_next_window_size(720, 320, imgui.ONCE)
             imgui.begin("Help", True)
             imgui.core.set_window_font_scale(2.0)
-            imgui.text("Open Gaussian Splatting PLY file \n  by click 'open ply' button")
-            imgui.text("Use left click & move to rotate camera")
-            imgui.text("Use right click & move to translate camera")
-            imgui.text("Press Q/E to roll camera")
-            imgui.text("Use scroll to zoom in/out")
-            imgui.text("Use control panel to change setting")
+            imgui.text("Open a preprocessed .ply file by clicking \n 'open .ply' in Control > Load file.")
+
+            imgui.text('')
+            imgui.text("Control:")
+            imgui.text("WASD or right mouse button: Move the camera")
+            imgui.text("Left mouse button: Rotate the camera")
+            imgui.text("Q/E: Roll camera")
+            imgui.text("Mouse wheel scrolling: Zoom in or out")
+
+            # imgui.begin("Help", True)
+
+            # imgui.text("Open Gaussian Splatting PLY file \n  by clicking 'open .ply' button")
+            # imgui.text("Use left click & move to rotate camera")
+            # imgui.text("Use right click & move to translate camera")
+            # imgui.text("Press Q/E to roll camera")
+            # imgui.text("Use scroll to zoom in/out")
+            # imgui.text("Use control panel to change setting")
             imgui.end()
 
-        if g_show_atom_settings_win:
-            if imgui.begin("Atom Settings", True):
-                imgui.core.set_window_font_scale(2.0)
-
-                imgui.text('Display settings:')
-
-                imgui.core.push_item_width(500)
-                changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
-                if changed:
-                    set_global_alpha(gaussians, global_alpha)
-                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.01, 0.0, 10.0)
-                if changed:
-                    set_global_scale(gaussians, global_scale)
-
-                imgui.text('Element settings:')
-
-                changed, render_all_elements = imgui.core.checkbox('', render_all_elements)
-                if changed:
-                    changed_render_all_elements(gaussians)
-
-                for elem in gaussians.num_of_atoms_by_element:
-                    imgui.push_id(elem)
-
-                    changed, gaussians.num_of_atoms_by_element[elem]['is_rendered'] = imgui.core.checkbox('##' + elem, gaussians.num_of_atoms_by_element[elem]['is_rendered'])
-
-                    if changed:
-                        set_color(gaussians, elem)
-
-                    imgui.same_line()
-
-                    imgui.text(elem)
-                    imgui.same_line(80, 50)
-
-                    imgui.text(str(gaussians.num_of_atoms_by_element[elem]['num']))
-                    imgui.same_line(200, 50)
-
-                    imgui.core.push_item_width(500)
-
-                    # imgui.table_set_column_index(1)
-                    changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4('##slider_scale' + elem, *gaussians.num_of_atoms_by_element[elem]['color'])
-
-                    if changed:
-                        set_index_properties(gaussians)
-
-                    # imgui.table_set_column_index(2)
-                    imgui.same_line(spacing=50)
-
-                    imgui.core.push_item_width(200)
-
-                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.drag_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.01, 0.0, 10.0)
-
-                    if changed:
-                        set_index_properties(gaussians)
-
-                    imgui.pop_id()
-
-            imgui.end()
 
         if g_show_debug_win:
             if imgui.begin("Debug", True):
