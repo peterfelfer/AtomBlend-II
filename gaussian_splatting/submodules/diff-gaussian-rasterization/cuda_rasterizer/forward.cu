@@ -965,7 +965,7 @@ render_gaussianBall(
             float alpha_value = min(0.99f, con_o.w * exp(power));
             float opaque_value = 1;
             float alpha = alpha_value;
-            if(con_o.w > 0.9) {
+            if(con_o.w > 0.5) {
                 float interp_value = con_o.w * 2 - 1;
                 alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
             }
@@ -1023,22 +1023,20 @@ render_gaussianBall(
 template <uint32_t CHANNELS>
 __global__ void __launch_bounds__(BLOCK_X * BLOCK_Y)
 render_gaussianBallOpt(
-        const uint2* __restrict__ ranges,
-        const uint32_t* __restrict__ point_list,
-        int W, int H,
-        const float2* __restrict__ points_xy_image,
-        const float* __restrict__ features,
-        const float4* __restrict__ conic_opacity,
-        float* __restrict__ final_T,
-        uint32_t* __restrict__ n_contrib,
-        const float* __restrict__ bg_color,
-        const float* viewmatrix,
-        const float* projmatrix,
-        const float* orig_points,
-        const float scale_modifier,
-        int* radii,
-        int* radii_xy,
-        float* __restrict__ out_color)
+	const uint2* __restrict__ ranges,
+	const uint32_t* __restrict__ point_list,
+	int W, int H,
+	const float2* __restrict__ points_xy_image,
+	const float* __restrict__ features,
+	const float4* __restrict__ conic_opacity,
+	float* __restrict__ final_T,
+	uint32_t* __restrict__ n_contrib,
+	const float* __restrict__ bg_color,
+    const float* viewmatrix,
+	const float* projmatrix,
+	const float* orig_points,
+	const float scale_modifier,
+	float* __restrict__ out_color)
 {
     // Identify current tile and associated min/max pixel range.
     auto block = cg::this_thread_block();
@@ -1102,10 +1100,7 @@ render_gaussianBallOpt(
             float4 con_o = collected_conic_opacity[j];
             float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y) - con_o.y * d.x * d.y;
             if (power > 0.0f){
-                C[0] = 0.0f;
-                C[1] = 1.0f;
-                C[2] = 0.0f;
-               continue;
+                continue;
             }
 
             // Eq. (2) from 3D Gaussian splatting paper.
@@ -1115,9 +1110,20 @@ render_gaussianBallOpt(
             float alpha_value = min(0.99f, con_o.w * exp(power));
             float opaque_value = 1;
             float alpha = alpha_value;
-            if(con_o.w > 0.5) {
-                float interp_value = con_o.w * 2 - 1;
-                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
+//            if(con_o.w > 0.9) {
+//                float interp_value = con_o.w * 2 - 1;
+//                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
+//            }
+
+            float x = exp(power);
+            if (x > 0.01f && x < 0.5f){
+                alpha = 2.0f * -x + 1.0f;
+                alpha = x;
+//                    C[0] = 1.0f;
+            } else if (x > 0.01f){
+                alpha = 2.0f * -x + 1.0f;
+                alpha = x;
+//                    C[1] = 1.0f;
             }
 
             alpha = min(0.99f, alpha);
@@ -1134,64 +1140,28 @@ render_gaussianBallOpt(
 
             float radius = scale_modifier;
 
-            float r_in_pixels = float(radii[collected_id[j]]); // the size of the radius in pixels
-
-            float r_in_pixels_x = float(radii_xy[collected_id[j]]);
-            float r_in_pixels_y = float(radii_xy[collected_id[j] + 1]);
-
-            if (r_in_pixels_x == 0.0f || r_in_pixels_y == 0.0f){
-//                printf("CONTINUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUE");
-                C[0] = 0.0f;
-                C[1] = 1.0f;
-                C[2] = 0.0f;
-                continue;
-            }
-
-            glm::vec2 reltc = glm::vec2(d.x, d.y) * 2.0f - 1.0f;
-
-//            printf("%f, %f d.x, d.y", d.x / r_in_pixels_x, d.y / r_in_pixels_y);
-            reltc.x = reltc.x;// * r_in_pixels_x;
-            reltc.y = reltc.y;// * r_in_pixels_y;
-            float dist_to_center = sqrt(reltc.x * reltc.x + reltc.y * reltc.y);
-            dist_to_center = dist_to_center / r_in_pixels;
+            bool inside_ellipse = exp(power) > 0.01f;
+            if (inside_ellipse) {
+                float dz = exp(0.35 * power);
 
 
-            // Calculate the surface normal
-//            float dx = (reltc.x / r_in_pixels_x);  // X-distance from the pixel to the sphere center
-//            float dy = (reltc.y / r_in_pixels_y); // Y-distance from the pixel to the sphere center
-
-            // Check if point is in the gaussian (ellipse)
-            float normalized_x = reltc.x / r_in_pixels_x;
-            float normalized_y = reltc.y / r_in_pixels_y;
-
-            bool inside_ellipse = (normalized_x * normalized_x + normalized_y * normalized_y) <= 1.0f;
-
-//            C[0] = con_o.x * d.x * d.x;
-//            C[1] = con_o.z * d.y * d.y;
-//            C[2] = 0;
-//            T = test_T;
-
-
-            if (inside_ellipse) {  // Check if the pixel is inside the sphere
-//                float dz = sqrtf(radius - dist_to_center);
-//                float dz = sqrtf(radius * radius - glm::dot(reltc, reltc));
-//                float dz = sqrtf(radius * radius - (dx * dx + dy * dy));
-                float dz = sqrtf(radius - dist_to_center);
 
                 C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
                 C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
                 C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
-//                C[3] = 1.0f;
+
+//                C[0] = 0.0f;
+//                C[1] = 0.0f;
+//                C[2] = 0.0f;
+
+
+
+//                C[0] = 1 - con_o.w;
+//                C[1] = 0;
+//                C[2] = 0;
 
                 T = test_T;
             }
-            else {
-                C[0] = 1.0f;
-                C[1] = 0.0f;
-                C[2] = 0.0f;
-                T = test_T;
-            }
-
 
             // Keep track of last range entry to update this
             // pixel.
@@ -1309,8 +1279,6 @@ void FORWARD::render(int P,
             projmatrix,
             orig_points,
             scale_modifier,
-            radii,
-            radii_xy,
             out_color
         );
     }

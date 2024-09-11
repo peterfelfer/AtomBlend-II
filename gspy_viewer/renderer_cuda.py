@@ -10,11 +10,13 @@ import torch
 from renderer_ogl import GaussianRenderBase
 from dataclasses import dataclass
 from cuda import cudart as cu
+import diff_gaussian_rasterization
 from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
 # from ..gaussian_splatting/submodules/diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
 # from ..gaussian_splatting.submodules
 # import importlib
 # diff_gaussian_rasterization = importlib.import_module()
+
 
 try:
     from OpenGL.raw.WGL.EXT.swap_control import wglSwapIntervalEXT
