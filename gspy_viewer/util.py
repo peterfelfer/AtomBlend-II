@@ -16,6 +16,9 @@ class Camera:
         self.up = np.array([0.0, -1.0, 0.0]).astype(np.float32)
         self.yaw = -np.pi / 2
         self.pitch = 0
+
+        self.right = 38
+        self.top = 21
         
         self.is_pose_dirty = True
         self.is_intrin_dirty = True
@@ -61,7 +64,7 @@ class Camera:
             self.znear,
             self.zfar
         )
-        # project_mat = glm.ortho(0, 384, 0, 216, self.znear, self.zfar)
+        # project_mat = glm.ortho(0, self.right, 0, self.top, self.znear, self.zfar)
         return np.array(project_mat).astype(np.float32)
 
     def get_htanfovxy_focal(self):

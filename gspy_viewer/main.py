@@ -279,9 +279,9 @@ def main():
                 imgui.core.set_window_font_scale(2.0)
 
                 if imgui.collapsing_header("Load file")[0]:
-                    if imgui.button(label='open 50 neighb'):
+                    if imgui.button(label='open test.ply'):
                         # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
-                        file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_neighb_50_dist_20_100K.ply'
+                        file_path = '/home/qa43nawu/temp/qa43nawu/out/test.ply'
 
                         if file_path:
                             try:
@@ -573,6 +573,45 @@ def main():
                     )
                     if g_auto_sort:
                         g_renderer.sort_and_update(g_camera)
+
+                    #
+                    changed, g_camera.right = imgui.drag_float('right', g_camera.right, 1, 0, 5000)
+                    if changed:
+                        g_renderer.sort_and_update(g_camera)
+
+                    changed, g_camera.top = imgui.drag_float('top', g_camera.top, 1, 0, 5000)
+                    if changed:
+                        g_renderer.sort_and_update(g_camera)
+
+                    imgui.spacing()
+                    imgui.separator()
+                    imgui.spacing()
+
+                    # camera debug settings
+                    changed, new = imgui.drag_float3('camera position', g_camera.position[0], g_camera.position[1], g_camera.position[2], 0.1, )
+                    if changed:
+                        g_camera.position[0] = new[0]
+                        g_camera.position[1] = new[1]
+                        g_camera.position[2] = new[2]
+                        g_renderer.sort_and_update(g_camera)
+                        g_camera.is_pose_dirty = True
+
+                    changed, new = imgui.drag_float3('camera target', g_camera.target[0], g_camera.target[1], g_camera.target[2], 0.1, )
+                    if changed:
+                        g_camera.target[0] = new[0]
+                        g_camera.target[1] = new[1]
+                        g_camera.target[2] = new[2]
+                        g_renderer.sort_and_update(g_camera)
+                        g_camera.is_pose_dirty = True
+
+                    changed, new = imgui.drag_float3('camera up', g_camera.up[0], g_camera.up[1],
+                                                     g_camera.up[2], 0.1, )
+                    if changed:
+                        g_camera.up[0] = new[0]
+                        g_camera.up[1] = new[1]
+                        g_camera.up[2] = new[2]
+                        g_renderer.sort_and_update(g_camera)
+                        g_camera.is_pose_dirty = True
 
 
             imgui.end()
