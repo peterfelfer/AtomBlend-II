@@ -467,7 +467,7 @@ def main():
                 changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
-                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.1, 0.0, 30.0)
+                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.01, 0.0, 10.0)
                 if changed:
                     set_global_scale(gaussians, global_scale)
 

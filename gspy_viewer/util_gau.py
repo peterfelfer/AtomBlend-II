@@ -140,11 +140,11 @@ def load_ply(path):
 
     scale_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("scale_")]
     scale_names = sorted(scale_names, key = lambda x: int(x.split('_')[-1]))
-    scales = np.zeros((xyz.shape[0], 3))
+    scales = np.zeros((xyz.shape[0], 1))
     # for idx, attr_name in enumerate(scale_names):
     scales[:, 0] = np.asarray(plydata.elements[0]["scale_0"])
-    scales[:, 1] = np.asarray(plydata.elements[0]["scale_0"])
-    scales[:, 2] = np.asarray(plydata.elements[0]["scale_0"])
+    # scales[:, 1] = np.asarray(plydata.elements[0]["scale_0"])
+    # scales[:, 2] = np.asarray(plydata.elements[0]["scale_0"])
 
     rot_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("rot")]
     rot_names = sorted(rot_names, key = lambda x: int(x.split('_')[-1]))
