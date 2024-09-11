@@ -539,7 +539,7 @@ def main():
 
         if g_show_help_win:
             imgui.core.set_next_window_position(720, 0, imgui.ONCE)
-            imgui.core.set_next_window_size(720, 320, imgui.ONCE)
+            imgui.core.set_next_window_size(720, 430, imgui.ONCE)
             imgui.begin("Help", True)
             imgui.core.set_window_font_scale(2.0)
             imgui.text("Open a preprocessed .ply file by clicking \n 'open .ply' in Control > Load file.")
@@ -550,6 +550,9 @@ def main():
             imgui.text("Left mouse button: Rotate the camera")
             imgui.text("Q/E: Roll camera")
             imgui.text("Mouse wheel scrolling: Zoom in or out")
+
+            imgui.text('')
+            imgui.text('Click and hold on a slider to change its \n setting. You can also double click on the \n slider to enter a custom number that \n also can be off the bounds.')
 
             # imgui.begin("Help", True)
 
