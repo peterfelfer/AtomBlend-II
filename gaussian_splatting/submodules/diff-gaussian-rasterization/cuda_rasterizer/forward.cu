@@ -156,7 +156,7 @@ __device__ glm::vec3 computeColorFromSH(int idx, int deg, int max_coeffs, const 
 }
 
 // Forward version of 2D covariance matrix computation
-__device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y, float tan_fovx, float tan_fovy, const float* cov3D, const float* viewmatrix, const float scale, const bool orthographic_cam)
+__device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y, float tan_fovx, float tan_fovy, const float* cov3D, const float* viewmatrix, const float scale)
 {
 	// The following models the steps outlined by equations 29
 	// and 31 in "EWA Splatting" (Zwicker et al., 2002). 
@@ -172,17 +172,10 @@ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y,
 	t.y = min(limy, max(-limy, tytz)) * t.z;
 
     glm::mat3 J;
-    if (!orthographic_cam){
-    	J = glm::mat3(
-		focal_x / t.z, 0.0f, -(focal_x * t.x) / (t.z * t.z),
-		0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
-		0, 0, 0);
-    } else {
-    	J = glm::mat3(
-		10, 0, 0,
-		0, 10, 0,
-		0, 0, 0);
-    }
+    J = glm::mat3(
+    focal_x / t.z, 0.0f, -(focal_x * t.x) / (t.z * t.z),
+    0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
+    0, 0, 0);
 
 //    printf("focal %f, %f, \n", focal_x, focal_y);
 //    printf("tan fov %f, %f, \n", tan_fovx, tan_fovy);
@@ -366,7 +359,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	}
 
 	// Compute 2D screen-space covariance matrix
-	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale, orthographic_cam);
+	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale);
 
 	// Invert covariance (EWA algorithm)
 	float det = (cov.x * cov.z - cov.y * cov.y);

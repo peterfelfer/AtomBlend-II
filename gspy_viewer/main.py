@@ -34,7 +34,7 @@ g_renderer: GaussianRenderBase = g_renderer_list[g_renderer_idx]
 g_scale_modifier = 1.
 g_auto_sort = False
 g_show_control_win = True
-g_show_help_win = True
+g_show_help_win = False
 g_show_camera_win = True
 g_show_atom_settings_win = True
 g_show_debug_win = True
@@ -460,12 +460,11 @@ def main():
                         g_camera.roll_sensitivity = 0.03
                     imgui.pop_id()
 
-                    changed, new = imgui.core.checkbox("Orthographic camera",
-                                                       g_renderer.raster_settings["orthographic_cam"])
+                    changed, g_camera.fovy = imgui.core.drag_float("Field of view", g_camera.fovy, 0.01, 0.001, 100)
 
                     if changed:
-                        g_renderer.raster_settings["orthographic_cam"] = new
-                        g_renderer.sort_and_update(g_camera)
+                        g_camera.is_pose_dirty = True
+
 
                 imgui.spacing()
                 imgui.separator()
@@ -628,10 +627,13 @@ def main():
                     changed, g_camera.right = imgui.drag_float('right', g_camera.right, 1, 0, 5000)
                     if changed:
                         g_renderer.sort_and_update(g_camera)
+                        g_camera.is_pose_dirty = True
 
                     changed, g_camera.top = imgui.drag_float('top', g_camera.top, 1, 0, 5000)
                     if changed:
                         g_renderer.sort_and_update(g_camera)
+                        g_camera.is_pose_dirty = True
+
 
                     imgui.spacing()
                     imgui.separator()

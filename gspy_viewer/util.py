@@ -10,7 +10,7 @@ class Camera:
         self.zfar = 100
         self.h = h
         self.w = w
-        self.fovy = np.pi / 2
+        self.fovy = 0.5 #np.pi / 2
         self.position = np.array([0.0, 0.0, 3.0]).astype(np.float32)
         self.target = np.array([0.0, 0.0, 0.0]).astype(np.float32)
         self.up = np.array([0.0, -1.0, 0.0]).astype(np.float32)
@@ -32,11 +32,9 @@ class Camera:
         
         self.rot_sensitivity = 0.5
         self.trans_sensitivity = 0.5
-        self.zoom_sensitivity = 0.5
+        self.zoom_sensitivity = 2.0
         self.roll_sensitivity = 0.5
         self.target_dist = 3.
-
-        self.is_orthographic = False
 
         # the sensitivity settings have a very different range such that the movement seems normal
         # -> use adaptions to scale them all in a range of [0,1]
@@ -54,7 +52,6 @@ class Camera:
 
     def get_view_matrix(self):
         return np.array(glm.lookAt(self.position, self.target, self.up))
-        # return np.array(glm.translate(glm.mat4(1.0), -self.position))
 
     def get_project_matrix(self):
         # htanx, htany, focal = self.get_htanfovxy_focal()
@@ -65,13 +62,13 @@ class Camera:
         #     0, 0, self.zfar / f_n, - 2 * self.zfar * self.znear / f_n,
         #     0, 0, 1, 0
         # ])
+
         project_mat = glm.perspective(
             self.fovy,
             self.w / self.h,
             self.znear,
             self.zfar
         )
-        # project_mat = glm.ortho(0, self.right, 0, self.top, self.znear, self.zfar)
         return np.array(project_mat).astype(np.float32)
 
     def get_htanfovxy_focal(self):
