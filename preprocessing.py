@@ -758,6 +758,8 @@ if __name__ == "__main__":
         find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
+    print('found nearest neighbors', time.time() - start)
+
     fit_volume()
     fit_distance()
 
