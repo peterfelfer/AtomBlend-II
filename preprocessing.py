@@ -681,7 +681,7 @@ def fit_distance():
     plt.xlabel('distance')
     plt.ylabel('frequency')
     # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
-    plt.show()
+    plt.show(block=False)
 
 
 
@@ -760,8 +760,8 @@ if __name__ == "__main__":
 
     print('found nearest neighbors', time.time() - start)
 
-    fit_volume()
-    fit_distance()
+    # fit_volume()
+    # fit_distance()
 
     ### ply writing
     gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_list), np.asarray(distance_list), np.asarray(indices), np.asarray(scale_list), props)
