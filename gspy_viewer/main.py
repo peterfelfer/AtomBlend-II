@@ -406,10 +406,35 @@ def main():
                         g_renderer.sort_and_update(g_camera)
 
                     changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 0.01, -1.0, 1.0)
-
                     if changed:
                         g_renderer.raster_settings["individual_opacity_factor"] = new
                         g_renderer.sort_and_update(g_camera)
+
+                    if imgui.tree_node("Expand me!", imgui.TREE_NODE_FRAMED):
+
+                        def open_plotting_window():
+                            dpg.create_context()
+                            dpg.create_viewport(title='Volume Histogram', width=1200, height=1200)
+                            dpg.set_global_font_scale(2)
+                            with dpg.window(label="Volume histogram"):
+                                with dpg.plot(label="##Volume histogram", width=1150, height=1150):
+                                    dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
+                                    dpg.add_plot_axis(dpg.mvYAxis, label="Frequency")
+
+                                    data = gaussians.volume_opacity
+                                    dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
+                                                             max_range=gaussians.volume_opacity.max())
+
+                            dpg.setup_dearpygui()
+                            dpg.show_viewport()
+                            dpg.start_dearpygui()
+                            dpg.destroy_context()
+
+                        if imgui.button("Show distance plot", 100, 100):
+                            thread = threading.Thread(target=open_plotting_window)
+                            thread.start()
+
+                        imgui.tree_pop()
 
                 imgui.spacing()
                 imgui.separator()
@@ -666,32 +691,6 @@ def main():
                         g_renderer.sort_and_update(g_camera)
                         g_camera.is_pose_dirty = True
 
-
-            imgui.end()
-
-            if imgui.begin("Plots", True):
-                def open_plotting_window():
-                    dpg.create_context()
-                    dpg.create_viewport(title='Volume Histogram', width=1200, height=1200)
-                    dpg.set_global_font_scale(2)
-                    with dpg.window(label="Volume histogram"):
-                        with dpg.plot(label="##Volume histogram", width=1150, height=1150):
-                            dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
-                            dpg.add_plot_axis(dpg.mvYAxis, label="Frequency")
-
-                            data = gaussians.volume_opacity
-                            dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(), max_range=gaussians.volume_opacity.max())
-
-                    dpg.setup_dearpygui()
-                    dpg.show_viewport()
-                    dpg.start_dearpygui()
-                    dpg.destroy_context()
-
-                imgui.core.set_window_font_scale(3.0)
-
-                if imgui.button("Show distance plot", 100, 100):
-                    thread = threading.Thread(target=open_plotting_window)
-                    thread.start()
 
             imgui.end()
 
