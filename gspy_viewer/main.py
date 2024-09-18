@@ -262,21 +262,6 @@ def main():
 
         g_renderer.draw(g_render_cov3D, individual_opacity_state)
 
-        # imgui ui
-        if imgui.begin_main_menu_bar():
-            if imgui.begin_menu("Window", True):
-                clicked, g_show_control_win = imgui.menu_item(
-                    "Show Control", None, g_show_control_win
-                )
-                clicked, g_show_help_win = imgui.menu_item(
-                    "Show Help", None, g_show_help_win
-                )
-                clicked, g_show_camera_win = imgui.menu_item(
-                    "Show Camera Control", None, g_show_camera_win
-                )
-                imgui.end_menu()
-            imgui.end_main_menu_bar()
-
         if g_show_atom_settings_win:
             imgui.core.set_next_window_position(0, 0, imgui.ONCE)
             imgui.core.set_next_window_size(720, 1200, imgui.ONCE)
@@ -349,14 +334,13 @@ def main():
 
             imgui.end()
 
-
         if g_show_control_win:
             imgui.core.set_next_window_position(0, 1200, imgui.ONCE)
             imgui.core.set_next_window_size(720, 1200, imgui.ONCE)
             if imgui.begin("Control", True):
                 imgui.core.set_window_font_scale(2.0)
 
-                if imgui.collapsing_header("Load file")[0]:
+                if imgui.tree_node("Load file", imgui.TREE_NODE_FRAMED):
                     if imgui.button(label='open test.ply'):
                         # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
                         file_path = '/home/qa43nawu/temp/qa43nawu/out/test.ply'
@@ -386,12 +370,13 @@ def main():
 
                     imgui.text("Loaded file: " + file_path.split('/')[-1])
                     imgui.text(f"Number of Atoms = {len(gaussians)}")
+                    imgui.tree_pop()
 
                 imgui.spacing()
                 imgui.separator()
                 imgui.spacing()
 
-                if imgui.collapsing_header("Individual opacity")[0]:
+                if imgui.tree_node("Individual opacity", imgui.TREE_NODE_FRAMED):
                     changed = imgui.radio_button("Depending on volume", individual_opacity_state == 0)
                     if changed:
                         individual_opacity_state = 0
@@ -410,8 +395,7 @@ def main():
                         g_renderer.raster_settings["individual_opacity_factor"] = new
                         g_renderer.sort_and_update(g_camera)
 
-                    if imgui.tree_node("Expand me!", imgui.TREE_NODE_FRAMED):
-
+                    if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED):
                         def open_plotting_window():
                             dpg.create_context()
                             dpg.create_viewport(title='Volume Histogram', width=1200, height=1200)
@@ -435,12 +419,14 @@ def main():
                             thread.start()
 
                         imgui.tree_pop()
+                    imgui.tree_pop()
 
                 imgui.spacing()
                 imgui.separator()
                 imgui.spacing()
 
-                if imgui.collapsing_header("Camera settings")[0]:
+                if imgui.tree_node("Camera settings", imgui.TREE_NODE_FRAMED):
+
                     # if imgui.button(label='rot 180'):
                     #     g_camera.flip_ground()
 
@@ -491,12 +477,14 @@ def main():
                     if changed:
                         g_camera.is_pose_dirty = True
 
+                    imgui.tree_pop()
 
                 imgui.spacing()
                 imgui.separator()
                 imgui.spacing()
 
-                if imgui.collapsing_header("Rendering")[0]:
+                if imgui.tree_node("Rendering", imgui.TREE_NODE_FRAMED):
+
                     #### render mode ####
                     if g_renderer_idx == 0:  # ogl
                         changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_ogl)
@@ -514,11 +502,13 @@ def main():
                     if changed:
                         set_cov3D_changes(gaussians)
 
+                    imgui.tree_pop()
+
                 imgui.spacing()
                 imgui.separator()
                 imgui.spacing()
 
-                if imgui.collapsing_header("Save image")[0]:
+                if imgui.tree_node("Save image", imgui.TREE_NODE_FRAMED):
                     if imgui.button(label='save image'):
                         width, height = glfw.get_framebuffer_size(window)
                         nrChannels = 3;
@@ -544,6 +534,7 @@ def main():
 
                         ########################
                         # matrix = [[0.0 for _ in range(3)] for _ in range(3)]
+                    imgui.tree_pop()
 
                 imgui.spacing()
                 imgui.separator()
