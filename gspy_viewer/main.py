@@ -248,27 +248,6 @@ def main():
     update_activated_renderer_state(gaussians)
     set_index_properties(gaussians)
 
-    # threading
-    def open_plotting_window():
-        dpg.create_context()
-        dpg.create_viewport(title='Volume Histogram', width=1200, height=1200)
-        dpg.set_global_font_scale(2)
-        with dpg.window(label="Volume histogram"):
-            with dpg.plot(label="##Volume histogram", width=1150, height=1150):
-                dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
-                dpg.add_plot_axis(dpg.mvYAxis, label="Frequency")
-
-                data = gaussians.volume_opacity
-                dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
-                                         max_range=gaussians.volume_opacity.max())
-
-        dpg.setup_dearpygui()
-        dpg.show_viewport()
-        dpg.start_dearpygui()
-        dpg.destroy_context()
-
-    thread = threading.Thread(target=open_plotting_window)
-
     # settings
     while not glfw.window_should_close(window):
         glfw.poll_events()
@@ -691,15 +670,30 @@ def main():
             imgui.end()
 
             if imgui.begin("Plots", True):
+                def open_plotting_window():
+                    dpg.create_context()
+                    dpg.create_viewport(title='Volume Histogram', width=1200, height=1200)
+                    dpg.set_global_font_scale(2)
+                    with dpg.window(label="Volume histogram"):
+                        with dpg.plot(label="##Volume histogram", width=1150, height=1150):
+                            dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
+                            dpg.add_plot_axis(dpg.mvYAxis, label="Frequency")
 
+                            data = gaussians.volume_opacity
+                            dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(), max_range=gaussians.volume_opacity.max())
+
+                    dpg.setup_dearpygui()
+                    dpg.show_viewport()
+                    dpg.start_dearpygui()
+                    dpg.destroy_context()
 
                 imgui.core.set_window_font_scale(3.0)
 
                 if imgui.button("Show distance plot", 100, 100):
+                    thread = threading.Thread(target=open_plotting_window)
                     thread.start()
 
             imgui.end()
-
 
         imgui.render()
         impl.render(imgui.get_draw_data())
@@ -707,6 +701,7 @@ def main():
 
     impl.shutdown()
     glfw.terminate()
+
 
 if __name__ == "__main__":
     global args
