@@ -50,7 +50,7 @@ namespace CudaRasterizer
 			const int render_mode,
 			const float* indices,
 			const float* index_properties,
-			bool orthographic_cam,
+			float* gaussian_settings,
 			const float individual_opacity_factor,
 			int* radii = nullptr,
 			bool debug = false

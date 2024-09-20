@@ -268,7 +268,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const bool orthographic_cam,
+	const float* gaussian_settings,
 	const float individual_opacity_factor)
 {
 	auto idx = cg::this_grid().thread_rank();
@@ -1303,7 +1303,7 @@ void FORWARD::preprocess(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const bool orthographic_cam,
+	const float* gaussian_settings,
 	const float individual_opacity_factor)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
@@ -1333,7 +1333,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		prefiltered,
 		indices,
 		index_properties,
-		orthographic_cam,
+		gaussian_settings,
 		individual_opacity_factor
 		);
 }

@@ -138,7 +138,7 @@ class CUDARenderer(GaussianRenderBase):
             "debug": False,
             "render_mode": 0,
             "index_properties": torch.Tensor([]),
-            "orthographic_cam": False,
+            "gaussian_settings": torch.Tensor([]),
             "individual_opacity_factor": 0.0,
         }
         gl.glViewport(0, 0, w, h)

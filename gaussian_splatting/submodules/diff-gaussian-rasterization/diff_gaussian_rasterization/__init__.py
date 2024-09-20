@@ -78,7 +78,7 @@ class _RasterizeGaussians(torch.autograd.Function):
             raster_settings.render_mode,
             indices,
             index_properties,
-            raster_settings.orthographic_cam,
+            raster_settings.gaussian_settings,
             raster_settings.individual_opacity_factor
         )
 
@@ -172,7 +172,7 @@ class GaussianRasterizationSettings(NamedTuple):
     debug : bool
     render_mode : int
     index_properties : torch.Tensor
-    orthographic_cam : bool
+    gaussian_settings : torch.Tensor([])
     individual_opacity_factor : float
 
 class GaussianRasterizer(nn.Module):

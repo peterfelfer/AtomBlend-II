@@ -15,7 +15,7 @@ def update_plot():
 
 
 def update_gaussian_data(gaussians):
-
+    pass
 
 def interpolate_y_value(x_value):
     """Finds the y-value for a given x-value using linear interpolation."""

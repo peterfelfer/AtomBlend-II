@@ -227,7 +227,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const int render_mode,
 	const float* indices,
 	const float* index_properties,
-	bool orthographic_cam,
+	float* gaussian_settings,
 	const float individual_opacity_factor,
 	int* radii,
 	bool debug
@@ -287,7 +287,7 @@ int CudaRasterizer::Rasterizer::forward(
 		prefiltered,
 		indices,
 		index_properties,
-		orthographic_cam,
+		gaussian_settings,
 		individual_opacity_factor
 	), debug)
 
