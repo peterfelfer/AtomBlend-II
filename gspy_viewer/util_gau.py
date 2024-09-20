@@ -1,6 +1,7 @@
 import numpy as np
 from plyfile import PlyData
 from dataclasses import dataclass
+import dpg_plotting
 
 @dataclass
 class GaussianData:
@@ -183,6 +184,10 @@ def load_ply(path):
     indices = indices.astype(np.float32)
 
     shs = features_dc.reshape(-1, 3)
+
+    # plotting settings
+    dpg_plotting.plotting_data["volume_min_max"] = [0.0, volume_opacity.max()]
+    dpg_plotting.plotting_data["volume_alpha_range"] = [0.0, volume_opacity.max()]
 
     return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, volume_opacity, distance_opacity, indices)
 

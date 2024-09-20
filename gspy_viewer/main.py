@@ -14,7 +14,7 @@ import argparse
 import torch
 from renderer_ogl import OpenGLRenderer, GaussianRenderBase
 import threading
-import dearpygui.dearpygui as dpg
+import dpg_plotting
 
 # Add the directory containing main.py to the Python path
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -376,7 +376,7 @@ def main():
                 imgui.separator()
                 imgui.spacing()
 
-                if imgui.tree_node("Individual opacity", imgui.TREE_NODE_FRAMED):
+                if imgui.tree_node("Individual opacity", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
                     changed = imgui.radio_button("Depending on volume", individual_opacity_state == 0)
                     if changed:
                         individual_opacity_state = 0
@@ -395,35 +395,11 @@ def main():
                         g_renderer.raster_settings["individual_opacity_factor"] = new
                         g_renderer.sort_and_update(g_camera)
 
-                    if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED):
-                        def value_updated(sender, app_data, user_data):
-                            print(app_data)
-
-                        def open_plotting_window():
-                            dpg.create_context()
-                            dpg.create_viewport(title='Volume Histogram', width=1200, height=1200)
-                            dpg.set_global_font_scale(2)
-                            with dpg.window(label="Volume histogram"):
-                                with dpg.plot(label="##Volume histogram", width=1100, height=1150):
-                                    dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
-                                    dpg.add_plot_axis(dpg.mvYAxis, label="Frequency")
-
-                                    data = gaussians.volume_opacity
-                                    dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
-                                                             max_range=gaussians.volume_opacity.max())
-
-                                dpg.add_slider_float(label='test', default_value=1.0, callback=value_updated)
-
-                            dpg.setup_dearpygui()
-                            dpg.show_viewport()
-                            dpg.start_dearpygui()
-                            dpg.destroy_context()
+                    if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
 
                         if imgui.button("Show distance plot", 100, 100):
-                            thread = threading.Thread(target=open_plotting_window)
+                            thread = threading.Thread(target=dpg_plotting.open_plotting_window(gaussians))
                             thread.start()
-
-
 
                         imgui.tree_pop()
                     imgui.tree_pop()
