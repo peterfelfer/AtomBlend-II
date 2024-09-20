@@ -402,6 +402,9 @@ def main():
                             glfw.make_context_current(None)
                             dpg_plotting.open_plotting_window(gaussians, g_renderer)
 
+                            # thread = threading.Thread(target=dpg_plotting.open_plotting_window(gaussians, g_renderer))
+                            # thread.start()
+
                             glfw.make_context_current(window)
 
                         imgui.tree_pop()
