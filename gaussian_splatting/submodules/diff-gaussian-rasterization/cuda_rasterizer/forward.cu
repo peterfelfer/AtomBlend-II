@@ -300,10 +300,12 @@ __global__ void preprocessCUDA(int P, int D, int M,
         scale *= 30.0f;
 	}
 
-    if (col.w != 0.0 && opacities != nullptr){
-        col.w = opacities[idx] + individual_opacity_factor;
-        col.w = glm::clamp(col.w, 0.0f, 1.0f);
-    }
+//    if (col.w != 0.0 && opacities != nullptr){
+//        col.w = opacities[idx] + individual_opacity_factor;
+//        col.w = glm::clamp(col.w, 0.0f, 1.0f);
+//    }
+
+    col.w = opacities[idx];
 
     ////// DEBUG
 

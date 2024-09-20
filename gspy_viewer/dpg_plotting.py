@@ -1,4 +1,6 @@
 import dearpygui.dearpygui as dpg
+import torch
+import numpy as np
 
 plotting_data = {
     "points": [[0.0, 0.0], [0.25, 0.25], [0.5, 0.5], [0.75, 0.75], [1.0, 1.0]],
@@ -7,7 +9,8 @@ plotting_data = {
 }
 
 def value_updated(sender, app_data, user_data):
-    print(app_data)
+    print(sender, app_data, user_data)
+    print(dpg.get_value(sender))
 
 def update_plot():
     """Updates the plot based on current control points."""
@@ -15,15 +18,32 @@ def update_plot():
 
 
 def update_volumes(sender, app_data, user_data):
-    gaussians = user_data[0]
-    g_renderer = user_data[1]
+    line_id = user_data[0]
+    gaussians = user_data[1]
+    g_renderer = user_data[2]
+
+    val = dpg.get_value(sender)
+    if val is not None:
+        if plotting_data["volume_min_max"][line_id] == val:
+            return
+
+        plotting_data["volume_min_max"][line_id] = val
+    else:
+        return
 
     new_volumes = []
-    for gaussian in gaussians.volume_opacity:
-        new_volume = interpolate_y_value(gaussian)
-        new_volumes.append(new_volume)
+    for volume in gaussians.volume_opacity:
 
-    gaussians.volume_opacity = new_volumes
+        if volume.item() < plotting_data["volume_min_max"][0]:
+            new_volume = 0.0
+        elif volume.item() > plotting_data["volume_min_max"][1]:
+            new_volume = 1.0
+        else:
+            new_volume = interpolate_y_value(volume.item())
+
+        new_volumes.append([new_volume])
+
+    gaussians.opacity = torch.tensor(np.array(new_volumes)).float().cuda().requires_grad_(False)
     g_renderer.update_gaussian_data(gaussians)
 
 def interpolate_y_value(x_value):
@@ -72,8 +92,8 @@ def open_plotting_window(gaussians, g_renderer):
             dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
                                      max_range=gaussians.volume_opacity.max())
 
-            dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=10, thickness=3, callback=update_volumes, user_data=[gaussians, g_renderer])
-            dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=100, thickness=3, callback=update_volumes, user_data=[gaussians, g_renderer])
+            dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=10, thickness=3, callback=update_volumes, user_data=[0, gaussians, g_renderer])
+            dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=100, thickness=3, callback=update_volumes, user_data=[1, gaussians, g_renderer])
 
     with dpg.window(label="Set opacity depending on volume", pos=[1200, 0]):
         draw_linear_mapping()
