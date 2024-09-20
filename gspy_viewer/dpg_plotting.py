@@ -14,24 +14,29 @@ def update_plot():
     dpg.set_value("line_series", [list(p) for p in plotting_data["points"]])
 
 
-def update_gaussian_data(gaussians):
-    pass
+def update_volumes(sender, app_data, user_data):
+    gaussians = user_data[0]
+    g_renderer = user_data[1]
+
+    new_volumes = []
+    for gaussian in gaussians.volume_opacity:
+        new_volume = interpolate_y_value(gaussian)
+        new_volumes.append(new_volume)
+
+    gaussians.volume_opacity = new_volumes
+    g_renderer.update_gaussian_data(gaussians)
 
 def interpolate_y_value(x_value):
-    """Finds the y-value for a given x-value using linear interpolation."""
-    # Sort points by x to ensure interpolation works
-    sorted_points = sorted(plotting_data["points"], key=lambda p: p[0])
+    # # Sort points by x to ensure interpolation works
+    # sorted_points = sorted(plotting_data["points"], key=lambda p: p[0])
+    #
+    # for i in range(len(sorted_points) - 1):
+    x0, y0 = [plotting_data["volume_alpha_range"][0], 0.0]
+    x1, y1 = [plotting_data["volume_alpha_range"][1], 1.0]
 
-    for i in range(len(sorted_points) - 1):
-        x0, y0 = sorted_points[i]
-        x1, y1 = sorted_points[i + 1]
-
-        # If x_value lies between x0 and x1, do linear interpolation
-        if x0 <= x_value <= x1:
-            t = (x_value - x0) / (x1 - x0)
-            return y0 + t * (y1 + t * (y1 - y0))  # Linear interpolation formula
-
-    return None  # x_value is out of bounds
+    if x0 <= x_value <= x1:
+        t = (x_value - x0) / (x1 - x0)
+        return y0 + t * (y1 + t * (y1 - y0))
 
 def on_point_drag(sender, app_data, user_data):
     """Updates control point when dragged."""
@@ -54,7 +59,7 @@ def draw_linear_mapping():
             dpg.add_drag_point(label=f"Point", default_value=[x, y], callback=on_point_drag, user_data=i)
 
 
-def open_plotting_window(gaussians):
+def open_plotting_window(gaussians, g_renderer):
     dpg.create_context()
     dpg.create_viewport(title='Individual alpha', width=2500, height=1200)
     dpg.set_global_font_scale(2)
@@ -67,13 +72,16 @@ def open_plotting_window(gaussians):
             dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
                                      max_range=gaussians.volume_opacity.max())
 
-            dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=10, thickness=3)
-            dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=100, thickness=3)
+            dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=10, thickness=3, callback=update_volumes, user_data=[gaussians, g_renderer])
+            dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=100, thickness=3, callback=update_volumes, user_data=[gaussians, g_renderer])
 
     with dpg.window(label="Set opacity depending on volume", pos=[1200, 0]):
         draw_linear_mapping()
 
         dpg.add_slider_float(label='test', default_value=1.0, callback=value_updated)
+
+    while dpg.is_dearpygui_running():
+        dpg.render_dearpygui_frame()
 
     dpg.setup_dearpygui()
     dpg.show_viewport()

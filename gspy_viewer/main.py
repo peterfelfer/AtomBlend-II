@@ -15,6 +15,7 @@ import torch
 from renderer_ogl import OpenGLRenderer, GaussianRenderBase
 import threading
 import dpg_plotting
+import dearpygui.dearpygui as dpg
 
 # Add the directory containing main.py to the Python path
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -398,8 +399,10 @@ def main():
                     if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
 
                         if imgui.button("Show distance plot", 100, 100):
-                            thread = threading.Thread(target=dpg_plotting.open_plotting_window(gaussians))
-                            thread.start()
+                            glfw.make_context_current(None)
+                            dpg_plotting.open_plotting_window(gaussians, g_renderer)
+
+                            glfw.make_context_current(window)
 
                         imgui.tree_pop()
                     imgui.tree_pop()

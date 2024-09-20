@@ -16,6 +16,7 @@ from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianR
 # from ..gaussian_splatting.submodules
 # import importlib
 # diff_gaussian_rasterization = importlib.import_module()
+import dpg_plotting
 
 
 try:
@@ -138,7 +139,10 @@ class CUDARenderer(GaussianRenderBase):
             "debug": False,
             "render_mode": 0,
             "index_properties": torch.Tensor([]),
-            "gaussian_settings": torch.Tensor([]),
+            "gaussian_settings": torch.Tensor([
+                dpg_plotting.plotting_data["volume_alpha_range"][0],
+                dpg_plotting.plotting_data["volume_alpha_range"][1]
+            ]),
             "individual_opacity_factor": 0.0,
         }
         gl.glViewport(0, 0, w, h)
