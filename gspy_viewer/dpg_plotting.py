@@ -5,7 +5,7 @@ import numpy as np
 plotting_data = {
     "points": [[0.0, 0.0], [0.25, 0.25], [0.5, 0.5], [0.75, 0.75], [1.0, 1.0]],
     "volume_min_max": [0.0, 0.0],
-    "volume_alpha_range": [0.0, 0.0]
+    # "volume_alpha_range": [0.0, 0.0]
 }
 
 def value_updated(sender, app_data, user_data):
@@ -43,16 +43,24 @@ def update_volumes(sender, app_data, user_data):
 
         new_volumes.append([new_volume])
 
+    # update line series data
+    min = plotting_data["volume_min_max"][0]
+    max = plotting_data["volume_min_max"][1]
+    x_values = [min, max]
+    y_values = [0, 1]
+    dpg.set_value('alpha_line', [x_values, y_values])
+
     gaussians.opacity = torch.tensor(np.array(new_volumes)).float().cuda().requires_grad_(False)
     g_renderer.update_gaussian_data(gaussians)
+    # g_renderer.need_rerender = True
 
 def interpolate_y_value(x_value):
     # # Sort points by x to ensure interpolation works
     # sorted_points = sorted(plotting_data["points"], key=lambda p: p[0])
     #
     # for i in range(len(sorted_points) - 1):
-    x0, y0 = [plotting_data["volume_alpha_range"][0], 0.0]
-    x1, y1 = [plotting_data["volume_alpha_range"][1], 1.0]
+    x0, y0 = [plotting_data["volume_min_max"][0], 0.0]
+    x1, y1 = [plotting_data["volume_min_max"][1], 1.0]
 
     if x0 <= x_value <= x1:
         t = (x_value - x0) / (x1 - x0)
@@ -83,17 +91,24 @@ def open_plotting_window(gaussians, g_renderer):
     dpg.create_context()
     dpg.create_viewport(title='Individual alpha', width=2500, height=1200)
     dpg.set_global_font_scale(2)
+    min = plotting_data["volume_min_max"][0]
+    max = plotting_data["volume_min_max"][1]
+
     with dpg.window(label="Volume histogram"):
         with dpg.plot(label="##Volume histogram", width=1100, height=1000):
             dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
-            dpg.add_plot_axis(dpg.mvYAxis, label="Frequency")
+            with dpg.plot_axis(dpg.mvYAxis, label="Frequency", tag="y1"):
+                data = gaussians.volume_opacity
+                dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
+                                         max_range=gaussians.volume_opacity.max())
 
-            data = gaussians.volume_opacity
-            dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
-                                     max_range=gaussians.volume_opacity.max())
+            dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=min, thickness=3, callback=update_volumes, user_data=[0, gaussians, g_renderer])
+            dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=max, thickness=3, callback=update_volumes, user_data=[1, gaussians, g_renderer])
 
-            dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=10, thickness=3, callback=update_volumes, user_data=[0, gaussians, g_renderer])
-            dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=100, thickness=3, callback=update_volumes, user_data=[1, gaussians, g_renderer])
+            # dpg.add_plot_axis(dpg.mvXAxis2, label="x2", tag="x2_axis")
+
+            with dpg.plot_axis(dpg.mvYAxis2, label="Alpha", tag="y2", opposite=True):
+                dpg.add_line_series([min, max], [0, 1], label="alpha", parent="y2", tag="alpha_line")
 
     with dpg.window(label="Set opacity depending on volume", pos=[1200, 0]):
         draw_linear_mapping()

@@ -140,8 +140,8 @@ class CUDARenderer(GaussianRenderBase):
             "render_mode": 0,
             "index_properties": torch.Tensor([]),
             "gaussian_settings": torch.Tensor([
-                dpg_plotting.plotting_data["volume_alpha_range"][0],
-                dpg_plotting.plotting_data["volume_alpha_range"][1]
+                dpg_plotting.plotting_data["volume_min_max"][0],
+                dpg_plotting.plotting_data["volume_min_max"][1]
             ]),
             "individual_opacity_factor": 0.0,
         }
