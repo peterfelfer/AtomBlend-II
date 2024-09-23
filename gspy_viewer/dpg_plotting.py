@@ -122,3 +122,4 @@ def open_plotting_window(gaussians, g_renderer):
     dpg.show_viewport()
     dpg.start_dearpygui()
     dpg.destroy_context()
+

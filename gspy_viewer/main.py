@@ -399,11 +399,11 @@ def main():
                     if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
 
                         if imgui.button("Show distance plot", 100, 100):
-                            glfw.make_context_current(None)
-                            dpg_plotting.open_plotting_window(gaussians, g_renderer)
+                            # glfw.make_context_current(None)
+                            # dpg_plotting.open_plotting_window(gaussians, g_renderer)
 
-                            # thread = threading.Thread(target=dpg_plotting.open_plotting_window(gaussians, g_renderer))
-                            # thread.start()
+                            thread = threading.Thread(target=dpg_plotting.open_plotting_window, args=(gaussians, g_renderer))
+                            thread.start()
 
                             # glfw.make_context_current(window)
 
