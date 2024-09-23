@@ -268,13 +268,13 @@ class CUDARenderer(GaussianRenderBase):
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
-        # opacity_param = None
-        # if opac_state == 0:
-        #     opacity_param = self.gaussians.volume_opacity
-        # elif opac_state == 1:
-        #     opacity_param = self.gaussians.distance_opacity
+        opacity_param = None
+        if opac_state == 0:
+            opacity_param = self.gaussians.opacity
+        elif opac_state == 1:
+            opacity_param = self.gaussians.distance_opacity
 
-        opacity_param = self.gaussians.opacity
+        # opacity_param = self.gaussians.opacity
 
         # if g_render_cov3D:
         with torch.no_grad():

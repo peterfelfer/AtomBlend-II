@@ -14,7 +14,7 @@ class Camera:
         self.position = np.array([0.0, 0.0, 3.0]).astype(np.float32)
         self.target = np.array([0.0, 0.0, 0.0]).astype(np.float32)
         self.up = np.array([0.0, -1.0, 0.0]).astype(np.float32)
-        self.yaw = -np.pi / 2
+        self.yaw = np.pi / 2
         self.pitch = 0
 
         self.right = 38
@@ -95,10 +95,10 @@ class Camera:
             self.yaw += xoffset * self.rot_sensitivity * self.rot_sensitivity_adaption
             self.pitch += yoffset * self.rot_sensitivity * self.rot_sensitivity_adaption
 
-            self.pitch = np.clip(self.pitch, -np.pi / 2, np.pi / 2)
+            self.pitch = np.clip(self.pitch, -np.pi / 2 + 0.01, np.pi / 2 - 0.01)
 
-            front = np.array([np.cos(self.yaw) * np.cos(self.pitch), 
-                            np.sin(self.pitch), np.sin(self.yaw) * 
+            front = np.array([np.cos(self.yaw) * np.cos(self.pitch),
+                            np.sin(self.pitch), np.sin(self.yaw) *
                             np.cos(self.pitch)])
             front = self._global_rot_mat() @ front.reshape(3, 1)
             front = front[:, 0]
