@@ -79,7 +79,8 @@ class _RasterizeGaussians(torch.autograd.Function):
             indices,
             index_properties,
             raster_settings.gaussian_settings,
-            raster_settings.individual_opacity_factor
+            raster_settings.individual_opacity_factor,
+            raster_settings.view_interpolation
         )
 
         # Invoke C++/CUDA rasterizer

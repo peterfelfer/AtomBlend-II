@@ -269,7 +269,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const float* indices,
 	const float* index_properties,
 	const float* gaussian_settings,
-	const float individual_opacity_factor)
+	const float individual_opacity_factor,
+	const float view_interpolation)
 {
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= P)
@@ -345,9 +346,21 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
 	const float* cov3D;
+
 	if (cov3D_precomp != nullptr) // precomputed cov3D
 	{
-		cov3D = cov3D_precomp + idx * 6;
+        const float atom_cov3D[6] = { 20, 0, 0, 20, 0, 20 }; // = identity matrix
+		const float* volume_cov3D = cov3D_precomp + idx * 6;
+		int cov3D_idx = idx * 6;
+
+		cov3Ds[cov3D_idx + 0] = view_interpolation * volume_cov3D[0] + (1-view_interpolation) * atom_cov3D[0];
+		cov3Ds[cov3D_idx + 1] = view_interpolation * volume_cov3D[1] + (1-view_interpolation) * atom_cov3D[1];
+		cov3Ds[cov3D_idx + 2] = view_interpolation * volume_cov3D[2] + (1-view_interpolation) * atom_cov3D[2];
+		cov3Ds[cov3D_idx + 3] = view_interpolation * volume_cov3D[3] + (1-view_interpolation) * atom_cov3D[3];
+		cov3Ds[cov3D_idx + 4] = view_interpolation * volume_cov3D[4] + (1-view_interpolation) * atom_cov3D[4];
+		cov3Ds[cov3D_idx + 5] = view_interpolation * volume_cov3D[5] + (1-view_interpolation) * atom_cov3D[5];
+
+        cov3D = cov3Ds + idx * 6;
 	}
 	else // using identity matrix as cov3D
 	{
@@ -1308,7 +1321,8 @@ void FORWARD::preprocess(int P, int D, int M,
 	const float* indices,
 	const float* index_properties,
 	const float* gaussian_settings,
-	const float individual_opacity_factor)
+	const float individual_opacity_factor,
+	const float view_interpolation)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
 		P, D, M,
@@ -1338,6 +1352,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		indices,
 		index_properties,
 		gaussian_settings,
-		individual_opacity_factor
+		individual_opacity_factor,
+		view_interpolation
 		);
 }

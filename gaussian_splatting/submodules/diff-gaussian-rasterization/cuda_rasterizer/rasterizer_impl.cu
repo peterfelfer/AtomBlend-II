@@ -229,6 +229,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const float* index_properties,
 	float* gaussian_settings,
 	const float individual_opacity_factor,
+	const float view_interpolation,
 	int* radii,
 	bool debug
 	)
@@ -288,7 +289,8 @@ int CudaRasterizer::Rasterizer::forward(
 		indices,
 		index_properties,
 		gaussian_settings,
-		individual_opacity_factor
+		individual_opacity_factor,
+		view_interpolation
 	), debug)
 
 	// Compute prefix sum over full list of touched tile counts by Gaussians

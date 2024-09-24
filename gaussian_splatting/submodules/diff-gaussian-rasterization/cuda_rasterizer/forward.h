@@ -48,7 +48,8 @@ namespace FORWARD
 		const float* indices,
 		const float* index_properties,
 		const float* gaussian_settings,
-		const float individual_opacity_factor);
+		const float individual_opacity_factor,
+		const float view_interpolation);
 
 	// Main rasterization method.
 	void render(int P,

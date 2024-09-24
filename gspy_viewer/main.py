@@ -173,15 +173,6 @@ def set_index_properties(gaussians):
     g_renderer.update_gaussian_data(gaussians)
     g_renderer.sort_and_update(g_camera)
 
-def set_cov3D_changes(gaussians):
-    if not g_render_cov3D:
-        g_renderer.set_scale_modifier(0.1)
-    else:
-        g_renderer.set_scale_modifier(20.0)
-
-    g_renderer.update_gaussian_data(gaussians)
-    g_renderer.sort_and_update(g_camera)
-
 def set_color(gaussians, elem):
     col = gaussians.num_of_atoms_by_element[elem]['color']
 
@@ -380,6 +371,9 @@ def main():
                 if imgui.tree_node("From atom to volume view", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
                     changed, g_renderer.raster_settings["view_interpolation"] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["view_interpolation"], 0.01, 0.0, 1.0)
 
+                    if changed:
+                        g_renderer.sort_and_update(g_camera)
+
                     imgui.tree_pop()
 
                 imgui.spacing()
@@ -498,7 +492,8 @@ def main():
                     #### cov3d ####
                     changed, g_render_cov3D = imgui.core.checkbox('Shape atoms (use covariance matrices)', g_render_cov3D)
                     if changed:
-                        set_cov3D_changes(gaussians)
+                        g_renderer.update_gaussian_data(gaussians)
+                        g_renderer.sort_and_update(g_camera)
 
                     imgui.tree_pop()
 
