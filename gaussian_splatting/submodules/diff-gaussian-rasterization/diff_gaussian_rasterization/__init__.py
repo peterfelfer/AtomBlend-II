@@ -174,6 +174,7 @@ class GaussianRasterizationSettings(NamedTuple):
     index_properties : torch.Tensor
     gaussian_settings : torch.Tensor([])
     individual_opacity_factor : float
+    view_interpolation : float
 
 class GaussianRasterizer(nn.Module):
     def __init__(self, raster_settings):

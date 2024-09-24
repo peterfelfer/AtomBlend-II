@@ -291,6 +291,9 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float p_w = 1.0f / (p_hom.w + 0.0000001f);
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
+    // Get view interpolation
+//    float view_interpolation = gaussian_settings[1];
+
     // Get color and scale for corresponding index
 	int index = indices[idx];
 	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3]};
@@ -299,7 +302,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	if (cov3D_precomp == nullptr){ // precomputed cov3D#
         scale *= 30.0f;
 	}
-
 
     if (col.w != 0.0 && opacities != nullptr){
         col.w = opacities[idx] + individual_opacity_factor;

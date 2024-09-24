@@ -377,6 +377,15 @@ def main():
                 imgui.separator()
                 imgui.spacing()
 
+                if imgui.tree_node("From atom to volume view", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
+                    changed, g_renderer.raster_settings["gaussian_settings"][1] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["gaussian_settings"][1], 0.01, 0.0, 1.0)
+
+                    imgui.tree_pop()
+
+                imgui.spacing()
+                imgui.separator()
+                imgui.spacing()
+
                 if imgui.tree_node("Individual opacity", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
                     changed = imgui.radio_button("Depending on volume", individual_opacity_state == 0)
                     if changed:

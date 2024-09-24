@@ -141,9 +141,10 @@ class CUDARenderer(GaussianRenderBase):
             "index_properties": torch.Tensor([]),
             "gaussian_settings": torch.Tensor([
                 dpg_plotting.plotting_data["volume_min_max"][0],
-                dpg_plotting.plotting_data["volume_min_max"][1]
+                dpg_plotting.plotting_data["volume_min_max"][1],
             ]),
             "individual_opacity_factor": 0.0,
+            "view_interpolation": 1.0,
         }
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
