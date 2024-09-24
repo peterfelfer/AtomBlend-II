@@ -347,7 +347,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// from scaling and rotation parameters. 
 	const float* cov3D;
 
-	if (cov3D_precomp != nullptr) // precomputed cov3D
+	if (cov3D_precomp != nullptr) // precomputed cov3D; view interpolation
 	{
         const float atom_cov3D[6] = { 20, 0, 0, 20, 0, 20 }; // = identity matrix
 		const float* volume_cov3D = cov3D_precomp + idx * 6;
@@ -374,6 +374,9 @@ __global__ void preprocessCUDA(int P, int D, int M,
         cov3Ds[cov3D_idx + 5] = 1.0f;
 		cov3D = cov3Ds + idx * 6;
 	}
+
+	// view interpolation
+	col.w = (1 - view_interpolation) * 0.5 + 0.5;
 
 	// Compute 2D screen-space covariance matrix
 	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale);
