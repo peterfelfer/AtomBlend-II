@@ -306,16 +306,11 @@ __global__ void preprocessCUDA(int P, int D, int M,
         scale *= 30.0f;
 	}
 
-    if (col.w != 0.0 && opacities != nullptr){
-        col.w = opacities[idx] + view_interpolation_factor;
-        col.w = glm::clamp(col.w, 0.0f, 1.0f);
+    if (col.w != 0.0 && opacities != nullptr && !view_interpolation){
         col.w = individual_opacity_factor / volume[idx];
+        col.w = glm::clamp(col.w, 0.0f, 1.0f);
     }
 
-
-    if (idx < 100){
-        printf("%f, %f, %f, \n", col.w, individual_opacity_factor, volume[idx]);
-    }
 
 
     ////// DEBUG

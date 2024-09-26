@@ -580,10 +580,6 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             # volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
             volume = 4/3 * 3.14159 * volume_vec[0] * volume_vec[1] * volume_vec[2]
 
-            # volume = volume / 50
-
-            opacity = 1 / (0.25*volume)
-
             # scale = 50000 / (volume)
             # scale = 1 / volume
             scale = 1
@@ -786,6 +782,7 @@ if __name__ == "__main__":
 
     print('found nearest neighbors', time.time() - start)
 
+    ### ACHTUNG: volumen & distanzen werden verändert!
     # fit_volume()
     # fit_distance()
 

@@ -375,6 +375,7 @@ def main():
                         g_renderer.sort_and_update(g_camera)
 
                     changed, g_renderer.raster_settings["view_interpolation_factor"] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["view_interpolation_factor"], 0.01, 0.0, 1.0)
+
                     if changed:
                         g_renderer.sort_and_update(g_camera)
 
@@ -398,7 +399,7 @@ def main():
                         individual_opacity_state = 2
                         g_renderer.sort_and_update(g_camera)
 
-                    changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 0.01, -1.0, 1.0)
+                    changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 1.0, 0.0, 1000.0)
                     if changed:
                         g_renderer.raster_settings["individual_opacity_factor"] = new
                         g_renderer.sort_and_update(g_camera)

@@ -143,7 +143,7 @@ class CUDARenderer(GaussianRenderBase):
                 dpg_plotting.plotting_data["volume_min_max"][1],
             ]),
             "view_interpolation": True,
-            "individual_opacity_factor": 0.0,
+            "individual_opacity_factor": 50.0,
             "view_interpolation_factor": 1.0,
         }
         super().__init__()
