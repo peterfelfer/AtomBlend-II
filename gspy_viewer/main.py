@@ -370,8 +370,11 @@ def main():
                 imgui.spacing()
 
                 if imgui.tree_node("From atom to volume view", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
-                    changed, g_renderer.raster_settings["view_interpolation"] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["view_interpolation"], 0.01, 0.0, 1.0)
+                    changed, g_renderer.raster_settings["view_interpolation"] = imgui.core.checkbox("View interpolation", g_renderer.raster_settings["view_interpolation"])
+                    if changed:
+                        g_renderer.sort_and_update(g_camera)
 
+                    changed, g_renderer.raster_settings["view_interpolation_factor"] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["view_interpolation_factor"], 0.01, 0.0, 1.0)
                     if changed:
                         g_renderer.sort_and_update(g_camera)
 

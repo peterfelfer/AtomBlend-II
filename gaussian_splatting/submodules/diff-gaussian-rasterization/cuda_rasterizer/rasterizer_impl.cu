@@ -228,8 +228,9 @@ int CudaRasterizer::Rasterizer::forward(
 	const float* indices,
 	const float* index_properties,
 	float* gaussian_settings,
+	const bool view_interpolation,
 	const float individual_opacity_factor,
-	const float view_interpolation,
+	const float view_interpolation_factor,
 	const float* volume,
 	int* radii,
 	bool debug
@@ -290,8 +291,9 @@ int CudaRasterizer::Rasterizer::forward(
 		indices,
 		index_properties,
 		gaussian_settings,
-		individual_opacity_factor,
 		view_interpolation,
+		individual_opacity_factor,
+		view_interpolation_factor,
 		volume
 	), debug)
 

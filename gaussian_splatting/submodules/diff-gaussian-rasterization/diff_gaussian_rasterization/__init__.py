@@ -82,8 +82,9 @@ class _RasterizeGaussians(torch.autograd.Function):
             indices,
             index_properties,
             raster_settings.gaussian_settings,
-            raster_settings.individual_opacity_factor,
             raster_settings.view_interpolation,
+            raster_settings.individual_opacity_factor,
+            raster_settings.view_interpolation_factor,
             volume
         )
 
@@ -178,8 +179,9 @@ class GaussianRasterizationSettings(NamedTuple):
     render_mode : int
     index_properties : torch.Tensor
     gaussian_settings : torch.Tensor([])
+    view_interpolation : True
     individual_opacity_factor : float
-    view_interpolation : float
+    view_interpolation_factor : float
 
 class GaussianRasterizer(nn.Module):
     def __init__(self, raster_settings):

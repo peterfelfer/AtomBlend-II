@@ -269,8 +269,9 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const float* indices,
 	const float* index_properties,
 	const float* gaussian_settings,
+	const bool view_interpolation,
 	const float individual_opacity_factor,
-	const float view_interpolation,
+	const float view_interpolation_factor,
 	const float* volume)
 {
 	auto idx = cg::this_grid().thread_rank();
@@ -294,7 +295,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
     // Get view interpolation
-//    float view_interpolation = gaussian_settings[1];
+//    float view_interpolation_factor = gaussian_settings[1];
 
     // Get color and scale for corresponding index
 	int index = indices[idx];
@@ -306,7 +307,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	}
 
     if (col.w != 0.0 && opacities != nullptr){
-        col.w = opacities[idx] + individual_opacity_factor;
+        col.w = opacities[idx] + view_interpolation_factor;
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
         col.w = individual_opacity_factor / volume[idx];
     }
@@ -354,22 +355,20 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// from scaling and rotation parameters. 
 	const float* cov3D;
 
-	if (cov3D_precomp != nullptr) // precomputed cov3D; view interpolation
+	if (view_interpolation) // precomputed cov3D; view interpolation
 	{
         const float atom_cov3D[6] = { 20, 0, 0, 20, 0, 20 }; // = identity matrix
 		const float* volume_cov3D = cov3D_precomp + idx * 6;
 		int cov3D_idx = idx * 6;
 
-		cov3Ds[cov3D_idx + 0] = view_interpolation * volume_cov3D[0] + (1-view_interpolation) * atom_cov3D[0];
-		cov3Ds[cov3D_idx + 1] = view_interpolation * volume_cov3D[1] + (1-view_interpolation) * atom_cov3D[1];
-		cov3Ds[cov3D_idx + 2] = view_interpolation * volume_cov3D[2] + (1-view_interpolation) * atom_cov3D[2];
-		cov3Ds[cov3D_idx + 3] = view_interpolation * volume_cov3D[3] + (1-view_interpolation) * atom_cov3D[3];
-		cov3Ds[cov3D_idx + 4] = view_interpolation * volume_cov3D[4] + (1-view_interpolation) * atom_cov3D[4];
-		cov3Ds[cov3D_idx + 5] = view_interpolation * volume_cov3D[5] + (1-view_interpolation) * atom_cov3D[5];
-
-        cov3D = cov3Ds + idx * 6;
+		cov3Ds[cov3D_idx + 0] = view_interpolation_factor * volume_cov3D[0] + (1-view_interpolation_factor) * atom_cov3D[0];
+		cov3Ds[cov3D_idx + 1] = view_interpolation_factor * volume_cov3D[1] + (1-view_interpolation_factor) * atom_cov3D[1];
+		cov3Ds[cov3D_idx + 2] = view_interpolation_factor * volume_cov3D[2] + (1-view_interpolation_factor) * atom_cov3D[2];
+		cov3Ds[cov3D_idx + 3] = view_interpolation_factor * volume_cov3D[3] + (1-view_interpolation_factor) * atom_cov3D[3];
+		cov3Ds[cov3D_idx + 4] = view_interpolation_factor * volume_cov3D[4] + (1-view_interpolation_factor) * atom_cov3D[4];
+		cov3Ds[cov3D_idx + 5] = view_interpolation_factor * volume_cov3D[5] + (1-view_interpolation_factor) * atom_cov3D[5];
 	}
-	else // using identity matrix as cov3D
+	else if (cov3D_precomp == nullptr) // using identity matrix as cov3D
 	{
 //		computeCov3D(scales[idx], scale_modifier, rotations[idx], cov3Ds + idx * 6);
 		int cov3D_idx = idx * 6;
@@ -379,12 +378,13 @@ __global__ void preprocessCUDA(int P, int D, int M,
         cov3Ds[cov3D_idx + 3] = 1.0f;
         cov3Ds[cov3D_idx + 4] = 0.0f;
         cov3Ds[cov3D_idx + 5] = 1.0f;
-		cov3D = cov3Ds + idx * 6;
 	}
 
+    cov3D = cov3Ds + idx * 6;
+
 	// view interpolation
-	if (col.w != 0.0){
-        col.w = (1 - view_interpolation) * 0.5 + 0.5;
+	if (col.w != 0.0 && view_interpolation){
+        col.w = (1 - view_interpolation_factor) * 0.5 + 0.5;
 	}
 
 	// Compute 2D screen-space covariance matrix
@@ -1339,8 +1339,9 @@ void FORWARD::preprocess(int P, int D, int M,
 	const float* indices,
 	const float* index_properties,
 	const float* gaussian_settings,
+	const bool view_interpolation,
 	const float individual_opacity_factor,
-	const float view_interpolation,
+	const float view_interpolation_factor,
 	const float* volume)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
@@ -1371,8 +1372,9 @@ void FORWARD::preprocess(int P, int D, int M,
 		indices,
 		index_properties,
 		gaussian_settings,
-		individual_opacity_factor,
 		view_interpolation,
+		individual_opacity_factor,
+		view_interpolation_factor,
 		volume
 		);
 }

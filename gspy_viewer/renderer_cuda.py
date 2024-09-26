@@ -123,7 +123,6 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
 
 class CUDARenderer(GaussianRenderBase):
     def __init__(self, w, h):
-        super().__init__()
         self.raster_settings = {
             "image_height": int(h),
             "image_width": int(w),
@@ -143,9 +142,11 @@ class CUDARenderer(GaussianRenderBase):
                 dpg_plotting.plotting_data["volume_min_max"][0],
                 dpg_plotting.plotting_data["volume_min_max"][1],
             ]),
+            "view_interpolation": True,
             "individual_opacity_factor": 0.0,
-            "view_interpolation": 1.0,
+            "view_interpolation_factor": 1.0,
         }
+        super().__init__()
         gl.glViewport(0, 0, w, h)
         self.program = util.compile_shaders(VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
         # setup cuda

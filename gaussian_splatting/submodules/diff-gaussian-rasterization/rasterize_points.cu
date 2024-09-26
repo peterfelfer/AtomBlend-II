@@ -56,8 +56,9 @@ RasterizeGaussiansCUDA(
 	const torch::Tensor& indices,
 	const torch::Tensor& index_properties,
 	const torch::Tensor& gaussian_settings,
+	const bool view_interpolation,
 	const float individual_opacity_factor,
-	const float view_interpolation,
+	const float view_interpolation_factor,
 	const torch::Tensor& volume)
 {
   if (means3D.ndimension() != 2 || means3D.size(1) != 3) {
@@ -112,8 +113,9 @@ RasterizeGaussiansCUDA(
 		indices.contiguous().data<float>(),
 		index_properties.contiguous().data<float>(),
 		gaussian_settings.contiguous().data<float>(),
-		individual_opacity_factor,
 		view_interpolation,
+		individual_opacity_factor,
+		view_interpolation_factor,
 		volume.contiguous().data<float>(),
 		radii.contiguous().data<int>(),
 		debug
