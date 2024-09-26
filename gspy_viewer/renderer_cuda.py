@@ -75,7 +75,7 @@ class GaussianDataCUDA:
     cov3D: torch.Tensor
     num_of_atoms_by_element: dict
     indices: torch.Tensor
-    volume_opacity: torch.Tensor
+    g_volume: torch.Tensor
     distance_opacity: torch.Tensor
     
     def __len__(self):
@@ -113,7 +113,7 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
         cov3D = torch.tensor(gau.cov3D).float().cuda().requires_grad_(False),
         num_of_atoms_by_element = gau.num_of_atoms_by_element,
         indices = torch.tensor(gau.indices).float().cuda().requires_grad_(False),
-        volume_opacity=torch.tensor(gau.volume_opacity).float().cuda().requires_grad_(False),
+        g_volume=torch.tensor(gau.g_volume).float().cuda().requires_grad_(False),
         distance_opacity=torch.tensor(gau.distance_opacity).float().cuda().requires_grad_(False),
 
     )

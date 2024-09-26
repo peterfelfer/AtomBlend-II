@@ -32,7 +32,7 @@ def update_volumes(sender, app_data, user_data):
         return
 
     new_volumes = []
-    for volume in gaussians.volume_opacity:
+    for volume in gaussians.g_volume:
 
         if volume.item() < plotting_data["volume_min_max"][0]:
             new_volume = 0.0
@@ -98,9 +98,9 @@ def open_plotting_window(gaussians, g_renderer):
         with dpg.plot(label="##Volume histogram", width=1100, height=1000):
             dpg.add_plot_axis(dpg.mvXAxis, label="Volume")
             with dpg.plot_axis(dpg.mvYAxis, label="Frequency", tag="y1"):
-                data = gaussians.volume_opacity
+                data = gaussians.g_volume
                 dpg.add_histogram_series(data, bins=1000, label="histogram", parent=dpg.last_item(),
-                                         max_range=gaussians.volume_opacity.max())
+                                         max_range=gaussians.g_volume.max())
 
             dpg.add_drag_line(label="Alpha = 0", color=[255, 0, 0, 255], default_value=min, thickness=3, callback=update_volumes, user_data=[0, gaussians, g_renderer])
             dpg.add_drag_line(label="Alpha = 1", color=[255, 0, 0, 255], default_value=max, thickness=3, callback=update_volumes, user_data=[1, gaussians, g_renderer])

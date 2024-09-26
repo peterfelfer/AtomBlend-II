@@ -48,7 +48,7 @@ render_all_elements = True
 file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
-volume_opacity = False
+g_volume = False
 individual_opacity_state = 2
 
 
@@ -227,7 +227,7 @@ def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, g_show_debug_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
-        g_render_cov3D, debug_covmat, render_all_elements, file_path, volume_opacity, \
+        g_render_cov3D, debug_covmat, render_all_elements, file_path, g_volume, \
         individual_opacity_state
 
     imgui.create_context()

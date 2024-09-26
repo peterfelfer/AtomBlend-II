@@ -43,7 +43,7 @@ class GaussianModel:
 
     def __init__(self, sh_degree: int):
         self.index = 0
-        self.volume_opacity = torch.empty(0)
+        self.g_volume = torch.empty(0)
         self.active_sh_degree = 0
         self.max_sh_degree = sh_degree
         self._xyz = torch.empty(0)
@@ -225,7 +225,7 @@ class GaussianModel:
         for i in range(self.cov3D.shape[1]):
             l.append('cov3D_{}'.format(i))
 
-        l.append('volume_opacity')
+        l.append('g_volume')
         l.append('distance_opacity')
         l.append('indices')
         return l
@@ -252,10 +252,10 @@ class GaussianModel:
             self.cov3D = torch.tensor(dummy_cov3D).float().cuda().requires_grad_(False)
         cov3D = self.cov3D.detach().cpu().numpy()
 
-        if len(self.volume_opacity) == 0:
-            dummy_volume_opacity = np.array([[1.0]] * len(self._xyz))
-            self.volume_opacity = torch.tensor(dummy_volume_opacity).float().cuda().requires_grad_(False)
-        volume_opacity = self.volume_opacity.detach().cpu().numpy()
+        if len(self.g_volume) == 0:
+            dummy_g_volume = np.array([[1.0]] * len(self._xyz))
+            self.g_volume = torch.tensor(dummy_g_volume).float().cuda().requires_grad_(False)
+        g_volume = self.g_volume.detach().cpu().numpy()
 
         distance_opacity = self.distance_opacity.detach().cpu().numpy()
 
@@ -264,7 +264,7 @@ class GaussianModel:
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
 
         elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D, volume_opacity, distance_opacity, indices), axis=1)
+        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D, g_volume, distance_opacity, indices), axis=1)
         elements[:] = list(map(tuple, attributes))
         el = PlyElement.describe(elements, 'vertex', comments=comments)
         PlyData([el]).write(path)
@@ -360,7 +360,7 @@ class GaussianModel:
         self._scaling = nn.Parameter(torch.tensor(scale_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
         self.cov3D = nn.Parameter(torch.tensor(cov3D_list, dtype=torch.float, device="cuda").requires_grad_(True))
-        self.volume_opacity = nn.Parameter(torch.tensor(volume_list, dtype=torch.float, device="cuda").requires_grad_(True))
+        self.g_volume = nn.Parameter(torch.tensor(volume_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.distance_opacity = nn.Parameter(torch.tensor(distance_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.indices = nn.Parameter(torch.tensor(indices, dtype=torch.float, device="cuda").requires_grad_(True))
 
