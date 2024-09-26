@@ -52,7 +52,7 @@ file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 volume_opacity = False
-individual_opacity_state = 2
+individual_opacity_state = 0
 
 def impl_glfw_init():
     window_name = "Interactive Gaussian Splatting Atom Probe Set Viewer"
@@ -236,6 +236,7 @@ def main():
     # gaussians = util_gau.naive_gaussian()
 
     # load "dummy" ply
+    # gaussians = util_gau.load_ply('/home/qa43nawu/temp/qa43nawu/out/Al-Cu-Sn_50_dist_20_0_to_1.5.ply')
     gaussians = util_gau.load_ply('/home/qa43nawu/temp/qa43nawu/out/test.ply')
     update_activated_renderer_state(gaussians)
     set_index_properties(gaussians)

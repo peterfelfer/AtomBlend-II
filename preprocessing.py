@@ -204,13 +204,13 @@ def combine_rrng_and_e_pos_file():
 
     return
 
-def load_rrng_file():
+def load_rrng_file(file_path):
     global color_settings
     global all_elements
     global all_elements_by_name
 
     # file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/rangefile.rrng'
-    file_path = '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
+    # file_path = '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
 
     rrng_file = open(file_path, 'r')
 
@@ -308,6 +308,14 @@ def load_rrng_file():
     # if both (r)rng and (e)pos file are loaded, we combine these two files
     combine_rrng_and_e_pos_file()
 
+def load_xrng_file(file_path):
+    import xmltodict
+    import xml.etree.ElementTree as ET
+    tree = ET.parse(file_path).getroot()
+    xmlstr = ET.tostring(tree, encoding="utf8", method="xml")
+    atom_dict = xmltodict.parse(xmlstr)
+
+    print("")
 
 def load_e_pos_file(num_atoms, file_path):
     # reading the given binary file and store it into a numpy array
@@ -688,17 +696,30 @@ def fit_distance():
 if __name__ == "__main__":
     from argparse import Namespace
 
+    datasets = {
+        "Al-Cu-Sn": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/Al-Cu-Sn/R4_01750-v01.pos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/Al-Cu-Sn/Al-Cu-Sn_mytry.rrng'
+        ],
+        "CuAl50_Ni_2p3V_10min_02": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
+        ]
+    }
+
+    default_data = "CuAl50_Ni_2p3V_10min_02"
+
     # parse arguments
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--num_neighbors", default=50, type=int, help="Number of neighbors that should be considered for PCA.")
     parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
     parser.add_argument("--normalization", default=1, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
-    parser.add_argument("--num_atoms", default=10000, type=int, help="The numbers of atoms that the .ply file should contain.")
+    parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
     parser.add_argument("--num_sd", default=10000, type=int, help="The number of standard deviations that determines the neighbors that should be considered.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
     parser.add_argument("--skip_std_dev", default=False, type=bool, help="If set to true, the all neighbors will be considered, not just them within the standard deviation.")
-    parser.add_argument("--epos_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos', type=str, help="The file path to the .pos or .epos file.")
-    parser.add_argument("--rrng_path", default='/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng', type=str, help="The file path to the .rrng file.")
+    parser.add_argument("--epos_path", default=datasets[default_data][0], type=str, help="The file path to the .pos or .epos file.")
+    parser.add_argument("--rrng_path", default=datasets[default_data][1], type=str, help="The file path to the .rrng file.")
     parser.add_argument("--out_dir", default= '/home/qa43nawu/temp/qa43nawu/out/', type=str, help="The directory in that the .ply file will be written.")
     parser.add_argument("--out_file_name", default= '', type=str, help="The file name of the .ply file that will be written.")
     parsed_args = parser.parse_args()
@@ -742,7 +763,12 @@ if __name__ == "__main__":
         atom_coords = load_e_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
 
     print('load epos', time.time() - start)
-    load_rrng_file()
+
+    if parsed_args.rrng_path.endswith('.rrng'):
+        load_rrng_file(parsed_args.rrng_path)
+    else:
+        load_xrng_file(parsed_args.rrng_path)
+
     print('load rrng', time.time() - start)
     combine_rrng_and_e_pos_file()
     print('combine epos and rrng', time.time() - start)
@@ -779,7 +805,7 @@ if __name__ == "__main__":
     comments.append('normalization: ' + str(parsed_args.normalization))
 
     if not parsed_args.out_file_name:
-        file_name = 'point_cloud_neighb_' + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_0_to_1.5' + '.ply'
+        file_name = default_data + "_" + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_0_to_1.5' + '.ply'
     else:
         file_name = parsed_args.out_file_name
 

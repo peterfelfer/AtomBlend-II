@@ -376,7 +376,9 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	}
 
 	// view interpolation
-	col.w = (1 - view_interpolation) * 0.5 + 0.5;
+	if (col.w != 0.0){
+        col.w = (1 - view_interpolation) * 0.5 + 0.5;
+	}
 
 	// Compute 2D screen-space covariance matrix
 	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale);

@@ -37,7 +37,7 @@ def update_volumes(sender, app_data, user_data):
         if volume.item() < plotting_data["volume_min_max"][0]:
             new_volume = 0.0
         elif volume.item() > plotting_data["volume_min_max"][1]:
-            new_volume = 1.0
+            new_volume = 0.0
         else:
             new_volume = interpolate_y_value(volume.item())
 
