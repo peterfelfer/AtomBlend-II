@@ -27,7 +27,8 @@ def rasterize_gaussians(
     cov3Ds_precomp,
     raster_settings,
     indices,
-    index_properties
+    index_properties,
+    volume
 ):
     return _RasterizeGaussians.apply(
         means3D,
@@ -38,7 +39,8 @@ def rasterize_gaussians(
         cov3Ds_precomp,
         raster_settings,
         indices,
-        index_properties
+        index_properties,
+        volume
     )
 
 class _RasterizeGaussians(torch.autograd.Function):
@@ -53,7 +55,8 @@ class _RasterizeGaussians(torch.autograd.Function):
         cov3Ds_precomp,
         raster_settings,
         indices,
-        index_properties
+        index_properties,
+        volume
     ):
 
         # Restructure arguments the way that the C++ lib expects them
@@ -80,7 +83,8 @@ class _RasterizeGaussians(torch.autograd.Function):
             index_properties,
             raster_settings.gaussian_settings,
             raster_settings.individual_opacity_factor,
-            raster_settings.view_interpolation
+            raster_settings.view_interpolation,
+            volume
         )
 
         # Invoke C++/CUDA rasterizer
@@ -193,7 +197,7 @@ class GaussianRasterizer(nn.Module):
             
         return visible
 
-    def forward(self, means3D, means2D, opacities, index_properties, indices = None, shs = None, colors_precomp = None, scales = None, rotations = None, cov3D_precomp = None):
+    def forward(self, means3D, means2D, opacities, index_properties, indices = None, shs = None, colors_precomp = None, scales = None, rotations = None, cov3D_precomp = None, volume = None):
         
         raster_settings = self.raster_settings
 
@@ -220,6 +224,8 @@ class GaussianRasterizer(nn.Module):
             indices = torch.Tensor([])
         if opacities is None:
             opacities = torch.Tensor([])
+        if volume is None:
+            volume = torch.Tensor([])
 
         # Invoke C++/CUDA rasterization routine
         return rasterize_gaussians(
@@ -231,6 +237,7 @@ class GaussianRasterizer(nn.Module):
             cov3D_precomp,
             raster_settings,
             indices,
-            index_properties
+            index_properties,
+            volume
         )
 

@@ -286,7 +286,8 @@ class CUDARenderer(GaussianRenderBase):
                 scales = self.gaussians.scale,
                 cov3D_precomp = self.gaussians.cov3D if g_render_cov3D else None,
                 indices = self.gaussians.indices,
-                index_properties = self.raster_settings["index_properties"]
+                index_properties = self.raster_settings["index_properties"],
+                volume = self.gaussians.g_volume
             )
 
         # print('viewmatrix', raster_settings.viewmatrix)

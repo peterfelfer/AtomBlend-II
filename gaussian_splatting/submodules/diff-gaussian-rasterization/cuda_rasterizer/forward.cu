@@ -270,7 +270,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const float* index_properties,
 	const float* gaussian_settings,
 	const float individual_opacity_factor,
-	const float view_interpolation)
+	const float view_interpolation,
+	const float* volume)
 {
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= P)
@@ -307,6 +308,12 @@ __global__ void preprocessCUDA(int P, int D, int M,
     if (col.w != 0.0 && opacities != nullptr){
         col.w = opacities[idx] + individual_opacity_factor;
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
+        col.w = individual_opacity_factor / volume[idx];
+    }
+
+
+    if (idx < 100){
+        printf("%f, %f, %f, \n", col.w, individual_opacity_factor, volume[idx]);
     }
 
 
@@ -1175,6 +1182,12 @@ render_gaussianBallOpt(
 //                C[1] = 0;
 //                C[2] = 0;
 
+                if (con_o.w < 0.01){
+                    C[0] = 1;
+                    C[1] = 1;
+                    C[2] = 0;
+                }
+
                 T = test_T;
             }
 
@@ -1327,7 +1340,8 @@ void FORWARD::preprocess(int P, int D, int M,
 	const float* index_properties,
 	const float* gaussian_settings,
 	const float individual_opacity_factor,
-	const float view_interpolation)
+	const float view_interpolation,
+	const float* volume)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
 		P, D, M,
@@ -1358,6 +1372,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		index_properties,
 		gaussian_settings,
 		individual_opacity_factor,
-		view_interpolation
+		view_interpolation,
+		volume
 		);
 }

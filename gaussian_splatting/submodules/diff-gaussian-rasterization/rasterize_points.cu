@@ -57,7 +57,8 @@ RasterizeGaussiansCUDA(
 	const torch::Tensor& index_properties,
 	const torch::Tensor& gaussian_settings,
 	const float individual_opacity_factor,
-	const float view_interpolation)
+	const float view_interpolation,
+	const torch::Tensor& volume)
 {
   if (means3D.ndimension() != 2 || means3D.size(1) != 3) {
     AT_ERROR("means3D must have dimensions (num_points, 3)");
@@ -113,6 +114,7 @@ RasterizeGaussiansCUDA(
 		gaussian_settings.contiguous().data<float>(),
 		individual_opacity_factor,
 		view_interpolation,
+		volume.contiguous().data<float>(),
 		radii.contiguous().data<int>(),
 		debug
 		);

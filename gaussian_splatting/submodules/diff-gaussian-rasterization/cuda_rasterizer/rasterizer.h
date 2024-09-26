@@ -53,6 +53,7 @@ namespace CudaRasterizer
 			float* gaussian_settings,
 			const float individual_opacity_factor,
 			const float view_interpolation,
+			const float* volume,
 			int* radii = nullptr,
 			bool debug = false
 			);
