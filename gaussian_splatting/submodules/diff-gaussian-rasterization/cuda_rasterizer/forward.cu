@@ -354,7 +354,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	// from scaling and rotation parameters. 
 	const float* cov3D;
 
-	if (view_interpolation && false) // precomputed cov3D; view interpolation
+	if (view_interpolation) // precomputed cov3D; view interpolation
 	{
         const float atom_cov3D[6] = { 1, 0, 0, 1, 0, 1 }; // = identity matrix
 		const float* volume_cov3D = cov3D_precomp + idx * 6;
@@ -366,8 +366,10 @@ __global__ void preprocessCUDA(int P, int D, int M,
 		cov3Ds[cov3D_idx + 3] = view_interpolation_factor * volume_cov3D[3] + (1-view_interpolation_factor) * atom_cov3D[3];
 		cov3Ds[cov3D_idx + 4] = view_interpolation_factor * volume_cov3D[4] + (1-view_interpolation_factor) * atom_cov3D[4];
 		cov3Ds[cov3D_idx + 5] = view_interpolation_factor * volume_cov3D[5] + (1-view_interpolation_factor) * atom_cov3D[5];
+
+        cov3D = cov3Ds + idx * 6;
 	}
-	else if (cov3D_precomp == nullptr && false) // using identity matrix as cov3D
+	else if (cov3D_precomp == nullptr) // using identity matrix as cov3D
 	{
 //		computeCov3D(scales[idx], scale_modifier, rotations[idx], cov3Ds + idx * 6);
 		int cov3D_idx = idx * 6;
@@ -377,9 +379,12 @@ __global__ void preprocessCUDA(int P, int D, int M,
         cov3Ds[cov3D_idx + 3] = 1.0f;
         cov3Ds[cov3D_idx + 4] = 0.0f;
         cov3Ds[cov3D_idx + 5] = 1.0f;
+
+        cov3D = cov3Ds + idx * 6;
+	} else {
+	    cov3D = cov3D_precomp + idx * 6;
 	}
 
-    cov3D = cov3Ds + idx * 6;
 
 	// view interpolation
 	if (col.w != 0.0 && view_interpolation){
