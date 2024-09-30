@@ -204,6 +204,224 @@ def combine_rrng_and_e_pos_file():
 
     return
 
+def load_rng_file(file_path):
+    rrng_file = open(file_path, 'r')
+
+    rrng_file.readline()  # first line should be number of elements and ranges; we don't need this
+
+    # read the elements and their colors
+    line = rrng_file.readline()
+
+    all_elems_color = {}  # store the colors of the elements as they are stated in a different section than the ranges
+
+    while not line.startswith('-'):
+        splitted_line = line.split(' ')
+
+        if len(splitted_line) == 1:
+            line = rrng_file.readline()
+            continue
+
+        splitted_line = line.replace('\n', ' ')
+        splitted_line = splitted_line.replace(',', '.').split(' ')
+
+        this_element = {}
+
+        # setting element name, charge is added later
+        elem_name = splitted_line[0]
+        this_element['element_name'] = elem_name
+
+        # set color
+        r = int(float(splitted_line[1]) * 255)
+        g = int(float(splitted_line[2]) * 255)
+        b = int(float(splitted_line[3]) * 255)
+
+        this_element['color'] = (r, g, b, 1)
+        all_elems_color[elem_name] = this_element  # todo: ABGlobals.all_elements; try with all_elements_by_name
+
+        line = rrng_file.readline()
+
+    # get the elements from the line starting with '-------------------'
+    splitted_line = line.replace('\n', ' ').split(' ')
+    all_elements_by_order = []
+    for elem in range(1, len(splitted_line)):
+        all_elements_by_order.append(splitted_line[elem])
+
+    # remove new line element and double spaces from list
+    all_elements_by_order[:] = (value for value in all_elements_by_order if value != '')
+    all_elements_by_order[:] = (value for value in all_elements_by_order if value != '\n')
+    line = rrng_file.readline()
+
+    # read single atoms
+    while line.startswith('.'):
+        this_elem = {}
+        this_elem['element_name'] = ''
+        splitted_line = line.replace('\n', ' ')
+        splitted_line = splitted_line.replace(',', '.').split(' ')
+
+        # remove new line element and double spaces from list
+        splitted_line[:] = (value for value in splitted_line if value != '')
+        only_bitmask = splitted_line[3:]
+        combined_elems = 0
+
+        for i in range(len(only_bitmask)):
+            if int(only_bitmask[i]) != 0:
+                elem_name = all_elements_by_order[i]
+
+                if int(only_bitmask[i]) == 1:
+                    this_elem['element_name'] += all_elems_color[elem_name]['element_name']  # todo maybe all_elems_by_order is better
+                else:
+                    this_elem['element_name'] += all_elems_color[elem_name]['element_name'] + only_bitmask[i]
+                this_elem['color'] = all_elems_color[elem_name]['color']
+                this_elem['start_range'] = float(splitted_line[1])
+                this_elem['end_range'] = float(splitted_line[2])
+                combined_elems += 1
+
+        # only add element to list if its one single element. polyatomic elements will be added later
+        if int(combined_elems) == 1:
+            all_elements.append(this_elem)
+
+            # set the current general point size to all the element point sizes
+            general_point_size = 5.0
+
+            # add single elements to color_settings
+            elem_name = this_elem['element_name']
+            if elem_name not in color_settings:
+                element_color_settings = {
+                    "name": elem_name,
+                    "display_name": elem_name,
+                    "point_size": general_point_size,
+                    "color": this_element['color'],
+                    "display": True,
+                }
+                color_settings[element_color_settings['name']] = element_color_settings
+                element_count[elem_name] = 0
+
+                # add unknown label to the color settings dict
+                element_color_settings = {
+                    "name": unknown_label,
+                    "display_name": unknown_label,
+                    "point_size": general_point_size,
+                    "color": [255, 0, 0, 1],
+                    "display": True,
+                }
+                color_settings[unknown_label] = element_color_settings
+
+        line = rrng_file.readline()
+
+    # read polyatomic extensions
+    while not line.startswith('-'):
+        line = rrng_file.readline()
+
+    # read '--- polyatomic extension' line
+    line = rrng_file.readline()
+
+    while not line.startswith('-'):
+        splitted_line = line.split(' ')
+
+        if len(splitted_line) != 4:
+            line = rrng_file.readline()
+            continue
+
+        splitted_line = line.replace('\n', ' ')
+        splitted_line = splitted_line.replace(',', '.').split(' ')
+        this_element = {}
+
+        # setting element name, charge is added later
+        elem_name = splitted_line[0]
+        this_element['element_name'] = elem_name
+
+        # set color
+        r = int(float(splitted_line[1]) * 255)
+        g = int(float(splitted_line[2]) * 255)
+        b = int(float(splitted_line[3]) * 255)
+        this_element['color'] = (r, g, b, 1)
+        all_elems_color[elem_name] = this_element  # todo: ABGlobals.all_elements; try with all_elements_by_name
+
+        line = rrng_file.readline()
+
+    # read ------------------- [elems]' line
+    all_elements_by_order = []
+    splitted_line = line.replace('\n', ' ').split(' ')
+    for elem in range(1, len(splitted_line)):
+        all_elements_by_order.append(splitted_line[elem])
+
+    # remove new line element and double spaces from list
+    all_elements_by_order[:] = (value for value in all_elements_by_order if value != '')
+    all_elements_by_order[:] = (value for value in all_elements_by_order if value != '\n')
+
+    for elem in range(1, len(splitted_line)):
+        all_elements_by_order.append(splitted_line[elem])
+
+    # read next line
+    line = rrng_file.readline()
+
+    # read ranges of polyatomic elements
+    while line.startswith('.'):
+        this_elem = {}
+        this_elem['element_name'] = ''
+        splitted_line = line.replace('\n', ' ')
+        splitted_line = splitted_line.replace(',', '.').split(' ')
+
+        # remove new line element and double spaces from list
+        splitted_line[:] = (value for value in splitted_line if value != '')
+        splitted_line[:] = (value for value in splitted_line if value != '\n')
+
+        only_bitmask = splitted_line[3:]
+        for i in range(len(only_bitmask)):
+            if int(only_bitmask[i]) != 0:
+                elem_name = all_elements_by_order[i]
+                this_elem['element_name'] += all_elems_color[elem_name]['element_name']
+                this_elem['color'] = all_elems_color[elem_name]['color']
+                this_elem['start_range'] = float(splitted_line[1])
+                this_elem['end_range'] = float(splitted_line[2])
+        all_elements.append(this_elem)
+
+        line = rrng_file.readline()
+
+        # set the current general point size to all the element point sizes
+        general_point_size = 5.0
+
+        # add this element to element property group to create a color picker in the color settings tab
+        elem_name = this_elem['element_name']
+
+        # add polyatomic elements to color_settings
+        if elem_name not in color_settings:
+            element_color_settings = {
+                "name": elem_name,
+                "display_name": elem_name,
+                "point_size": general_point_size,
+                "color": this_element['color'],
+                "display": True,
+            }
+            color_settings[element_color_settings['name']] = element_color_settings
+            element_count[elem_name] = 0
+
+        # add unknown label to the color settings dict
+        element_color_settings = {
+            "name": unknown_label,
+            "display_name": unknown_label,
+            "point_size": general_point_size,
+            "color": [255, 0, 0, 1],
+            "display": True,
+        }
+        color_settings[unknown_label] = element_color_settings
+
+    # sort atoms by start range
+    all_elements.sort(key=lambda x: x.get('start_range'))
+
+    # build all_elements_by_name dict
+    for elem in all_elements:
+        name_and_charge = elem['element_name']
+        if name_and_charge not in all_elements_by_name:
+            this_element_dict = {}
+            this_element_dict['element_name'] = elem['element_name']
+            this_element_dict['color'] = elem['color']
+            this_element_dict['coordinates'] = []
+            this_element_dict['num_of_atoms'] = 0
+            this_element_dict['num_displayed'] = 0
+            all_elements_by_name[name_and_charge] = this_element_dict
+
+
 def load_rrng_file(file_path):
     global color_settings
     global all_elements
@@ -708,13 +926,22 @@ if __name__ == "__main__":
         "R31_06365-v02": [
             '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.pos',
             '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.rrng'
-        ]
+        ],
+        "aut_leoben_leitner": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/aut_leoben_leitner/R21_08680-v02.pos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/aut_leoben_leitner/R21_08680.rrng',
+        ],
+        "SeHoKim": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.pos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/SeHoKim_R5076_44076_v02.rng'
+        ],
     }
 
-    default_data = "CuAl50_Ni_2p3V_10min_02"
+    # default_data = "CuAl50_Ni_2p3V_10min_02"
     # default_data = "Al-Cu-Sn"
     # default_data = "TiAlN_film_cross"
     # default_data = "R31_06365-v02"
+    default_data = "SeHoKim"
 
     # parse arguments
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -764,15 +991,17 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    if parsed_args.epos_path.endswith('.pos'):
+    if parsed_args.epos_path.lower().endswith('.pos'):
         atom_coords = load_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
     else:
         atom_coords = load_e_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
 
     print('load epos', time.time() - start)
 
-    if parsed_args.rrng_path.endswith('.rrng'):
+    if parsed_args.rrng_path.lower().endswith('.rrng'):
         load_rrng_file(parsed_args.rrng_path)
+    elif parsed_args.rrng_path.lower().endswith('.rng'):
+        load_rng_file(parsed_args.rrng_path)
     else:
         load_xrng_file(parsed_args.rrng_path)
 

@@ -269,6 +269,12 @@ def main():
 
         g_renderer.draw(g_render_cov3D, individual_opacity_state)
 
+        max_scale = 1.0
+        scale_step = 0.001
+        if g_render_cov3D:
+            max_scale = 10.0
+            # scale_step = 0.1
+
         if g_show_atom_settings_win:
             imgui.core.set_next_window_position(0, 0, imgui.ONCE)
             imgui.core.set_next_window_size(720, 1200, imgui.ONCE)
@@ -281,7 +287,7 @@ def main():
                 changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
-                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.01, 0.0, 1.0)
+                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, scale_step, 0.0, max_scale)
                 if changed:
                     set_global_scale(gaussians, global_scale)
 
@@ -332,7 +338,7 @@ def main():
 
                     imgui.core.push_item_width(100)
 
-                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.drag_float('', gaussians.num_of_atoms_by_element[elem]['scale'], 0.01, 0.0, 10.0)
+                    changed, gaussians.num_of_atoms_by_element[elem]['scale'] = imgui.core.drag_float('', gaussians.num_of_atoms_by_element[elem]['scale'], scale_step, 0.0, max_scale)
 
                     if changed:
                         set_index_properties(gaussians)

@@ -107,7 +107,7 @@ def load_ply(path):
                 obj = {
                     'num': int(num),
                     'color': (r, g, b, 1.0),
-                    'scale': 0.1,
+                    'scale': 0.001,
                     'is_rendered': True,
                 }
 
