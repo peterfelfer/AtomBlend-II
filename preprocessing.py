@@ -700,10 +700,21 @@ if __name__ == "__main__":
         "CuAl50_Ni_2p3V_10min_02": [
             '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos',
             '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
+        ],
+        "TiAlN_film_cross": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/TiAlN_film_cross-section_1200C/TiAlN_film_cross-section_1200C.epos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/TiAlN_film_cross-section_1200C/TiAlN_film_cross-section_1200C.rrng',
+        ],
+        "R31_06365-v02": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.pos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.rrng'
         ]
     }
 
     default_data = "CuAl50_Ni_2p3V_10min_02"
+    # default_data = "Al-Cu-Sn"
+    # default_data = "TiAlN_film_cross"
+    # default_data = "R31_06365-v02"
 
     # parse arguments
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)

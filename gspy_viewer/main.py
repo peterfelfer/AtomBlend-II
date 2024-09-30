@@ -52,7 +52,7 @@ file_path = ''
 
 debug_covmat = np.asarray([1.0, 0.0, 0.0, 1.0, 0.0, 1.0])
 g_volume = False
-individual_opacity_state = 0
+individual_opacity_state = 2
 
 def impl_glfw_init():
     window_name = "Interactive Gaussian Splatting Atom Probe Set Viewer"
@@ -118,6 +118,9 @@ def key_callback(window, key, scancode, action, mods):
             g_camera.process_move_key(0, 0, -1)
         elif key == glfw.KEY_ESCAPE:
             glfw.set_window_should_close(window, True)
+        elif key == glfw.KEY_P:
+            print("prr")
+            save_img()
 
 def update_camera_pose_lazy():
     if g_camera.is_pose_dirty:
@@ -198,6 +201,17 @@ def set_global_scale(gaussians, scale):
 
     set_index_properties(gaussians)
 
+def save_img():
+    width, height = glfw.get_framebuffer_size(window)
+    nrChannels = 3;
+    stride = nrChannels * width;
+    stride += (4 - stride % 4) if stride % 4 else 0
+    gl.glPixelStorei(gl.GL_PACK_ALIGNMENT, 4)
+    gl.glReadBuffer(gl.GL_FRONT)
+    bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
+    img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
+    imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
+
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
         g_show_control_win, g_show_help_win, g_show_camera_win, g_show_debug_win, \
@@ -267,7 +281,7 @@ def main():
                 changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
-                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.01, 0.0, 10.0)
+                changed, global_scale = imgui.core.drag_float('Global scale', global_scale, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_scale(gaussians, global_scale)
 
