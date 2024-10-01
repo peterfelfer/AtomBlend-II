@@ -1140,15 +1140,16 @@ render_gaussianBallOpt(
 //                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
 //            }
 
-            float x = exp(power);
-            if (x > 0.01f && x < 0.5f){
-                alpha = 2.0f * -x + 1.0f;
-                alpha = x;
-//                    C[0] = 1.0f;
-            } else if (x > 0.01f){
-                alpha = 2.0f * -x + 1.0f;
-                alpha = x;
-//                    C[1] = 1.0f;
+            float center_fac = exp(power); // the closer to center, the higher [0,1]
+            if (center_fac > 1-con_o.w){
+                alpha = 1.0f;
+            } else {
+                float desired_alpha = con_o.w;
+
+                alpha = (1 / (1 - desired_alpha)) * (-center_fac + 1);
+
+//                alpha *= center_fac;
+
             }
 
             alpha = min(0.99f, alpha);
@@ -1175,21 +1176,9 @@ render_gaussianBallOpt(
                 C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
                 C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
 
-//                C[0] = 0.0f;
-//                C[1] = 0.0f;
-//                C[2] = 0.0f;
-
-
-
-//                C[0] = 1 - con_o.w;
-//                C[1] = 0;
-//                C[2] = 0;
-
-                if (con_o.w < 0.01){
-                    C[0] = 1;
-                    C[1] = 1;
-                    C[2] = 0;
-                }
+                C[0] = alpha;
+                C[1] = alpha;
+                C[2] = alpha;
 
                 T = test_T;
             }

@@ -937,11 +937,11 @@ if __name__ == "__main__":
         ],
     }
 
-    # default_data = "CuAl50_Ni_2p3V_10min_02"
+    default_data = "CuAl50_Ni_2p3V_10min_02"
     # default_data = "Al-Cu-Sn"
     # default_data = "TiAlN_film_cross"
     # default_data = "R31_06365-v02"
-    default_data = "SeHoKim"
+    # default_data = "SeHoKim"
 
     # parse arguments
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
