@@ -649,19 +649,11 @@ render_flatCUDA(
 			// Obtain alpha by multiplying with Gaussian opacity
 			// and its exponential falloff from mean.
 			// Avoid numerical instabilities (see paper appendix).
-            float alpha_value = min(0.99f, con_o.w * exp(power));
-            float opaque_value = 1;
-            float alpha = alpha_value;
-            if(con_o.w > 0.5) {
-                float interp_value = con_o.w * 2 - 1;
-                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
-            }
 
-            alpha = min(0.99f, alpha);
-			if (alpha < 1.0f / 255.0f)
+            float alpha = min(0.99f, con_o.w);
+            float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
+			if (alpha_sphere < 1.0f / 255.0f)
 				continue;
-            if (alpha_value < 1.0f / 255.0f)
-                continue;
             float test_T = T * (1 - alpha);
             if (test_T < 0.0001f)
             {
@@ -674,8 +666,6 @@ render_flatCUDA(
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
 				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
-//                 C[ch] = features[collected_id[j] * CHANNELS + ch] * alpha * T;
-// 				C[ch] += test;
 
 
 
@@ -700,7 +690,7 @@ render_flatCUDA(
 		final_T[pix_id] = T;
 		n_contrib[pix_id] = last_contributor;
 		for (int ch = 0; ch < CHANNELS; ch++)
-			out_color[ch * H * W + pix_id] = C[ch]; // + bg_color[ch];
+			out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
 
 // 			out_color[ch * H * W + pix_id] = T;
 //             out_color[ch * H * W + pix_id] = C[ch];
