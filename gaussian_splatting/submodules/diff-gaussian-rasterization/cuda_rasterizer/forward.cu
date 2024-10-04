@@ -987,9 +987,7 @@ render_gaussianBall(
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
-            float alpha_value = min(0.99f, con_o.w * exp(power));
-            float opaque_value = 1;
-            float alpha = alpha_value;
+            float alpha = 1.0f;
 
             float center_fac = exp(power); // the closer to center, the higher [0,1]
             if (center_fac > 1-con_o.w){ // inner circle
@@ -1001,17 +999,16 @@ render_gaussianBall(
                 alpha = linear_interpolation;
             }
 
-            alpha = min(0.99f, alpha);
-            if (alpha < 1.0f / 255.0f)
-                continue;
-            if (alpha_value < 1.0f / 255.0f)
-                continue;
-            float test_T = T * (1 - alpha);
-            if (test_T < 0.0001f)
-            {
-                done = true;
-                continue;
-            }
+			alpha = min(0.99f, alpha);
+			if (alpha < 1.0f / 255.0f)
+				continue;
+			float test_T = T * (1 - alpha);
+			if (test_T < 0.0001f)
+			{
+				done = true;
+				continue;
+			}
+
 
             float radius = scale_modifier;
 
