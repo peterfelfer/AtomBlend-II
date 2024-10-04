@@ -789,17 +789,20 @@ render_gaussianBall(
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
-            float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
+
+            // use exp for sphere calculation but not for shading
+            float alpha_sphere = min(0.99f, con_o.w * exp(power));
 			if (alpha_sphere < 3.0f / 255.0f)
 				continue;
 
+            // Inner circle is always con_o.w, the outer circle interpolates linear between [con_o.w, 0]
             float alpha = 1.0f;
-
             float center_fac = exp(power); // the closer to center, the higher [0,1]
             if (center_fac > 1-con_o.w){ // inner circle
                 alpha = con_o.w;
             } else {
                 float x = 1 - center_fac;
+                // linear interpolation; solving for y: https://en.wikipedia.org/wiki/Linear_interpolation
                 float linear_interpolation = (con_o.w * (1-x)) / (1 - con_o.w);
 
                 alpha = linear_interpolation;
@@ -814,9 +817,6 @@ render_gaussianBall(
 				continue;
 			}
 
-            float radius = scale_modifier;
-
-            bool inside_ellipse = exp(power) > 0.01f;
             float dz = exp(0.35 * power);
 
             for (int ch = 0; ch < CHANNELS; ch++)
