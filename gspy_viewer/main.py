@@ -41,8 +41,8 @@ g_show_camera_win = True
 g_show_atom_settings_win = True
 g_show_debug_win = True
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
-g_render_mode_tables_cuda = ["Phong Shading", "Flat", "Gaussian Splatting", "Gaussian Ball", "Gaussian Ball Opt"]
-g_render_mode = 3
+g_render_mode_tables_cuda = ["Gaussian Splatting", "Gaussian Ball", "Flat", "Debug"]
+g_render_mode = 1
 g_render_cov3D = True
 
 global_alpha = 1.0
