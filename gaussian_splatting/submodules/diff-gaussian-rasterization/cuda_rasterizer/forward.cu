@@ -990,9 +990,15 @@ render_gaussianBall(
             float alpha_value = min(0.99f, con_o.w * exp(power));
             float opaque_value = 1;
             float alpha = alpha_value;
-            if(con_o.w > 0.5) {
-                float interp_value = con_o.w * 2 - 1;
-                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
+
+            float center_fac = exp(power); // the closer to center, the higher [0,1]
+            if (center_fac > 1-con_o.w){ // inner circle
+                alpha = con_o.w;
+            } else {
+                float x = 1 - center_fac;
+                float linear_interpolation = (con_o.w * (1-x)) / (1 - con_o.w);
+
+                alpha = linear_interpolation;
             }
 
             alpha = min(0.99f, alpha);
@@ -1017,9 +1023,9 @@ render_gaussianBall(
                 C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
                 C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
 
-//                C[0] = 1 - con_o.w;
-//                C[1] = 0;
-//                C[2] = 0;
+//                C[0] = alpha;
+//                C[1] = alpha;
+//                C[2] = alpha;
 
                 T = test_T;
             }
@@ -1135,34 +1141,15 @@ render_gaussianBallOpt(
             float alpha_value = min(0.99f, con_o.w * exp(power));
             float opaque_value = 1;
             float alpha = alpha_value;
-//            if(con_o.w > 0.9) {
-//                float interp_value = con_o.w * 2 - 1;
-//                alpha = alpha_value * (1 - interp_value) + opaque_value * interp_value;
-//            }
 
             float center_fac = exp(power); // the closer to center, the higher [0,1]
             if (center_fac > 1-con_o.w){ // inner circle
-//                alpha = 1.0f;
-
                 alpha = con_o.w;
-
             } else {
-                float desired_alpha = con_o.w;
-
-//                alpha = (1 / (1 - desired_alpha)) * (-center_fac + 1);
-//                alpha = 1 - alpha;
-
-//                alpha *= center_fac;
-
                 float x = 1 - center_fac;
-                float scale_y = con_o.w;
-//                float linear_interpolation = (x - 1) / (con_o.w - 1) * con_o.w;
-
                 float linear_interpolation = (con_o.w * (1-x)) / (1 - con_o.w);
 
                 alpha = linear_interpolation;
-//                alpha = 1 - pow(1 - linear_interpolation, 4);
-
             }
 
             alpha = min(0.99f, alpha);
@@ -1182,8 +1169,6 @@ render_gaussianBallOpt(
             bool inside_ellipse = exp(power) > 0.01f;
             if (inside_ellipse) {
                 float dz = exp(0.35 * power);
-
-
 
                 C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
                 C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
