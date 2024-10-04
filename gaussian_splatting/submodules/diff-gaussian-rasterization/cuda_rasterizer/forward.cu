@@ -652,7 +652,7 @@ render_flatCUDA(
 
             float alpha = min(0.99f, con_o.w);
             float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
-			if (alpha_sphere < 1.0f / 255.0f)
+			if (alpha_sphere < 3.0f / 255.0f)
 				continue;
             float test_T = T * (1 - alpha);
             if (test_T < 0.0001f)
@@ -789,6 +789,10 @@ render_gaussianBall(
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
+            float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
+			if (alpha_sphere < 3.0f / 255.0f)
+				continue;
+
             float alpha = 1.0f;
 
             float center_fac = exp(power); // the closer to center, the higher [0,1]
@@ -802,8 +806,7 @@ render_gaussianBall(
             }
 
 			alpha = min(0.99f, alpha);
-			if (alpha < 1.0f / 255.0f)
-				continue;
+
 			float test_T = T * (1 - alpha);
 			if (test_T < 0.0001f)
 			{
@@ -811,23 +814,15 @@ render_gaussianBall(
 				continue;
 			}
 
-
             float radius = scale_modifier;
 
             bool inside_ellipse = exp(power) > 0.01f;
-            if (inside_ellipse) {
-                float dz = exp(0.35 * power);
+            float dz = exp(0.35 * power);
 
-                C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
-                C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
-                C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
+            for (int ch = 0; ch < CHANNELS; ch++)
+				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * dz * T;
 
-//                C[0] = alpha;
-//                C[1] = alpha;
-//                C[2] = alpha;
-
-                T = test_T;
-            }
+            T = test_T;
 
             // Keep track of last range entry to update this
             // pixel.
@@ -937,9 +932,11 @@ render_gaussianBallOpt(
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
-            float alpha_value = min(0.99f, con_o.w * exp(power));
-            float opaque_value = 1;
-            float alpha = alpha_value;
+            float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
+			if (alpha_sphere < 3.0f / 255.0f)
+				continue;
+
+            float alpha = 1.0f;
 
             float center_fac = exp(power); // the closer to center, the higher [0,1]
             if (center_fac > 1-con_o.w){ // inner circle
@@ -951,34 +948,24 @@ render_gaussianBallOpt(
                 alpha = linear_interpolation;
             }
 
-            alpha = min(0.99f, alpha);
-            if (alpha < 1.0f / 255.0f)
-                continue;
-            if (alpha_value < 1.0f / 255.0f)
-                continue;
-            float test_T = T * (1 - alpha);
-            if (test_T < 0.0001f)
-            {
-                done = true;
-                continue;
-            }
+			alpha = min(0.99f, alpha);
+
+			float test_T = T * (1 - alpha);
+			if (test_T < 0.0001f)
+			{
+				done = true;
+				continue;
+			}
 
             float radius = scale_modifier;
 
             bool inside_ellipse = exp(power) > 0.01f;
-            if (inside_ellipse) {
-                float dz = exp(0.35 * power);
+            float dz = exp(0.35 * power);
 
-                C[0] += features[collected_id[j] * CHANNELS] * alpha * dz * T;
-                C[1] += features[collected_id[j] * CHANNELS + 1] * alpha * dz * T;
-                C[2] += features[collected_id[j] * CHANNELS + 2] * alpha * dz * T;
+            for (int ch = 0; ch < CHANNELS; ch++)
+				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * dz * T;
 
-//                C[0] = alpha;
-//                C[1] = alpha;
-//                C[2] = alpha;
-
-                T = test_T;
-            }
+            T = test_T;
 
             // Keep track of last range entry to update this
             // pixel.
