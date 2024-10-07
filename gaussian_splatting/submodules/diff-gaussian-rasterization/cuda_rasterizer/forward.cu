@@ -513,7 +513,7 @@ renderCUDA(
 			// Keep track of current position in range
 			contributor++;
 
-			// Resample using conic matrix (cf. "Surface 
+			// Resample using conic matrix (cf. "Surface
 			// Splatting" by Zwicker et al., 2001)
 			float2 xy = collected_xy[j];
 			float2 d = { xy.x - pixf.x, xy.y - pixf.y };
@@ -795,18 +795,7 @@ render_gaussianBall(
 			if (alpha_sphere < 3.0f / 255.0f)
 				continue;
 
-            // Inner circle is always con_o.w, the outer circle interpolates linear between [con_o.w, 0]
-            float alpha = 1.0f;
-            float center_fac = exp(power); // the closer to center, the higher [0,1]
-            if (center_fac > 1-con_o.w){ // inner circle
-                alpha = con_o.w;
-            } else {
-                float x = 1 - center_fac;
-                // linear interpolation; solving for y: https://en.wikipedia.org/wiki/Linear_interpolation
-                float linear_interpolation = (con_o.w * (1-x)) / (1 - con_o.w);
-
-                alpha = linear_interpolation;
-            }
+            float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
 
 			alpha = min(0.99f, alpha);
 
@@ -933,22 +922,14 @@ render_gaussianBallOpt(
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
             float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
-			if (alpha_sphere < 3.0f / 255.0f)
+			if (alpha_sphere < 1.0f / 255.0f)
 				continue;
 
-            float alpha = 1.0f;
+            float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
 
-            float center_fac = exp(power); // the closer to center, the higher [0,1]
-            if (center_fac > 1-con_o.w){ // inner circle
-                alpha = con_o.w;
-            } else {
-                float x = 1 - center_fac;
-                float linear_interpolation = (con_o.w * (1-x)) / (1 - con_o.w);
-
-                alpha = linear_interpolation;
-            }
-
+//            alpha = exp(power);
 			alpha = min(0.99f, alpha);
+
 
 			float test_T = T * (1 - alpha);
 			if (test_T < 0.0001f)
@@ -960,10 +941,15 @@ render_gaussianBallOpt(
             float radius = scale_modifier;
 
             bool inside_ellipse = exp(power) > 0.01f;
-            float dz = exp(0.35 * power);
+            float dz = exp(power);
 
-            for (int ch = 0; ch < CHANNELS; ch++)
+            for (int ch = 0; ch < CHANNELS; ch++){
 				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * dz * T;
+
+//				C[0] = alpha;
+//				C[1] = alpha;
+//				C[2] = alpha;
+			}
 
             T = test_T;
 
