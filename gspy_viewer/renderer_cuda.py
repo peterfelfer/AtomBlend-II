@@ -76,7 +76,7 @@ class GaussianDataCUDA:
     num_of_atoms_by_element: dict
     indices: torch.Tensor
     g_volume: torch.Tensor
-    distance_opacity: torch.Tensor
+    g_distance: torch.Tensor
     
     def __len__(self):
         return len(self.xyz)
@@ -114,7 +114,7 @@ def gaus_cuda_from_cpu(gau: util_gau) -> GaussianDataCUDA:
         num_of_atoms_by_element = gau.num_of_atoms_by_element,
         indices = torch.tensor(gau.indices).float().cuda().requires_grad_(False),
         g_volume=torch.tensor(gau.g_volume).float().cuda().requires_grad_(False),
-        distance_opacity=torch.tensor(gau.distance_opacity).float().cuda().requires_grad_(False),
+        g_distance=torch.tensor(gau.g_distance).float().cuda().requires_grad_(False),
 
     )
     gaus.sh = gaus.sh.reshape(len(gaus), -1, 3).contiguous()
@@ -270,25 +270,26 @@ class CUDARenderer(GaussianRenderBase):
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
-        opacity_param = None
+        filter_param = None
         if opac_state == 0:
-            opacity_param = self.gaussians.opacity
+            filter_param = self.gaussians.g_volume
         elif opac_state == 1:
-            opacity_param = self.gaussians.distance_opacity
+            filter_param = self.gaussians.g_distance
 
         # opacity_param = self.gaussians.opacity
+
 
         # if g_render_cov3D:
         with torch.no_grad():
             img, radii = rasterizer(
                 means3D = self.gaussians.xyz,
                 means2D = None,
-                opacities = opacity_param,
+                opacities = None,
                 scales = None,
                 cov3D_precomp = self.gaussians.cov3D if g_render_cov3D else None,
                 indices = self.gaussians.indices,
                 index_properties = self.raster_settings["index_properties"],
-                volume = self.gaussians.g_volume
+                g_filter = filter_param
             )
 
         # print('viewmatrix', raster_settings.viewmatrix)

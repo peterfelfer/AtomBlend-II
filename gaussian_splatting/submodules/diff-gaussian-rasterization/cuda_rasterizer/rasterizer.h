@@ -54,7 +54,7 @@ namespace CudaRasterizer
 			const bool view_interpolation,
 			const float individual_opacity_factor,
 			const float view_interpolation_factor,
-			const float* volume,
+			const float* g_filter,
 			int* radii = nullptr,
 			bool debug = false
 			);

@@ -13,7 +13,7 @@ class GaussianData:
     cov3D: np.ndarray
     num_of_atoms_by_element: dict
     g_volume: np.ndarray
-    distance_opacity: np.ndarray
+    g_distance: np.ndarray
     indices: np.ndarray
 
     def flat(self) -> np.ndarray:
@@ -162,8 +162,8 @@ def load_ply(path):
     g_volume = np.ones((xyz.shape[0], 1))
     g_volume[:, 0] = np.asarray(plydata.elements[0]["g_volume"])
 
-    distance_opacity = np.ones((xyz.shape[0], 1))
-    distance_opacity[:, 0] = np.asarray(plydata.elements[0]["distance_opacity"])
+    g_distance = np.ones((xyz.shape[0], 1))
+    g_distance[:, 0] = np.asarray(plydata.elements[0]["g_distance"])
 
     indices = np.zeros((xyz.shape[0], 1))
     indices[:, 0] = np.asarray(plydata.elements[0]["indices"])
@@ -180,7 +180,7 @@ def load_ply(path):
     #                     features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
     # shs = shs.astype(np.float32)
     g_volume = g_volume.astype(np.float32)
-    distance_opacity = distance_opacity.astype(np.float32)
+    g_distance = g_distance.astype(np.float32)
     indices = indices.astype(np.float32)
 
     shs = features_dc.reshape(-1, 3)
@@ -189,7 +189,7 @@ def load_ply(path):
     dpg_plotting.plotting_data["volume_min_max"] = [0.0, g_volume.max()]
     # dpg_plotting.plotting_data["volume_alpha_range"] = [0.0, g_volume.max()]
 
-    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, g_volume, distance_opacity, indices)
+    return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, g_volume, g_distance, indices)
 
 if __name__ == "__main__":
     gs = load_ply("/home/qa43nawu/temp/qa43nawu/out/point_cloud.ply")

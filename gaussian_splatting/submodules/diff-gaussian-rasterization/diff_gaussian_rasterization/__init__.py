@@ -28,7 +28,7 @@ def rasterize_gaussians(
     raster_settings,
     indices,
     index_properties,
-    volume
+    g_filter
 ):
     return _RasterizeGaussians.apply(
         means3D,
@@ -40,7 +40,7 @@ def rasterize_gaussians(
         raster_settings,
         indices,
         index_properties,
-        volume
+        g_filter
     )
 
 class _RasterizeGaussians(torch.autograd.Function):
@@ -56,7 +56,7 @@ class _RasterizeGaussians(torch.autograd.Function):
         raster_settings,
         indices,
         index_properties,
-        volume
+        g_filter
     ):
 
         # Restructure arguments the way that the C++ lib expects them
@@ -85,7 +85,7 @@ class _RasterizeGaussians(torch.autograd.Function):
             raster_settings.view_interpolation,
             raster_settings.individual_opacity_factor,
             raster_settings.view_interpolation_factor,
-            volume
+            g_filter
         )
 
         # Invoke C++/CUDA rasterizer
@@ -199,7 +199,7 @@ class GaussianRasterizer(nn.Module):
             
         return visible
 
-    def forward(self, means3D, means2D, opacities, index_properties, indices = None, shs = None, colors_precomp = None, scales = None, rotations = None, cov3D_precomp = None, volume = None):
+    def forward(self, means3D, means2D, opacities, index_properties, indices = None, shs = None, colors_precomp = None, scales = None, rotations = None, cov3D_precomp = None, g_filter = None):
         
         raster_settings = self.raster_settings
 
@@ -226,8 +226,8 @@ class GaussianRasterizer(nn.Module):
             indices = torch.Tensor([])
         if opacities is None:
             opacities = torch.Tensor([])
-        if volume is None:
-            volume = torch.Tensor([])
+        if g_filter is None:
+            g_filter = torch.Tensor([])
 
         # Invoke C++/CUDA rasterization routine
         return rasterize_gaussians(
@@ -240,6 +240,6 @@ class GaussianRasterizer(nn.Module):
             raster_settings,
             indices,
             index_properties,
-            volume
+            g_filter
         )
 

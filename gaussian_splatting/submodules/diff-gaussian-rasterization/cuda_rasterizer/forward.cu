@@ -272,7 +272,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
-	const float* volume)
+	const float* g_filter)
 {
 	auto idx = cg::this_grid().thread_rank();
 	if (idx >= P)
@@ -310,8 +310,8 @@ __global__ void preprocessCUDA(int P, int D, int M,
 //        scale *= 30.0f;
 //	}
 
-    if (col.w != 0.0 && opacities != nullptr && !view_interpolation){
-        col.w = individual_opacity_factor / volume[idx];
+    if (col.w != 0.0 && g_filter != nullptr && !view_interpolation){
+        col.w = individual_opacity_factor / g_filter[idx];
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
     }
 
@@ -1086,7 +1086,7 @@ void FORWARD::preprocess(int P, int D, int M,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
-	const float* volume)
+	const float* g_filter)
 {
 	preprocessCUDA<NUM_CHANNELS> << <(P + 255) / 256, 256 >> > (
 		P, D, M,
@@ -1119,6 +1119,6 @@ void FORWARD::preprocess(int P, int D, int M,
 		view_interpolation,
 		individual_opacity_factor,
 		view_interpolation_factor,
-		volume
+		g_filter
 		);
 }

@@ -41,7 +41,7 @@ RasterizeGaussiansCUDA(
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	float view_interpolation_factor,
-	const torch::Tensor& volume);
+	const torch::Tensor& g_filter);
 
 std::tuple<torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor, torch::Tensor>
  RasterizeGaussiansBackwardCUDA(

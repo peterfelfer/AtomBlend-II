@@ -226,7 +226,7 @@ class GaussianModel:
             l.append('cov3D_{}'.format(i))
 
         l.append('g_volume')
-        l.append('distance_opacity')
+        l.append('g_distance')
         l.append('indices')
         return l
 
@@ -257,14 +257,14 @@ class GaussianModel:
             self.g_volume = torch.tensor(dummy_g_volume).float().cuda().requires_grad_(False)
         g_volume = self.g_volume.detach().cpu().numpy()
 
-        distance_opacity = self.distance_opacity.detach().cpu().numpy()
+        g_distance = self.g_distance.detach().cpu().numpy()
 
         indices = self.indices.detach().cpu().numpy()
 
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
 
         elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D, g_volume, distance_opacity, indices), axis=1)
+        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D, g_volume, g_distance, indices), axis=1)
         elements[:] = list(map(tuple, attributes))
         el = PlyElement.describe(elements, 'vertex', comments=comments)
         PlyData([el]).write(path)
@@ -361,7 +361,7 @@ class GaussianModel:
         self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
         self.cov3D = nn.Parameter(torch.tensor(cov3D_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.g_volume = nn.Parameter(torch.tensor(volume_list, dtype=torch.float, device="cuda").requires_grad_(True))
-        self.distance_opacity = nn.Parameter(torch.tensor(distance_list, dtype=torch.float, device="cuda").requires_grad_(True))
+        self.g_distance = nn.Parameter(torch.tensor(distance_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.indices = nn.Parameter(torch.tensor(indices, dtype=torch.float, device="cuda").requires_grad_(True))
 
         self.active_sh_degree = self.max_sh_degree
