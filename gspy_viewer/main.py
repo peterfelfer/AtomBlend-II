@@ -289,7 +289,7 @@ def main():
                     set_global_alpha(gaussians, global_alpha)
                 changed, global_scale = imgui.core.drag_float('Global scale', global_scale, scale_step, 0.0, max_scale)
                 if changed:
-                    set_global_scale(gaussians, global_scale)
+                    set_global_scale(gaussians, global_scale / 50)
 
                 imgui.text('Element settings:')
 

@@ -25,6 +25,7 @@ from scipy.spatial import KDTree
 from scipy.stats import norm
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
+import debug_data
 
 import time
 
@@ -620,6 +621,9 @@ def load_pos_file(num_atoms, file_path):
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
+    sorted_by_mn = debug_data.spiral
+    num_of_atoms = len(sorted_by_mn)
+
 
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
@@ -778,10 +782,6 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             # standardized = (nn_coords - means) / std_dev
             # nn_coords = standardized
 
-            # alternative standardization step
-            scaler = StandardScaler()
-            scaled = scaler.fit_transform(nn_coords)
-            nn_coords = scaled
 
             cov_mat, volume_vec = calc_pca(nn_coords)
 
