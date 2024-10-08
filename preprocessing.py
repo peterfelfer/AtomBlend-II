@@ -621,7 +621,7 @@ def load_pos_file(num_atoms, file_path):
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
-    sorted_by_mn = debug_data.spiral
+    sorted_by_mn = debug_data.square
     num_of_atoms = len(sorted_by_mn)
 
 

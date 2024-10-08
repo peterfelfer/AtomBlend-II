@@ -1,3 +1,36 @@
+'''import bpy
+# Function to print vertex coordinates of all objects in the scene
+def print_vertex_coordinates():
+    # Get the current scene
+    scene = bpy.context.scene
+
+    # Iterate through all objects in the scene
+    for obj in scene.objects:
+        # Check if the object is a mesh
+        if obj.type == 'MESH':
+            print(f"Object: {obj.name}")
+            # Iterate through all vertices in the mesh
+            counter = 0
+            for vert in obj.data.vertices:
+                # Get the vertex coordinates in object space
+                co = vert.co
+                print(f"sorted_by_mn[{counter}] = [{co.x}, {co.y}, {co.z}, mn]")
+
+                counter += 1
+
+        if obj.type == 'CURVE':
+            for spline in obj.data.splines:
+                counter = 0
+                for point in spline.points:
+                    co = obj.matrix_world @ point.co
+                    print(f"sorted_by_mn[{counter}] = [{co.x}, {co.y}, {co.z}, mn]")
+
+                    counter += 1
+
+
+# Run the function
+print_vertex_coordinates()'''
+
 import numpy as np
 
 mn = 1.0
@@ -5,6 +38,53 @@ surface = np.zeros((100,4))
 circle = np.zeros((32,4))
 sphere = np.zeros((482,4))
 spiral = np.zeros((121,4))
+square = np.zeros((44,4))
+
+### PLANE
+square[0] = [-1.0, -1.0, 0.0, mn]
+square[1] = [1.0, -1.0, 0.0, mn]
+square[2] = [-1.0, 1.0, 0.0, mn]
+square[3] = [1.0, 1.0, 0.0, mn]
+square[4] = [-1.0, 0.8181818127632141, 0.0, mn]
+square[5] = [-1.0, 0.6363636255264282, 0.0, mn]
+square[6] = [-1.0, 0.45454543828964233, 0.0, mn]
+square[7] = [-1.0, 0.27272725105285645, 0.0, mn]
+square[8] = [-1.0, 0.09090906381607056, 0.0, mn]
+square[9] = [-1.0, -0.09090910851955414, 0.0, mn]
+square[10] = [-1.0, -0.27272728085517883, 0.0, mn]
+square[11] = [-1.0, -0.4545454680919647, 0.0, mn]
+square[12] = [-1.0, -0.6363636255264282, 0.0, mn]
+square[13] = [-1.0, -0.8181818127632141, 0.0, mn]
+square[14] = [-0.8181818127632141, -1.0, 0.0, mn]
+square[15] = [-0.6363636255264282, -1.0, 0.0, mn]
+square[16] = [-0.45454543828964233, -1.0, 0.0, mn]
+square[17] = [-0.27272725105285645, -1.0, 0.0, mn]
+square[18] = [-0.09090906381607056, -1.0, 0.0, mn]
+square[19] = [0.09090910851955414, -1.0, 0.0, mn]
+square[20] = [0.27272728085517883, -1.0, 0.0, mn]
+square[21] = [0.4545454680919647, -1.0, 0.0, mn]
+square[22] = [0.6363636255264282, -1.0, 0.0, mn]
+square[23] = [0.8181818127632141, -1.0, 0.0, mn]
+square[24] = [1.0, -0.8181818127632141, 0.0, mn]
+square[25] = [1.0, -0.6363636255264282, 0.0, mn]
+square[26] = [1.0, -0.45454543828964233, 0.0, mn]
+square[27] = [1.0, -0.27272725105285645, 0.0, mn]
+square[28] = [1.0, -0.09090906381607056, 0.0, mn]
+square[29] = [1.0, 0.09090910851955414, 0.0, mn]
+square[30] = [1.0, 0.27272728085517883, 0.0, mn]
+square[31] = [1.0, 0.4545454680919647, 0.0, mn]
+square[32] = [1.0, 0.6363636255264282, 0.0, mn]
+square[33] = [1.0, 0.8181818127632141, 0.0, mn]
+square[34] = [0.8181818127632141, 1.0, 0.0, mn]
+square[35] = [0.6363636255264282, 1.0, 0.0, mn]
+square[36] = [0.45454543828964233, 1.0, 0.0, mn]
+square[37] = [0.27272725105285645, 1.0, 0.0, mn]
+square[38] = [0.09090906381607056, 1.0, 0.0, mn]
+square[39] = [-0.09090910851955414, 1.0, 0.0, mn]
+square[40] = [-0.27272728085517883, 1.0, 0.0, mn]
+square[41] = [-0.4545454680919647, 1.0, 0.0, mn]
+square[42] = [-0.6363636255264282, 1.0, 0.0, mn]
+square[43] = [-0.8181818127632141, 1.0, 0.0, mn]
 
 ### SURFACE
 surface[0] = [00, 00, 0, mn]

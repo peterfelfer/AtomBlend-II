@@ -269,7 +269,7 @@ def main():
 
         g_renderer.draw(g_render_cov3D, individual_opacity_state)
 
-        max_scale = 1.0
+        max_scale = 10.0
         scale_step = 0.001
         if g_render_cov3D:
             max_scale = 10.0
@@ -289,7 +289,7 @@ def main():
                     set_global_alpha(gaussians, global_alpha)
                 changed, global_scale = imgui.core.drag_float('Global scale', global_scale, scale_step, 0.0, max_scale)
                 if changed:
-                    set_global_scale(gaussians, global_scale / 50)
+                    set_global_scale(gaussians, global_scale)
 
                 imgui.text('Element settings:')
 
