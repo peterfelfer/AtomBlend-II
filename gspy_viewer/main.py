@@ -46,7 +46,7 @@ g_render_mode = 1
 g_render_cov3D = True
 
 global_alpha = 1.0
-global_scale = 0.1
+global_scale = 0.01
 render_all_elements = True
 file_path = ''
 
@@ -246,6 +246,8 @@ def main():
 
     g_renderer = g_renderer_list[g_renderer_idx]
 
+    # time_t = 0.0
+
     # gaussian data; naive gaussian
     # gaussians = util_gau.naive_gaussian()
 
@@ -289,7 +291,7 @@ def main():
                     set_global_alpha(gaussians, global_alpha)
                 changed, global_scale = imgui.core.drag_float('Global scale', global_scale, scale_step, 0.0, max_scale)
                 if changed:
-                    set_global_scale(gaussians, global_scale)
+                    set_global_scale(gaussians, global_scale / 50.0)
 
                 imgui.text('Element settings:')
 
@@ -394,9 +396,10 @@ def main():
                     if changed:
                         g_renderer.sort_and_update(g_camera)
 
+                    # g_renderer.raster_settings["view_interpolation_factor"] = time_t;
                     changed, g_renderer.raster_settings["view_interpolation_factor"] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["view_interpolation_factor"], 0.01, 0.0, 1.0)
 
-                    if changed:
+                    if changed or True:
                         g_renderer.sort_and_update(g_camera)
 
                     imgui.tree_pop()
@@ -706,6 +709,11 @@ def main():
         imgui.render()
         impl.render(imgui.get_draw_data())
         glfw.swap_buffers(window)
+
+        # time_t += 0.0005
+        # if time_t > 1.0:
+        #     time_t = 0.0
+        # print(time_t)
 
     impl.shutdown()
     glfw.terminate()

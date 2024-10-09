@@ -322,7 +322,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 //    float opacity = opacities[idx];
 //    opacity = opacity / 1000;
 //    opacity = 1 / opacity;
-////    col = { 1, 1, 1, 1 };
+//    col = { 1, 1, 1, 1 };
 //    col.x = opacity;
 //    col.y = 0.0f;
 //    col.z = 0.0f;

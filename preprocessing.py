@@ -621,7 +621,7 @@ def load_pos_file(num_atoms, file_path):
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
-    sorted_by_mn = debug_data.square
+    sorted_by_mn = debug_data.spiral
     num_of_atoms = len(sorted_by_mn)
 
 
@@ -706,7 +706,8 @@ def calc_pca(point_cloud):
     # transformed_cov_matrix = np.dot(components.T * explained_variance, components)
     # transformed_cov_matrix = np.dot(components.T * explained_variance * explained_variance, components)
     # transformed_cov_matrix = np.dot(components.T * singular_values, components)
-    transformed_cov_matrix = np.dot(components.T * singular_values * singular_values, components)
+    trafo_1 = components.T * singular_values * singular_values
+    transformed_cov_matrix = np.dot(trafo_1, components)
 
     # if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
     #     mat_3x3 = np.zeros((3,3))
@@ -758,7 +759,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
 
                 volume = 4 / 3 * 3.14159 * 1
                 scale = 1
-                distance = 0.0
+                distance = np.inf
 
                 cov3D_list.append(np.asarray(cov_mat))
                 scale_list.append([scale])
