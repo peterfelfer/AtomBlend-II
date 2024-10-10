@@ -39,6 +39,13 @@ circle = np.zeros((32,4))
 sphere = np.zeros((482,4))
 spiral = np.zeros((121,4))
 square = np.zeros((44,4))
+line = np.zeros((4,4))
+
+### LINE
+line[0] = [1,0,0, mn]
+line[1] = [2,0,0, mn]
+line[2] = [3,0,0, mn]
+line[3] = [4,0,0, mn]
 
 ### PLANE
 square[0] = [-1.0, -1.0, 0.0, mn]

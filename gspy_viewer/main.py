@@ -355,7 +355,7 @@ def main():
             if imgui.begin("Control", True):
                 imgui.core.set_window_font_scale(2.0)
 
-                if imgui.tree_node("Load file", imgui.TREE_NODE_FRAMED):
+                if imgui.tree_node("Load file", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
                     if imgui.button(label='open test.ply'):
                         # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
                         file_path = '/home/qa43nawu/temp/qa43nawu/out/test.ply'
@@ -374,6 +374,42 @@ def main():
                                                                initialdir="/home/qa43nawu/temp/qa43nawu/out/",
                                                                filetypes=[('ply file', '.ply')]
                                                                )
+                        if file_path:
+                            try:
+                                gaussians = util_gau.load_ply(file_path)
+                                set_index_properties(gaussians)
+                                g_renderer.update_gaussian_data(gaussians)
+                                g_renderer.sort_and_update(g_camera)
+                            except RuntimeError as e:
+                                pass
+
+                    if imgui.button(label='open CuAl50'):
+                        file_path = '/home/qa43nawu/temp/qa43nawu/out/CuAl50.ply'
+
+                        if file_path:
+                            try:
+                                gaussians = util_gau.load_ply(file_path)
+                                set_index_properties(gaussians)
+                                g_renderer.update_gaussian_data(gaussians)
+                                g_renderer.sort_and_update(g_camera)
+                            except RuntimeError as e:
+                                pass
+
+                    if imgui.button(label='open dataset 1'):
+                        file_path = '/home/qa43nawu/temp/qa43nawu/out/dataset1.ply'
+
+                        if file_path:
+                            try:
+                                gaussians = util_gau.load_ply(file_path)
+                                set_index_properties(gaussians)
+                                g_renderer.update_gaussian_data(gaussians)
+                                g_renderer.sort_and_update(g_camera)
+                            except RuntimeError as e:
+                                pass
+
+                    if imgui.button(label='open dataset 2'):
+                        file_path = '/home/qa43nawu/temp/qa43nawu/out/dataset2.ply'
+
                         if file_path:
                             try:
                                 gaussians = util_gau.load_ply(file_path)
@@ -422,7 +458,11 @@ def main():
                         individual_opacity_state = 2
                         g_renderer.sort_and_update(g_camera)
 
-                    changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 1.0, 0.0, 1000.0)
+                    if individual_opacity_state == 0:
+                        changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 1.0, 0.0, 10000.0)
+                    else:
+                        changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 0.01, 0.0, 10.0)
+
                     if changed:
                         g_renderer.raster_settings["individual_opacity_factor"] = new
                         g_renderer.sort_and_update(g_camera)

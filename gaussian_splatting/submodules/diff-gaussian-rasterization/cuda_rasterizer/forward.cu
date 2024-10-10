@@ -312,7 +312,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
     if (col.w != 0.0 && g_filter != nullptr && !view_interpolation){
         col.w = individual_opacity_factor / g_filter[idx];
-        col.w = glm::clamp(col.w, 0.0f, 1.0f);
+        col.w = 1 - glm::clamp(col.w, 0.0f, 1.0f);
     }
 
 

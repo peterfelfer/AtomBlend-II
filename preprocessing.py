@@ -621,8 +621,8 @@ def load_pos_file(num_atoms, file_path):
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
-    sorted_by_mn = debug_data.spiral
-    num_of_atoms = len(sorted_by_mn)
+    # sorted_by_mn = debug_data.spiral
+    # num_of_atoms = len(sorted_by_mn)
 
 
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
@@ -706,8 +706,8 @@ def calc_pca(point_cloud):
     # transformed_cov_matrix = np.dot(components.T * explained_variance, components)
     # transformed_cov_matrix = np.dot(components.T * explained_variance * explained_variance, components)
     # transformed_cov_matrix = np.dot(components.T * singular_values, components)
-    trafo_1 = components.T * singular_values * singular_values
-    transformed_cov_matrix = np.dot(trafo_1, components)
+
+    transformed_cov_matrix = (components.T * singular_values * singular_values) @ components
 
     # if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
     #     mat_3x3 = np.zeros((3,3))
@@ -758,7 +758,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
                 cov_mat[5] = 0.1
 
                 volume = 4 / 3 * 3.14159 * 1
-                scale = 1
+                scale = 0.05
                 distance = np.inf
 
                 cov3D_list.append(np.asarray(cov_mat))
@@ -936,6 +936,14 @@ if __name__ == "__main__":
             '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.pos',
             '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/SeHoKim_R5076_44076_v02.rng'
         ],
+        "dataset1": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/dataset1/R56_00385-v01.pos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/dataset1/R56_00385-v01.rrng'
+        ],
+        "dataset2": [
+            '/home/qa43nawu/temp/qa43nawu/input_files/dataset2/R56_00211-v04.epos',
+            '/home/qa43nawu/temp/qa43nawu/input_files/dataset2/CW1-Laser_partsolv.rrng'
+        ],
     }
 
     default_data = "CuAl50_Ni_2p3V_10min_02"
@@ -943,11 +951,13 @@ if __name__ == "__main__":
     # default_data = "TiAlN_film_cross"
     # default_data = "R31_06365-v02"
     # default_data = "SeHoKim"
+    # default_data = "dataset1"
+    # default_data = "dataset2"
 
     # parse arguments
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--num_neighbors", default=50, type=int, help="Number of neighbors that should be considered for PCA.")
-    parser.add_argument("--max_distance", default=20, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
+    parser.add_argument("--num_neighbors", default=20, type=int, help="Number of neighbors that should be considered for PCA.")
+    parser.add_argument("--max_distance", default=5, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
     parser.add_argument("--normalization", default=1, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
     parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
     parser.add_argument("--num_sd", default=10000, type=int, help="The number of standard deviations that determines the neighbors that should be considered.")
