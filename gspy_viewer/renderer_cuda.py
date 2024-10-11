@@ -138,10 +138,7 @@ class CUDARenderer(GaussianRenderBase):
             "debug": False,
             "render_mode": 0,
             "index_properties": torch.Tensor([]),
-            "gaussian_settings": torch.Tensor([
-                dpg_plotting.plotting_data["volume_min_max"][0],
-                dpg_plotting.plotting_data["volume_min_max"][1],
-            ]),
+            "prior_big_volume": True,
             "view_interpolation": False,
             "individual_opacity_factor": 50.0,
             "view_interpolation_factor": 1.0,
@@ -271,7 +268,7 @@ class CUDARenderer(GaussianRenderBase):
         # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
         filter_param = None
-        if opac_state == 0:
+        if opac_state == 0 or opac_state == 3:
             filter_param = self.gaussians.g_volume
         elif opac_state == 1:
             filter_param = self.gaussians.g_distance

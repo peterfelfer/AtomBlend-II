@@ -268,7 +268,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const float* gaussian_settings,
+	const bool prior_big_volume,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
@@ -295,7 +295,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
     // Get view interpolation
-//    float view_interpolation_factor = gaussian_settings[1];
+//    float view_interpolation_factor = prior_big_volume[1];
 
     // Get color and scale for corresponding index
 	int index = indices[idx];
@@ -312,7 +312,12 @@ __global__ void preprocessCUDA(int P, int D, int M,
 
     if (col.w != 0.0 && g_filter != nullptr && !view_interpolation){
         col.w = individual_opacity_factor / g_filter[idx];
-        col.w = 1 - glm::clamp(col.w, 0.0f, 1.0f);
+        col.w = glm::clamp(col.w, 0.0f, 1.0f);
+
+        if (prior_big_volume){
+            col.w = 1 - col.w;
+        }
+
     }
 
 
@@ -529,12 +534,15 @@ renderCUDA(
 			float alpha = min(0.99f, con_o.w * exp(power));
 			if (alpha < 1.0f / 255.0f)
 				continue;
+
 			float test_T = T * (1 - alpha);
+
 			if (test_T < 0.0001f)
 			{
 				done = true;
 				continue;
 			}
+
 
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
@@ -1082,7 +1090,7 @@ void FORWARD::preprocess(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const float* gaussian_settings,
+	const bool prior_big_volume,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
@@ -1115,7 +1123,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		prefiltered,
 		indices,
 		index_properties,
-		gaussian_settings,
+		prior_big_volume,
 		view_interpolation,
 		individual_opacity_factor,
 		view_interpolation_factor,

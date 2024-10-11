@@ -445,9 +445,15 @@ def main():
                 imgui.spacing()
 
                 if imgui.tree_node("Individual opacity", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
-                    changed = imgui.radio_button("Depending on volume", individual_opacity_state == 0)
+                    changed = imgui.radio_button("Depending on volume: High volume = high opacity", individual_opacity_state == 3)
+                    if changed:
+                        individual_opacity_state = 3
+                        g_renderer.raster_settings["prior_big_volume"] = True
+                        g_renderer.sort_and_update(g_camera)
+                    changed = imgui.radio_button("Depending on volume: High volume = low opacity", individual_opacity_state == 0)
                     if changed:
                         individual_opacity_state = 0
+                        g_renderer.raster_settings["prior_big_volume"] = False
                         g_renderer.sort_and_update(g_camera)
                     changed = imgui.radio_button("Depending on distance to neighbors", individual_opacity_state == 1)
                     if changed:
@@ -458,8 +464,8 @@ def main():
                         individual_opacity_state = 2
                         g_renderer.sort_and_update(g_camera)
 
-                    if individual_opacity_state == 0:
-                        changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 1.0, 0.0, 10000.0)
+                    if individual_opacity_state == 0 or individual_opacity_state == 3:
+                        changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 10.0, 0.0, 10000.0)
                     else:
                         changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 0.01, 0.0, 10.0)
 
