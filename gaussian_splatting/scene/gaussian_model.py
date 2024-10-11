@@ -230,7 +230,7 @@ class GaussianModel:
         l.append('indices')
         return l
 
-    def save_ply(self, path, colors, comments):
+    def save_ply(self, path, comments):
         mkdir_p(os.path.dirname(path))
 
         xyz = self._xyz.detach().cpu().numpy()

@@ -939,12 +939,12 @@ render_gaussianBallOpt(
 			alpha = min(0.99f, alpha);
 
 
-			float test_T = T * (1 - alpha);
-			if (test_T < 0.0001f)
-			{
-				done = true;
-				continue;
-			}
+//			float test_T = T * (1 - alpha);
+//			if (test_T < 0.0001f)
+//			{
+//				done = true;
+//				continue;
+//			}
 
             float radius = scale_modifier;
 
@@ -959,7 +959,7 @@ render_gaussianBallOpt(
 //				C[2] = alpha;
 			}
 
-            T = test_T;
+//            T = test_T;
 
             // Keep track of last range entry to update this
             // pixel.

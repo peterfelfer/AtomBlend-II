@@ -1000,14 +1000,15 @@ if __name__ == "__main__":
         "background_color": np.asarray([1.0, 1.0, 1.0]),
     }
 
-    start = time.time()
+    epos = time.time()
 
     if parsed_args.epos_path.lower().endswith('.pos'):
         atom_coords = load_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
     else:
         atom_coords = load_e_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
 
-    print('load epos', time.time() - start)
+    print('load epos', time.time() - epos)
+    rrng = time.time()
 
     if parsed_args.rrng_path.lower().endswith('.rrng'):
         load_rrng_file(parsed_args.rrng_path)
@@ -1016,22 +1017,24 @@ if __name__ == "__main__":
     else:
         load_xrng_file(parsed_args.rrng_path)
 
-    print('load rrng', time.time() - start)
+    print('load rrng', time.time() - rrng)
+    combine_epos_rrng = time.time()
+
     combine_rrng_and_e_pos_file()
-    print('combine epos and rrng', time.time() - start)
-    print('set colors', time.time() - start)
+    print('combine epos and rrng', time.time() - combine_epos_rrng)
+    neighbor = time.time()
 
     indices = get_indices()
 
     atom_color_list = atom_color_update()
     atom_coords_list = atom_coords_update()
-    colors = np.asarray(atom_color_list)[:, :3]
 
     if not parsed_args.skip_pca:
         find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    print('found nearest neighbors', time.time() - start)
+    print('found nearest neighbors', time.time() - neighbor)
+    write_file = time.time()
 
     ### ACHTUNG: volumen & distanzen werden verändert!
     # fit_volume()
@@ -1061,7 +1064,7 @@ if __name__ == "__main__":
 
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
-    gaussians.save_ply(out_path, colors, comments)
+    gaussians.save_ply(out_path, comments)
 
-    print('wrote ply', time.time() - start)
+    print('write file', time.time() - write_file)
 
