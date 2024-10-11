@@ -213,15 +213,6 @@ class GaussianModel:
         # l = ['x', 'y', 'z', 'nx', 'ny', 'nz']
         l = ['x', 'y', 'z']
         # All channels except the 3 DC
-        for i in range(self._features_dc.shape[1] * self._features_dc.shape[2]):
-            l.append('f_dc_{}'.format(i))
-        # for i in range(self._features_rest.shape[1] * self._features_rest.shape[2]):
-        #     l.append('f_rest_{}'.format(i))
-        l.append('opacity')
-        for i in range(self._scaling.shape[1]):
-            l.append('scale_{}'.format(i))
-        for i in range(self._rotation.shape[1]):
-            l.append('rot_{}'.format(i))
         for i in range(self.cov3D.shape[1]):
             l.append('cov3D_{}'.format(i))
 
@@ -234,18 +225,6 @@ class GaussianModel:
         mkdir_p(os.path.dirname(path))
 
         xyz = self._xyz.detach().cpu().numpy()
-        # normals = np.zeros_like(xyz)
-        # f_dc = colors
-        f_dc = self._features_dc.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
-        # f_rest = self._features_rest.detach().transpose(1, 2).flatten(start_dim=1).contiguous().cpu().numpy()
-        opacities = self._opacity.detach().cpu().numpy()
-
-        if len(self._scaling) == 0:
-            dummy_scale = np.array([[1.0, 1.0, 1.0]] * len(self._xyz))
-            self._scaling = torch.tensor(dummy_scale).float().cuda().requires_grad_(False)
-        scale = self._scaling.detach().cpu().numpy()
-
-        rotation = self._rotation.detach().cpu().numpy()
 
         if len(self.cov3D) == 0:
             dummy_cov3D = np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 1.0]] * len(self._xyz))
@@ -264,7 +243,7 @@ class GaussianModel:
         dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
 
         elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, f_dc, opacities, scale, rotation, cov3D, g_volume, g_distance, indices), axis=1)
+        attributes = np.concatenate((xyz, cov3D, g_volume, g_distance, indices), axis=1)
         elements[:] = list(map(tuple, attributes))
         el = PlyElement.describe(elements, 'vertex', comments=comments)
         PlyData([el]).write(path)
@@ -311,54 +290,12 @@ class GaussianModel:
         self.active_sh_degree = self.max_sh_degree
 
 
-    def store_data(self, atom_coords, atom_color_list, cov3D_list, volume_list, distance_list, indices, scale_list, props):
+    def store_data(self, atom_coords, cov3D_list, volume_list, distance_list, indices):
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),
                         np.asarray(atom_coords[:, 2])), axis=1)
-        opacities = np.asarray([props['opacity']] * len(atom_coords))[..., np.newaxis]
-
-        features_dc = np.zeros((xyz.shape[0], 3, 1))
-        # features_dc[:, 0, 0] = np.asarray(1.0 * len(atom_coords))
-        # features_dc[:, 1, 0] = np.asarray(1.0 * len(atom_coords))
-        # features_dc[:, 2, 0] = np.asarray(0.0 * len(atom_coords))
-
-        features_dc[:, :3, 0] = atom_color_list[:, :3]
-
-        # extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
-        # extra_f_names = sorted(extra_f_names, key=lambda x: int(x.split('_')[-1]))
-        # assert len(extra_f_names) == 3 * (self.max_sh_degree + 1) ** 2 - 3
-        # features_extra = np.zeros((xyz.shape[0], len(extra_f_names)))
-        # for idx, attr_name in enumerate(extra_f_names):
-            # features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
-        # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
-        # features_extra = features_extra.reshape((features_extra.shape[0], 3, (self.max_sh_degree + 1) ** 2 - 1))
-
-        scale_names = ['scale_0', 'scale_1', 'scale_2']
-        scale_names = sorted(scale_names, key=lambda x: int(x.split('_')[-1]))
-        scales = np.zeros((xyz.shape[0], len(scale_names)))
-        for idx, attr_name in enumerate(scale_names):
-            # scales[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
-            scales[:, idx] = np.asarray(props['scale'] * len(atom_coords))
-
-        scales = [[props['scale'], props['scale'], props['scale']]] * len(atom_coords)
-
-        rot_names = ['rot_0', 'rot_1', 'rot_2', 'rot_3']
-        rot_names = sorted(rot_names, key=lambda x: int(x.split('_')[-1]))
-        rots = np.zeros((xyz.shape[0], len(rot_names)))
-        for idx, attr_name in enumerate(rot_names):
-            # rots[:, idx] = np.asarray(plydata.elements[0][attr_name])[:len(atom_coords)]
-            rots[:, idx] = np.asarray(0.0 * len(atom_coords))
 
         self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._features_dc = nn.Parameter(
-            torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
-                True))
-        # self._features_rest = nn.Parameter(
-        #     torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
-        #         True))
-        self._opacity = nn.Parameter(torch.tensor(opacities, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._scaling = nn.Parameter(torch.tensor(scale_list, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
         self.cov3D = nn.Parameter(torch.tensor(cov3D_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.g_volume = nn.Parameter(torch.tensor(volume_list, dtype=torch.float, device="cuda").requires_grad_(True))
         self.g_distance = nn.Parameter(torch.tensor(distance_list, dtype=torch.float, device="cuda").requires_grad_(True))

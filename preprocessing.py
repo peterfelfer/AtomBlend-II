@@ -525,7 +525,7 @@ def load_rrng_file(file_path):
             all_elements_by_name[name_and_charge] = this_element_dict
 
     # if both (r)rng and (e)pos file are loaded, we combine these two files
-    combine_rrng_and_e_pos_file()
+    # combine_rrng_and_e_pos_file()
 
 def load_xrng_file(file_path):
     import xmltodict
@@ -946,12 +946,12 @@ if __name__ == "__main__":
         ],
     }
 
-    default_data = "CuAl50_Ni_2p3V_10min_02"
+    # default_data = "CuAl50_Ni_2p3V_10min_02"
     # default_data = "Al-Cu-Sn"
     # default_data = "TiAlN_film_cross"
     # default_data = "R31_06365-v02"
     # default_data = "SeHoKim"
-    # default_data = "dataset1"
+    default_data = "dataset1"
     # default_data = "dataset2"
 
     # parse arguments
@@ -988,17 +988,17 @@ if __name__ == "__main__":
     R = np.matmul(np.matmul(R_x, R_y), R_z)
     T = np.asarray([0.0, -40.0, 200.0])
 
-    props = {
-        "colmap_id": colmap_id,
-        "R": R,
-        "T": T,
-        "FoVx": 0.14,
-        "FoVy": 0.28,
-        "uid": 0,
-        "scale": -2.0,
-        "opacity": 1.0,
-        "background_color": np.asarray([1.0, 1.0, 1.0]),
-    }
+    # props = {
+    #     "colmap_id": colmap_id,
+    #     "R": R,
+    #     "T": T,
+    #     "FoVx": 0.14,
+    #     "FoVy": 0.28,
+    #     "uid": 0,
+    #     "scale": -2.0,
+    #     "opacity": 1.0,
+    #     "background_color": np.asarray([1.0, 1.0, 1.0]),
+    # }
 
     epos = time.time()
 
@@ -1007,7 +1007,7 @@ if __name__ == "__main__":
     else:
         atom_coords = load_e_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
 
-    print('load epos', time.time() - epos)
+    print('load epos', time.time() - epos, (time.time() - epos) / 60.0)
     rrng = time.time()
 
     if parsed_args.rrng_path.lower().endswith('.rrng'):
@@ -1017,11 +1017,11 @@ if __name__ == "__main__":
     else:
         load_xrng_file(parsed_args.rrng_path)
 
-    print('load rrng', time.time() - rrng)
+    print('load rrng', time.time() - rrng, (time.time() - rrng) / 60.0)
     combine_epos_rrng = time.time()
 
     combine_rrng_and_e_pos_file()
-    print('combine epos and rrng', time.time() - combine_epos_rrng)
+    print('combine epos and rrng', (time.time() - combine_epos_rrng) / 60.0)
     neighbor = time.time()
 
     indices = get_indices()
@@ -1033,7 +1033,7 @@ if __name__ == "__main__":
         find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    print('found nearest neighbors', time.time() - neighbor)
+    print('found nearest neighbors', time.time() - neighbor, (time.time() - neighbor) / 60.0)
     write_file = time.time()
 
     ### ACHTUNG: volumen & distanzen werden verändert!
@@ -1041,7 +1041,7 @@ if __name__ == "__main__":
     # fit_distance()
 
     ### ply writing
-    gaussians.store_data(np.asarray(atom_coords), np.asarray(atom_color_list), np.asarray(cov3D_list), np.asarray(volume_list), np.asarray(distance_list), np.asarray(indices), np.asarray(scale_list), props)
+    gaussians.store_data(np.asarray(atom_coords), np.asarray(cov3D_list), np.asarray(volume_list), np.asarray(distance_list), np.asarray(indices))
 
     # write numbers of atom elements as comment
     comments = []
@@ -1066,5 +1066,5 @@ if __name__ == "__main__":
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(out_path, comments)
 
-    print('write file', time.time() - write_file)
+    print('write file', (time.time() - write_file) / 60.0)
 

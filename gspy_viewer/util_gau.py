@@ -119,39 +119,6 @@ def load_ply(path):
     xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
-    opacities = np.asarray(plydata.elements[0]["g_volume"])[..., np.newaxis]
-    # opacities = np.asarray([[1.0]] * len(xyz))
-
-    features_dc = np.zeros((xyz.shape[0], 3, 1))
-    features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
-    features_dc[:, 1, 0] = np.asarray(plydata.elements[0]["f_dc_1"])
-    features_dc[:, 2, 0] = np.asarray(plydata.elements[0]["f_dc_2"])
-
-    '''
-    extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
-    extra_f_names = sorted(extra_f_names, key = lambda x: int(x.split('_')[-1]))
-    assert len(extra_f_names)==3 * (max_sh_degree + 1) ** 2 - 3
-    features_extra = np.zeros((xyz.shape[0], len(extra_f_names)))
-    for idx, attr_name in enumerate(extra_f_names):
-        features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])
-    # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
-    features_extra = features_extra.reshape((features_extra.shape[0], 3, (max_sh_degree + 1) ** 2 - 1))
-    features_extra = np.transpose(features_extra, [0, 2, 1])
-    '''
-
-    scale_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("scale_")]
-    scale_names = sorted(scale_names, key = lambda x: int(x.split('_')[-1]))
-    scales = np.zeros((xyz.shape[0], 1))
-    # for idx, attr_name in enumerate(scale_names):
-    scales[:, 0] = np.asarray(plydata.elements[0]["scale_0"])
-    # scales[:, 1] = np.asarray(plydata.elements[0]["scale_0"])
-    # scales[:, 2] = np.asarray(plydata.elements[0]["scale_0"])
-
-    rot_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("rot")]
-    rot_names = sorted(rot_names, key = lambda x: int(x.split('_')[-1]))
-    rots = np.zeros((xyz.shape[0], len(rot_names)))
-    for idx, attr_name in enumerate(rot_names):
-        rots[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
     cov3D_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("cov3D")]
     cov3D_names = sorted(cov3D_names, key = lambda x: int(x.split('_')[-1]))
@@ -170,20 +137,13 @@ def load_ply(path):
 
     # pass activate function
     xyz = xyz.astype(np.float32)
-    # rots = rots / np.linalg.norm(rots, axis=-1, keepdims=True)
-    rots = rots.astype(np.float32)
-    # scales = np.exp(scales)
-    scales = scales.astype(np.float32)
-    # opacities = 1/(1 + np.exp(- opacities))  # sigmoid
-    opacities = opacities.astype(np.float32)
-    # shs = np.concatenate([features_dc.reshape(-1, 3),
-    #                     features_extra.reshape(len(features_dc), -1)], axis=-1).astype(np.float32)
-    # shs = shs.astype(np.float32)
+    rots = np.array([])
+    scales = np.array([])
+    opacities = np.array([])
     g_volume = g_volume.astype(np.float32)
     g_distance = g_distance.astype(np.float32)
     indices = indices.astype(np.float32)
-
-    shs = features_dc.reshape(-1, 3)
+    shs = np.array([])
 
     # plotting settings
     dpg_plotting.plotting_data["volume_min_max"] = [0.0, g_volume.max()]
