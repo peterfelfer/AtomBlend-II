@@ -946,12 +946,12 @@ if __name__ == "__main__":
         ],
     }
 
-    # default_data = "CuAl50_Ni_2p3V_10min_02"
+    default_data = "CuAl50_Ni_2p3V_10min_02"
     # default_data = "Al-Cu-Sn"
     # default_data = "TiAlN_film_cross"
     # default_data = "R31_06365-v02"
     # default_data = "SeHoKim"
-    default_data = "dataset1"
+    # default_data = "dataset1"
     # default_data = "dataset2"
 
     # parse arguments
@@ -1021,7 +1021,7 @@ if __name__ == "__main__":
     combine_epos_rrng = time.time()
 
     combine_rrng_and_e_pos_file()
-    print('combine epos and rrng', (time.time() - combine_epos_rrng) / 60.0)
+    print('combine epos and rrng', (time.time() - combine_epos_rrng), (time.time() - combine_epos_rrng) / 60.0)
     neighbor = time.time()
 
     indices = get_indices()
@@ -1066,5 +1066,5 @@ if __name__ == "__main__":
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(out_path, comments)
 
-    print('write file', (time.time() - write_file) / 60.0)
+    print('write file', (time.time() - write_file), (time.time() - write_file) / 60.0)
 

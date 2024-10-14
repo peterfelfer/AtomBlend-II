@@ -217,7 +217,7 @@ def main():
         g_show_control_win, g_show_help_win, g_show_camera_win, g_show_debug_win, \
         g_render_mode, g_render_mode_tables_ogl, g_render_mode_tables_cuda, global_scale, global_alpha, \
         g_render_cov3D, debug_covmat, render_all_elements, file_path, g_volume, \
-        individual_opacity_state
+        individual_opacity_state, g_show_atom_settings_win
         
     imgui.create_context()
     if args.hidpi:
@@ -276,6 +276,28 @@ def main():
         if g_render_cov3D:
             max_scale = 10.0
             # scale_step = 0.1
+
+        # imgui ui
+        if imgui.begin_main_menu_bar():
+            if imgui.begin_menu("Window", True):
+                clicked, g_show_control_win = imgui.menu_item(
+                    "Show Control", None, g_show_control_win
+                )
+                clicked, g_show_help_win = imgui.menu_item(
+                    "Show Help", None, g_show_help_win
+                )
+                clicked, g_show_camera_win = imgui.menu_item(
+                    "Show Camera Control", None, g_show_camera_win
+                )
+                clicked, g_show_debug_win = imgui.menu_item(
+                    "Show Debug Control", None, g_show_debug_win
+                )
+                clicked, g_show_atom_settings_win = imgui.menu_item(
+                    "Show Atom Settings", None, g_show_atom_settings_win
+                )
+                imgui.end_menu()
+            imgui.end_main_menu_bar()
+
 
         if g_show_atom_settings_win:
             imgui.core.set_next_window_position(0, 0, imgui.ONCE)
