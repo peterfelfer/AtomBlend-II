@@ -26,7 +26,7 @@ from scipy.stats import norm
 import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import debug_data
-
+import statistics
 import time
 
 all_elements = []
@@ -646,34 +646,6 @@ def load_pos_file(num_atoms, file_path):
 
     return coords
 
-def calc_standard_deviation(distances, indices, num_sd):
-
-    # mean_x, mean_y, mean_z = np.mean(point_cloud, axis=0)
-    # std_x, std_y, std_z = np.std(point_cloud, axis=0)
-    #
-    # num_sd = 3
-    #
-    # sd_range_lower = [mean_x - std_x * num_sd, mean_y - std_y * num_sd, mean_z - std_z * num_sd]
-    # sd_range_upper = [mean_x + std_x * num_sd, mean_y + std_y * num_sd, mean_z + std_z * num_sd]
-    #
-    # within_std = point_cloud[
-    #     (point_cloud[:, 0] >= sd_range_lower[0]) & (point_cloud[:, 0] <= sd_range_upper[0]) &
-    #     (point_cloud[:, 1] >= sd_range_lower[1]) & (point_cloud[:, 1] <= sd_range_upper[1]) &
-    #     (point_cloud[:, 2] >= sd_range_lower[2]) & (point_cloud[:, 2] <= sd_range_upper[2])
-    # ]
-
-    mean = np.mean(distances, axis=0)
-    std = np.std(distances, axis=0)
-
-    sd_range_lower = mean - std * num_sd
-    sd_range_upper = mean + std * num_sd
-
-    within_std = indices[
-        (distances[:] >= sd_range_lower) & (distances[:] <= sd_range_upper)
-    ]
-
-    return within_std
-
 def calc_pca(point_cloud):
     # center data
     mean = np.mean(point_cloud, axis=0)
@@ -716,10 +688,15 @@ def calc_pca(point_cloud):
 
     return transformed_cov_matrix, volume_vec
 
-def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_dev=False, num_sd = 1):
+def find_nearest_neighbors(num_neighbors, max_distance, normalization, num_sd = 1):
     global cov3D_list, scale_list, volume_list, distance_list
+    counter = 0
+    atoms = 0
 
     for elem in all_elements_by_name:
+        counter += 1
+        atoms += all_elements_by_name[elem]['num_of_atoms']
+        print('elem ' + str(counter) + ' / ' + str(len(all_elements_by_name)) + ' atoms: ' + str(atoms))
         coords = all_elements_by_name[elem][('coordinates')]
         if (len(coords) == 0):
             continue
@@ -766,9 +743,6 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
                 volume_list.append([volume])
                 distance_list.append([distance])
                 continue
-
-            if not skip_std_dev:
-                indices = calc_standard_deviation(distance, indices, num_sd)
 
             indices = [indices]
             nn_coords = coords[indices][0]
@@ -838,7 +812,8 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, skip_std_
             cov3D_list.append(np.asarray(cov_mat))
             scale_list.append([scale])
             volume_list.append([volume])
-            distance_list.append([np.sum(distance / len(distance))])
+            # distance_list.append([np.sum(distance / len(distance))])
+            distance_list.append([statistics.median(distance)])
 
 
 def fit_volume():
@@ -916,7 +891,7 @@ if __name__ == "__main__":
             '/home/qa43nawu/temp/qa43nawu/input_files/Al-Cu-Sn/R4_01750-v01.pos',
             '/home/qa43nawu/temp/qa43nawu/input_files/Al-Cu-Sn/Al-Cu-Sn_mytry.rrng'
         ],
-        "CuAl50_Ni_2p3V_10min_02": [
+        "CuAl50": [
             '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos',
             '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
         ],
@@ -946,7 +921,7 @@ if __name__ == "__main__":
         ],
     }
 
-    default_data = "CuAl50_Ni_2p3V_10min_02"
+    # default_data = "CuAl50"
     # default_data = "Al-Cu-Sn"
     # default_data = "TiAlN_film_cross"
     # default_data = "R31_06365-v02"
@@ -962,9 +937,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
     parser.add_argument("--num_sd", default=10000, type=int, help="The number of standard deviations that determines the neighbors that should be considered.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
-    parser.add_argument("--skip_std_dev", default=False, type=bool, help="If set to true, the all neighbors will be considered, not just them within the standard deviation.")
-    parser.add_argument("--epos_path", default=datasets[default_data][0], type=str, help="The file path to the .pos or .epos file.")
-    parser.add_argument("--rrng_path", default=datasets[default_data][1], type=str, help="The file path to the .rrng file.")
+    parser.add_argument("--dataset", default="CuAl50", type=str, help="The name of the dataset that should be preprocessed.")
     parser.add_argument("--out_dir", default= '/home/qa43nawu/temp/qa43nawu/out/', type=str, help="The directory in that the .ply file will be written.")
     parser.add_argument("--out_file_name", default= '', type=str, help="The file name of the .ply file that will be written.")
     parsed_args = parser.parse_args()
@@ -1002,26 +975,32 @@ if __name__ == "__main__":
 
     epos = time.time()
 
-    if parsed_args.epos_path.lower().endswith('.pos'):
-        atom_coords = load_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
-    else:
-        atom_coords = load_e_pos_file(parsed_args.num_atoms, parsed_args.epos_path)
+    epos_path = datasets[parsed_args.dataset][0]
+    rrng_path = datasets[parsed_args.dataset][1]
 
-    print('load epos', time.time() - epos, (time.time() - epos) / 60.0)
+    if epos_path.lower().endswith('.pos'):
+        atom_coords = load_pos_file(parsed_args.num_atoms, epos_path)
+    else:
+        atom_coords = load_e_pos_file(parsed_args.num_atoms, epos_path)
+
+    epos = time.time() - epos
+    print('load epos', epos, epos / 60.0)
     rrng = time.time()
 
-    if parsed_args.rrng_path.lower().endswith('.rrng'):
-        load_rrng_file(parsed_args.rrng_path)
-    elif parsed_args.rrng_path.lower().endswith('.rng'):
-        load_rng_file(parsed_args.rrng_path)
+    if rrng_path.lower().endswith('.rrng'):
+        load_rrng_file(rrng_path)
+    elif rrng_path.lower().endswith('.rng'):
+        load_rng_file(rrng_path)
     else:
-        load_xrng_file(parsed_args.rrng_path)
+        load_xrng_file(rrng_path)
 
-    print('load rrng', time.time() - rrng, (time.time() - rrng) / 60.0)
+    rrng = time.time() - rrng
+    print('load rrng', rrng, rrng / 60.0)
     combine_epos_rrng = time.time()
 
     combine_rrng_and_e_pos_file()
-    print('combine epos and rrng', (time.time() - combine_epos_rrng), (time.time() - combine_epos_rrng) / 60.0)
+    combine_epos_rrng = time.time() - combine_epos_rrng
+    print('combine epos and rrng', combine_epos_rrng, combine_epos_rrng / 60.0)
     neighbor = time.time()
 
     indices = get_indices()
@@ -1030,10 +1009,11 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
 
     if not parsed_args.skip_pca:
-        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.skip_std_dev, parsed_args.num_sd)
+        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.num_sd)
     # gaussians.cov3D = np.asarray(cov3D_list)
 
-    print('found nearest neighbors', time.time() - neighbor, (time.time() - neighbor) / 60.0)
+    neighbor = time.time() - neighbor
+    print('found nearest neighbors', neighbor, neighbor / 60.0)
     write_file = time.time()
 
     ### ACHTUNG: volumen & distanzen werden verändert!
@@ -1054,9 +1034,10 @@ if __name__ == "__main__":
     comments.append('num_neighbors: ' + str(parsed_args.num_neighbors))
     comments.append('max_distance: ' + str(parsed_args.max_distance))
     comments.append('normalization: ' + str(parsed_args.normalization))
+    comments.append('duration: epos: ' + str(epos) + ' rrng: ' + str(rrng) + ' combine: ' + str(combine_epos_rrng) + ' neighbors: ' + str(neighbor))
 
     if not parsed_args.out_file_name:
-        file_name = default_data + "_" + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_0_to_1.5' + '.ply'
+        file_name = parsed_args.dataset + "_" + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_0_to_1.5' + '.ply'
     else:
         file_name = parsed_args.out_file_name
 
@@ -1066,5 +1047,6 @@ if __name__ == "__main__":
     # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(out_path, comments)
 
-    print('write file', (time.time() - write_file), (time.time() - write_file) / 60.0)
+    write_file = time.time() - write_file
+    print('write file', write_file, write_file / 60.0)
 

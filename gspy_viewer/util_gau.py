@@ -120,17 +120,27 @@ def load_ply(path):
                     np.asarray(plydata.elements[0]["y"]),
                     np.asarray(plydata.elements[0]["z"])),  axis=1)
 
+
     cov3D_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("cov3D")]
-    cov3D_names = sorted(cov3D_names, key = lambda x: int(x.split('_')[-1]))
-    cov3Ds = np.zeros((xyz.shape[0], len(cov3D_names)))
-    for idx, attr_name in enumerate(cov3D_names):
-        cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
+    if len(cov3D_names) == 0:
+        cov3Ds = np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 1.0]] * len(xyz))
+    else:
+        cov3D_names = sorted(cov3D_names, key = lambda x: int(x.split('_')[-1]))
+        cov3Ds = np.zeros((xyz.shape[0], len(cov3D_names)))
+        for idx, attr_name in enumerate(cov3D_names):
+            cov3Ds[:, idx] = np.asarray(plydata.elements[0][attr_name])
 
-    g_volume = np.ones((xyz.shape[0], 1))
-    g_volume[:, 0] = np.asarray(plydata.elements[0]["g_volume"])
+    if len(cov3D_names) == 0:
+        g_volume = np.array([[1.0]] * len(xyz))
+    else:
+        g_volume = np.ones((xyz.shape[0], 1))
+        g_volume[:, 0] = np.asarray(plydata.elements[0]["g_volume"])
 
-    g_distance = np.ones((xyz.shape[0], 1))
-    g_distance[:, 0] = np.asarray(plydata.elements[0]["g_distance"])
+    if len(cov3D_names) == 0:
+        g_distance = np.array([[1.0]] * len(xyz))
+    else:
+        g_distance = np.ones((xyz.shape[0], 1))
+        g_distance[:, 0] = np.asarray(plydata.elements[0]["g_distance"])
 
     indices = np.zeros((xyz.shape[0], 1))
     indices[:, 0] = np.asarray(plydata.elements[0]["indices"])

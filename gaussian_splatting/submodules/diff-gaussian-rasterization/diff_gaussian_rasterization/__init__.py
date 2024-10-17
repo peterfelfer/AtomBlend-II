@@ -61,7 +61,7 @@ class _RasterizeGaussians(torch.autograd.Function):
 
         # Restructure arguments the way that the C++ lib expects them
         args = (
-            raster_settings.bg, 
+            torch.Tensor(raster_settings.bg).float().cuda(),
             means3D,
             opacities,
             scales,

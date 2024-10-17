@@ -209,15 +209,18 @@ class GaussianModel:
                 param_group['lr'] = lr
                 return lr
 
-    def construct_list_of_attributes(self):
+    def construct_list_of_attributes(self, cov3d_dist_empty=False):
         # l = ['x', 'y', 'z', 'nx', 'ny', 'nz']
         l = ['x', 'y', 'z']
-        # All channels except the 3 DC
-        for i in range(self.cov3D.shape[1]):
-            l.append('cov3D_{}'.format(i))
 
-        l.append('g_volume')
-        l.append('g_distance')
+
+        if not cov3d_dist_empty:
+            # All channels except the 3 DC
+            for i in range(self.cov3D.shape[1]):
+                l.append('cov3D_{}'.format(i))
+
+            l.append('g_volume')
+            l.append('g_distance')
         l.append('indices')
         return l
 
@@ -226,24 +229,39 @@ class GaussianModel:
 
         xyz = self._xyz.detach().cpu().numpy()
 
+        cov3d_dist_empty = False
         if len(self.cov3D) == 0:
-            dummy_cov3D = np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 1.0]] * len(self._xyz))
-            self.cov3D = torch.tensor(dummy_cov3D).float().cuda().requires_grad_(False)
+            cov3d_dist_empty = True
+            # dummy_cov3D = np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 1.0]] * len(self._xyz))
+            # self.cov3D = torch.tensor(dummy_cov3D).float().cuda().requires_grad_(False)
+
+            # dummy_distance = np.array([[1.0]] * len(self._xyz))
+            # self.g_distance = torch.tensor(dummy_distance).float().cuda().requires_grad_(False)
+
+            self.cov3D = torch.tensor([]).float().cuda().requires_grad_(False)
+            self.g_distance = torch.tensor([]).float().cuda().requires_grad_(False)
         cov3D = self.cov3D.detach().cpu().numpy()
 
         if len(self.g_volume) == 0:
-            dummy_g_volume = np.array([[1.0]] * len(self._xyz))
-            self.g_volume = torch.tensor(dummy_g_volume).float().cuda().requires_grad_(False)
+            # dummy_g_volume = np.array([[1.0]] * len(self._xyz))
+            # self.g_volume = torch.tensor(dummy_g_volume).float().cuda().requires_grad_(False)
+            self.g_volume = torch.tensor([]).float().cuda().requires_grad_(False)
+
         g_volume = self.g_volume.detach().cpu().numpy()
 
         g_distance = self.g_distance.detach().cpu().numpy()
 
         indices = self.indices.detach().cpu().numpy()
 
-        dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes()]
+        dtype_full = [(attribute, 'f4') for attribute in self.construct_list_of_attributes(cov3d_dist_empty)]
 
         elements = np.empty(xyz.shape[0], dtype=dtype_full)
-        attributes = np.concatenate((xyz, cov3D, g_volume, g_distance, indices), axis=1)
+
+        if cov3d_dist_empty:
+            attributes = np.concatenate((xyz, indices), axis=1)
+        else:
+            attributes = np.concatenate((xyz, cov3D, g_volume, g_distance, indices), axis=1)
+
         elements[:] = list(map(tuple, attributes))
         el = PlyElement.describe(elements, 'vertex', comments=comments)
         PlyData([el]).write(path)

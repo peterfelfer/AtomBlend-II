@@ -307,7 +307,7 @@ def main():
 
                 imgui.text('Display settings:')
 
-                imgui.core.push_item_width(500)
+                imgui.core.push_item_width(700)
                 changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
@@ -330,7 +330,10 @@ def main():
                 imgui.same_line(200, 50)
                 imgui.text('Color (R, G, B, A)')
 
-                imgui.same_line(580)
+                imgui.same_line(560)
+                imgui.text('Name')
+
+                imgui.same_line(660)
                 imgui.text('Scale')
 
                 for elem in gaussians.num_of_atoms_by_element:
@@ -357,8 +360,11 @@ def main():
                     if changed:
                         set_index_properties(gaussians)
 
+                    imgui.same_line(510, 50)
+                    imgui.text(elem)
+
                     # imgui.table_set_column_index(2)
-                    imgui.same_line(spacing=25)
+                    imgui.same_line(620, spacing=25)
 
                     imgui.core.push_item_width(100)
 
@@ -487,7 +493,7 @@ def main():
                         g_renderer.sort_and_update(g_camera)
 
                     if individual_opacity_state == 0 or individual_opacity_state == 3:
-                        changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 10.0, 0.0, 10000.0)
+                        changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 5.0, 0.0, 10000.0)
                     else:
                         changed, new = imgui.core.drag_float("Intensity", g_renderer.raster_settings["individual_opacity_factor"], 0.01, 0.0, 10.0)
 
@@ -592,6 +598,9 @@ def main():
                         g_renderer.sort_and_update(g_camera)
 
                     imgui.tree_pop()
+
+                    changed, g_renderer.raster_settings["bg"] = imgui.core.color_edit3('Background color', *g_renderer.raster_settings["bg"])
+
 
                 imgui.spacing()
                 imgui.separator()
@@ -778,7 +787,9 @@ def main():
         impl.render(imgui.get_draw_data())
         glfw.swap_buffers(window)
 
-        # time_t += 0.0005
+        # time_t += 0.0003
+        # if time_t > 0.5:
+        #     time_t += 0.0002
         # if time_t > 1.0:
         #     time_t = 0.0
         # print(time_t)
