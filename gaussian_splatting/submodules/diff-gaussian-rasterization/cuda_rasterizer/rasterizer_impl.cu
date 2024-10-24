@@ -227,7 +227,7 @@ int CudaRasterizer::Rasterizer::forward(
 	const int render_mode,
 	const float* indices,
 	const float* index_properties,
-	bool prior_big_volume,
+	bool high_high,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
@@ -290,7 +290,7 @@ int CudaRasterizer::Rasterizer::forward(
 		prefiltered,
 		indices,
 		index_properties,
-		prior_big_volume,
+		high_high,
 		view_interpolation,
 		individual_opacity_factor,
 		view_interpolation_factor,
@@ -326,21 +326,12 @@ int CudaRasterizer::Rasterizer::forward(
 	int bit = getHigherMsb(tile_grid.x * tile_grid.y);
 
 	// Sort complete list of (duplicated) Gaussian indices by keys
-	if (render_mode != 2 && false){  // render_mode != gaussian splatting
-		CHECK_CUDA(cub::DeviceRadixSort::SortPairsDescending(
-		binningState.list_sorting_space,
-		binningState.sorting_size,
-		binningState.point_list_keys_unsorted, binningState.point_list_keys,
-		binningState.point_list_unsorted, binningState.point_list,
-		num_rendered, 0, 32 + bit), debug)
-	} else {
-		CHECK_CUDA(cub::DeviceRadixSort::SortPairs(
-		binningState.list_sorting_space,
-		binningState.sorting_size,
-		binningState.point_list_keys_unsorted, binningState.point_list_keys,
-		binningState.point_list_unsorted, binningState.point_list,
-		num_rendered, 0, 32 + bit), debug)
-	}
+    CHECK_CUDA(cub::DeviceRadixSort::SortPairs(
+    binningState.list_sorting_space,
+    binningState.sorting_size,
+    binningState.point_list_keys_unsorted, binningState.point_list_keys,
+    binningState.point_list_unsorted, binningState.point_list,
+    num_rendered, 0, 32 + bit), debug)
 
 	CHECK_CUDA(cudaMemset(imgState.ranges, 0, tile_grid.x * tile_grid.y * sizeof(uint2)), debug);
 

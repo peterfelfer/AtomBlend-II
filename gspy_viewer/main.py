@@ -313,7 +313,7 @@ def main():
                     set_global_alpha(gaussians, global_alpha)
                 changed, global_scale = imgui.core.drag_float('Global scale', global_scale, scale_step, 0.0, max_scale)
                 if changed:
-                    set_global_scale(gaussians, global_scale / 50.0)
+                    set_global_scale(gaussians, global_scale)
 
                 imgui.text('Element settings:')
 
@@ -330,10 +330,7 @@ def main():
                 imgui.same_line(200, 50)
                 imgui.text('Color (R, G, B, A)')
 
-                imgui.same_line(560)
-                imgui.text('Name')
-
-                imgui.same_line(660)
+                imgui.same_line(575)
                 imgui.text('Scale')
 
                 for elem in gaussians.num_of_atoms_by_element:
@@ -360,11 +357,11 @@ def main():
                     if changed:
                         set_index_properties(gaussians)
 
-                    imgui.same_line(510, 50)
-                    imgui.text(elem)
+                    # imgui.same_line(510, 50)
+                    # imgui.text(elem)
 
                     # imgui.table_set_column_index(2)
-                    imgui.same_line(620, spacing=25)
+                    imgui.same_line(550, spacing=25)
 
                     imgui.core.push_item_width(100)
 
@@ -461,7 +458,7 @@ def main():
                         g_renderer.sort_and_update(g_camera)
 
                     # g_renderer.raster_settings["view_interpolation_factor"] = time_t;
-                    changed, g_renderer.raster_settings["view_interpolation_factor"] = imgui.core.drag_float("%.3f", g_renderer.raster_settings["view_interpolation_factor"], 0.01, 0.0, 1.0)
+                    changed, g_renderer.raster_settings["view_interpolation_factor"] = imgui.core.drag_float("##view_interp_fac", g_renderer.raster_settings["view_interpolation_factor"], 0.01, 0.0, 1.0)
 
                     if changed or True:
                         g_renderer.sort_and_update(g_camera)
@@ -476,12 +473,12 @@ def main():
                     changed = imgui.radio_button("Depending on volume: High volume = high opacity", individual_opacity_state == 3)
                     if changed:
                         individual_opacity_state = 3
-                        g_renderer.raster_settings["prior_big_volume"] = True
+                        g_renderer.raster_settings["high_high"] = True
                         g_renderer.sort_and_update(g_camera)
                     changed = imgui.radio_button("Depending on volume: High volume = low opacity", individual_opacity_state == 0)
                     if changed:
                         individual_opacity_state = 0
-                        g_renderer.raster_settings["prior_big_volume"] = False
+                        g_renderer.raster_settings["high_high"] = False
                         g_renderer.sort_and_update(g_camera)
                     changed = imgui.radio_button("Depending on distance to neighbors", individual_opacity_state == 1)
                     if changed:

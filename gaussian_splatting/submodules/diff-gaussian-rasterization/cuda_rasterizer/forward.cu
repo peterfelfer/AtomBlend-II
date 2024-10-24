@@ -268,7 +268,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const bool prior_big_volume,
+	const bool high_high,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
@@ -295,7 +295,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
     // Get view interpolation
-//    float view_interpolation_factor = prior_big_volume[1];
+//    float view_interpolation_factor = high_high[1];
 
     // Get color and scale for corresponding index
 	int index = indices[idx];
@@ -310,15 +310,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
 //        scale *= 30.0f;
 //	}
 
-    if (col.w != 0.0 && g_filter != nullptr && !view_interpolation){
-        col.w = individual_opacity_factor / g_filter[idx];
-        col.w = glm::clamp(col.w, 0.0f, 1.0f);
 
-        if (prior_big_volume){
-            col.w = 1 - col.w;
-        }
-
-    }
 
 
 
@@ -390,11 +382,29 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	    cov3D = cov3D_precomp + idx * 6;
 	}
 
+    float col_view_interp = 0.0f;
+    float col_filter = 0.0f;
 
 	// view interpolation
 	if (col.w != 0.0 && view_interpolation){
         col.w = (1 - view_interpolation_factor) * 0.5 + 0.5;
+        col_view_interp = col.w;
 	}
+
+	//    if (col.w != 0.0 && g_filter != nullptr && !view_interpolation){
+    if (col.w != 0.0 && g_filter != nullptr){
+        col.w = individual_opacity_factor / g_filter[idx];
+        col.w = glm::clamp(col.w, 0.0f, 1.0f);
+
+        if (high_high){
+            col.w = 1 - col.w;
+        }
+        col_filter = col.w;
+    }
+
+    if (view_interpolation && g_filter){
+        col.w = (col_view_interp + 3.0f * col_filter) / 4.0f;
+    }
 
 	// Compute 2D screen-space covariance matrix
 	float3 cov = computeCov2D(p_orig, focal_x, focal_y, tan_fovx, tan_fovy, cov3D, viewmatrix, scale);
@@ -805,6 +815,8 @@ render_gaussianBall(
 
             float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
 
+            alpha = max(0.0, alpha);
+
 			alpha = min(0.99f, alpha);
 
 			float test_T = T * (1 - alpha);
@@ -930,8 +942,9 @@ render_gaussianBallOpt(
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
             float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
-			if (alpha_sphere < 1.0f / 255.0f)
+			if (alpha_sphere < 1.0f / 255.0f){
 				continue;
+			}
 
             float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
 
@@ -976,6 +989,26 @@ render_gaussianBallOpt(
         for (int ch = 0; ch < CHANNELS; ch++) {
             out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
         }
+
+        float3 contr = { 0,0,0 };
+
+        if (last_contributor < 5){
+            contr = { 1, 0, 0 };
+        } else if (last_contributor < 10){
+            contr = { 0, 1, 0 };
+        } else if (last_contributor < 15){
+            contr = { 0, 0, 1 };
+        } else if (last_contributor < 20){
+            contr = { 1, 1, 0 };
+        } else if (last_contributor < 25){
+            contr = { 0, 1, 1 };
+        } else {
+            contr = { 1, 0, 1 };
+        }
+
+        out_color[0 * H * W + pix_id] = contr.x;
+        out_color[1 * H * W + pix_id] = contr.y;
+        out_color[2 * H * W + pix_id] = contr.z;
     }
 }
 
@@ -1090,7 +1123,7 @@ void FORWARD::preprocess(int P, int D, int M,
 	bool prefiltered,
 	const float* indices,
 	const float* index_properties,
-	const bool prior_big_volume,
+	const bool high_high,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	const float view_interpolation_factor,
@@ -1123,7 +1156,7 @@ void FORWARD::preprocess(int P, int D, int M,
 		prefiltered,
 		indices,
 		index_properties,
-		prior_big_volume,
+		high_high,
 		view_interpolation,
 		individual_opacity_factor,
 		view_interpolation_factor,

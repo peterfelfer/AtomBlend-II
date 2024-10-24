@@ -138,7 +138,7 @@ class CUDARenderer(GaussianRenderBase):
             "debug": False,
             "render_mode": 0,
             "index_properties": torch.Tensor([]),
-            "prior_big_volume": False,
+            "high_high": False,
             "view_interpolation": False,
             "individual_opacity_factor": 50.0,
             "view_interpolation_factor": 1.0,

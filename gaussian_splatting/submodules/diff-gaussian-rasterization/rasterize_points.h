@@ -37,7 +37,7 @@ RasterizeGaussiansCUDA(
 	const int render_mode,
 	const torch::Tensor& indices,
 	const torch::Tensor& index_properties,
-	const bool prior_big_volume,
+	const bool high_high,
 	const bool view_interpolation,
 	const float individual_opacity_factor,
 	float view_interpolation_factor,

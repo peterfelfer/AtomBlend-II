@@ -50,7 +50,7 @@ namespace CudaRasterizer
 			const int render_mode,
 			const float* indices,
 			const float* index_properties,
-			bool prior_big_volume,
+			bool high_high,
 			const bool view_interpolation,
 			const float individual_opacity_factor,
 			const float view_interpolation_factor,
