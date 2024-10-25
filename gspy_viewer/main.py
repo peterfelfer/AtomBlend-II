@@ -484,6 +484,7 @@ def main():
                     if changed:
                         individual_opacity_state = 1
                         g_renderer.sort_and_update(g_camera)
+                        g_renderer.raster_settings["high_high"] = False
                     changed = imgui.radio_button("No individual opacity", individual_opacity_state == 2)
                     if changed:
                         individual_opacity_state = 2
