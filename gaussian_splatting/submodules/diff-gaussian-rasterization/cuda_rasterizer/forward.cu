@@ -397,13 +397,13 @@ __global__ void preprocessCUDA(int P, int D, int M,
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
 
         if (high_high){
-            col.w = 1 - col.w;
+            c2ol.w = 1 - col.w;
         }
         col_filter = col.w;
     }
 
     if (view_interpolation && g_filter){
-        col.w = (col_view_interp + 3.0f * col_filter) / 4.0f;
+        col.w = (col_view_interp + col_filter) / 2.0f;
     }
 
 	// Compute 2D screen-space covariance matrix
@@ -941,38 +941,32 @@ render_gaussianBallOpt(
             // Obtain alpha by multiplying with Gaussian opacity
             // and its exponential falloff from mean.
             // Avoid numerical instabilities (see paper appendix).
-            float alpha_sphere = min(0.99f, con_o.w * exp(power)); // use exp for sphere calculation but not for shading
-			if (alpha_sphere < 1.0f / 255.0f){
+
+            // use exp for sphere calculation but not for shading
+            float alpha_sphere = min(0.99f, con_o.w * exp(power));
+			if (alpha_sphere < 3.0f / 255.0f)
+				continue;
+
+//            float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
+            float alpha = con_o.w;
+
+            alpha = max(0.0, alpha);
+
+			alpha = min(0.99f, alpha);
+
+			float test_T = T * (1 - alpha);
+			if (test_T < 0.0001f)
+			{
+				done = true;
 				continue;
 			}
 
-            float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
+            float dz = exp(0.35 * power);
 
-//            alpha = exp(power);
-			alpha = min(0.99f, alpha);
-
-
-//			float test_T = T * (1 - alpha);
-//			if (test_T < 0.0001f)
-//			{
-//				done = true;
-//				continue;
-//			}
-
-            float radius = scale_modifier;
-
-            bool inside_ellipse = exp(power) > 0.01f;
-            float dz = exp(power);
-
-            for (int ch = 0; ch < CHANNELS; ch++){
+            for (int ch = 0; ch < CHANNELS; ch++)
 				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * dz * T;
 
-//				C[0] = alpha;
-//				C[1] = alpha;
-//				C[2] = alpha;
-			}
-
-//            T = test_T;
+            T = test_T;
 
             // Keep track of last range entry to update this
             // pixel.
@@ -989,26 +983,6 @@ render_gaussianBallOpt(
         for (int ch = 0; ch < CHANNELS; ch++) {
             out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
         }
-
-        float3 contr = { 0,0,0 };
-
-        if (last_contributor < 5){
-            contr = { 1, 0, 0 };
-        } else if (last_contributor < 10){
-            contr = { 0, 1, 0 };
-        } else if (last_contributor < 15){
-            contr = { 0, 0, 1 };
-        } else if (last_contributor < 20){
-            contr = { 1, 1, 0 };
-        } else if (last_contributor < 25){
-            contr = { 0, 1, 1 };
-        } else {
-            contr = { 1, 0, 1 };
-        }
-
-        out_color[0 * H * W + pix_id] = contr.x;
-        out_color[1 * H * W + pix_id] = contr.y;
-        out_color[2 * H * W + pix_id] = contr.z;
     }
 }
 

@@ -409,7 +409,7 @@ def main():
                                 pass
 
                     if imgui.button(label='open CuAl50'):
-                        file_path = '/home/qa43nawu/temp/qa43nawu/out/CuAl50.ply'
+                        file_path = '/home/qa43nawu/temp/qa43nawu/out/CuAl/1M/CuAl50_1mio.ply'
 
                         if file_path:
                             try:
