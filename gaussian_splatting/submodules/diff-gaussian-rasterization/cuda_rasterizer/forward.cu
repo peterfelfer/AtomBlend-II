@@ -397,7 +397,7 @@ __global__ void preprocessCUDA(int P, int D, int M,
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
 
         if (high_high){
-            c2ol.w = 1 - col.w;
+            col.w = 1 - col.w;
         }
         col_filter = col.w;
     }
