@@ -237,7 +237,7 @@ def load_rng_file(file_path):
         b = int(float(splitted_line[3]) * 255)
 
         this_element['color'] = (r, g, b, 1)
-        all_elems_color[elem_name] = this_element  # todo: ABGlobals.all_elements; try with all_elements_by_name
+        all_elems_color[elem_name] = this_element
 
         line = rrng_file.readline()
 
@@ -269,7 +269,7 @@ def load_rng_file(file_path):
                 elem_name = all_elements_by_order[i]
 
                 if int(only_bitmask[i]) == 1:
-                    this_elem['element_name'] += all_elems_color[elem_name]['element_name']  # todo maybe all_elems_by_order is better
+                    this_elem['element_name'] += all_elems_color[elem_name]['element_name']
                 else:
                     this_elem['element_name'] += all_elems_color[elem_name]['element_name'] + only_bitmask[i]
                 this_elem['color'] = all_elems_color[elem_name]['color']
@@ -428,9 +428,6 @@ def load_rrng_file(file_path):
     global all_elements
     global all_elements_by_name
 
-    # file_path = '/home/qa43nawu/temp/qa43nawu/input_files/voldata/rangefile.rrng'
-    # file_path = '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
-
     rrng_file = open(file_path, 'r')
 
     for line in rrng_file:
@@ -524,18 +521,6 @@ def load_rrng_file(file_path):
             this_element_dict['num_displayed'] = 0
             all_elements_by_name[name_and_charge] = this_element_dict
 
-    # if both (r)rng and (e)pos file are loaded, we combine these two files
-    # combine_rrng_and_e_pos_file()
-
-def load_xrng_file(file_path):
-    import xmltodict
-    import xml.etree.ElementTree as ET
-    tree = ET.parse(file_path).getroot()
-    xmlstr = ET.tostring(tree, encoding="utf8", method="xml")
-    atom_dict = xmltodict.parse(xmlstr)
-
-    print("")
-
 def load_e_pos_file(num_atoms, file_path):
     # reading the given binary file and store it into a numpy array
     # reading data as byte representation in float and int (as the last two values are ints we need a integer representation as well)
@@ -555,14 +540,6 @@ def load_e_pos_file(num_atoms, file_path):
 
     # concatenate the first nine columns of float data and the last second columns from int data
     concat_data = np.concatenate((reshaped_data_float[:, :9], reshaped_data_int[:, 9:]), axis=1)
-
-    # save the min and max x, y, z positions for camera settings later on
-    # ABGlobals.max_x = concat_data[:, 0].max()
-    # ABGlobals.min_x = concat_data[:, 0].min()
-    # ABGlobals.max_y = concat_data[:, 1].max()
-    # ABGlobals.min_y = concat_data[:, 1].min()
-    # ABGlobals.max_z = concat_data[:, 2].max()
-    # ABGlobals.min_z = concat_data[:, 2].min()
 
     # shuffling the data as they're kind of sorted by the z value
     np.random.seed(0)
@@ -603,14 +580,6 @@ def load_pos_file(num_atoms, file_path):
     num_of_atoms = int(data_as_float.shape[0] / 4)
     reshaped_data = np.reshape(data_as_float, (num_of_atoms, 4))
 
-    # save the min and max x, y, z positions for camera settings later on
-    # ABGlobals.max_x = reshaped_data[:, 0].max()
-    # ABGlobals.min_x = reshaped_data[:, 0].min()
-    # ABGlobals.max_y = reshaped_data[:, 1].max()
-    # ABGlobals.min_y = reshaped_data[:, 1].min()
-    # ABGlobals.max_z = reshaped_data[:, 2].max()
-    # ABGlobals.min_z = reshaped_data[:, 2].min()
-
     # shuffling the data as they're kind of sorted by the z value
     np.random.seed(0)
     reshaped_data = np.random.permutation(reshaped_data)
@@ -621,14 +590,10 @@ def load_pos_file(num_atoms, file_path):
     # sort atoms by ['m/n']
     global all_elems_sorted_by_mn
     sorted_by_mn = reshaped_data[reshaped_data[:, 3].argsort()]
-    # sorted_by_mn = debug_data.spiral
-    # num_of_atoms = len(sorted_by_mn)
-
 
     all_elems_sorted_by_mn = sorted_by_mn # todo ?? global
 
     coords = [(atom[0], atom[1], atom[2]) for atom in sorted_by_mn]
-
 
     # add unknown element to the list
     unknown_element_dict = {}
@@ -651,14 +616,10 @@ def calc_pca(point_cloud):
     mean = np.mean(point_cloud, axis=0)
     centered_point_cloud = point_cloud - mean
 
-    # covariance matrix of centered data (do we need this?)
-    # cov_matrix = np.cov(centered_point_cloud, rowvar=False)
-
     # perform pca
     if len(centered_point_cloud.shape) == 1:
         centered_point_cloud = [centered_point_cloud]
 
-    # num_components = 3 if len(centered_point_cloud) >= 3 else len(centered_point_cloud) # TODO for len < 3
     num_components = min(len(centered_point_cloud), 3)
 
     if num_components < 3:
@@ -669,22 +630,10 @@ def calc_pca(point_cloud):
     pca.fit(centered_point_cloud)
 
     components = pca.components_
-    explained_variance = pca.explained_variance_
     singular_values = pca.singular_values_
-
-    # volume_vec = explained_variance
     volume_vec = singular_values
 
-    # transformed_cov_matrix = np.dot(components.T * explained_variance, components)
-    # transformed_cov_matrix = np.dot(components.T * explained_variance * explained_variance, components)
-    # transformed_cov_matrix = np.dot(components.T * singular_values, components)
-
     transformed_cov_matrix = (components.T * singular_values * singular_values) @ components
-
-    # if transformed_cov_matrix.ndim == 0 or transformed_cov_matrix.shape[0] != 3 or transformed_cov_matrix.shape[1] != 3: # TODO for len < 3
-    #     mat_3x3 = np.zeros((3,3))
-    #     mat_3x3[:2, :2] = transformed_cov_matrix
-    #     transformed_cov_matrix = mat_3x3
 
     return transformed_cov_matrix, volume_vec
 
@@ -696,7 +645,7 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, num_sd = 
     for elem in all_elements_by_name:
         counter += 1
         atoms += all_elements_by_name[elem]['num_of_atoms']
-        print('elem ' + str(counter) + ' / ' + str(len(all_elements_by_name)) + ' atoms: ' + str(atoms))
+        print(elem + ' ' + str(counter) + ' / ' + str(len(all_elements_by_name)) + ', atoms: ' + str(atoms))
         coords = all_elements_by_name[elem][('coordinates')]
         if (len(coords) == 0):
             continue
@@ -751,53 +700,20 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, num_sd = 
             if len(nn_coords) == 0:
                 pass
 
-            # standardization step
-            # means = np.mean(nn_coords, axis=0) # mean of each axis x,y,z
-            # std_dev = np.std(nn_coords, axis=0) # standard deviation of each axis x,y,z
-            # standardized = (nn_coords - means) / std_dev
-            # nn_coords = standardized
-
-
             cov_mat, volume_vec = calc_pca(nn_coords)
 
             if np.isnan(np.asarray(cov_mat)).any():
                 print(cov_mat)
 
-            # if np.isnan(cov_mat).any(): # TODO fix nan
-            #     # print(cov_mat)
-            #     cov_mat = np.asarray([[0.1, 0, 0], [0, 0.1, 0], [0, 0, 0.1]])
-
-            # print(cov_mat, "\n")
-
             eigenvalues, _ = np.linalg.eig(cov_mat)
-            # volume = 4/3 * 3.14159 * eigenvalues[0] * eigenvalues[1] * eigenvalues[2]
             volume = 4/3 * 3.14159 * volume_vec[0] * volume_vec[1] * volume_vec[2]
-
-            # scale = 50000 / (volume)
-            # scale = 1 / volume
             scale = 1
 
-            # opacity = 1 - opacity
-
-            # print(opacity, "\n")
-
             cov_mat = cov_mat / normalization
-            # print(eigenvalues, "\n")
-            # print(volume, opacity, "\n")
-
             cov_mat = cov_mat.flatten()
 
             if np.isnan(cov_mat).any(): # TODO fix nan
                 print(cov_mat)
-
-            # if cov_mat[1] != cov_mat[3]:
-            #     print('COVMAT13')
-            #
-            # if cov_mat[2] != cov_mat[6]:
-            #     print('COVMAT26')
-            #
-            # if cov_mat[5] != cov_mat[7]:
-            #     print('COVMAT57')
 
             reduced_covmat = np.zeros(6)
             reduced_covmat[0] = cov_mat[0]
@@ -812,122 +728,26 @@ def find_nearest_neighbors(num_neighbors, max_distance, normalization, num_sd = 
             cov3D_list.append(np.asarray(cov_mat))
             scale_list.append([scale])
             volume_list.append([volume])
-            # distance_list.append([np.sum(distance / len(distance))])
             distance_list.append([statistics.median(distance)])
-
-
-def fit_volume():
-    global volume_list
-    # best fit of the data
-    (mu, sigma) = norm.fit(volume_list)
-
-    # if the standard deviation lies within the data, we normalize by the first standard deviation
-    max_distance = np.max(volume_list)
-    if mu + sigma < max_distance:
-        max_distance = mu + sigma
-
-    print('max volume: ', max_distance)
-
-    counts, bins = np.histogram(volume_list, bins=1000)
-
-    volume_list = volume_list / max_distance
-    volume_list = 1.0 - volume_list
-    volume_list = np.clip(volume_list, 0.0, 1.0)
-
-    # add a 'best fit' line
-    y = norm.pdf(bins, mu, sigma) * 100000
-    l = plt.plot(bins, y, 'r--', linewidth=2)
-
-    plt.axvline(mu, color='r', linestyle='--', label=f'Peak at {mu:.2f}')
-    plt.axvline(mu + sigma, color='b', linestyle='--', label='sigma1')
-    plt.axvline(mu - sigma, color='b', linestyle='--', label='sigma1')
-
-    plt.stairs(counts, bins)
-    plt.xlabel('volume')
-    plt.ylabel('frequency')
-    # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
-    plt.show()
-
-
-def fit_distance():
-    global distance_list
-    # best fit of the data
-    (mu, sigma) = norm.fit(distance_list)
-
-    # if the standard deviation lies within the data, we normalize by the first standard deviation
-    max_distance = np.max(distance_list)
-    if mu + sigma < max_distance:
-        max_distance = mu + sigma
-
-    print('max distance: ', max_distance)
-
-    counts, bins = np.histogram(distance_list, bins=1000)
-
-    distance_list = distance_list / max_distance
-    distance_list = 1.0 - distance_list
-    distance_list = np.clip(distance_list, 0.0, 1.0)
-
-    # add a 'best fit' line
-    y = norm.pdf(bins, mu, sigma) * 100
-    l = plt.plot(bins, y, 'r--', linewidth=2)
-
-    plt.axvline(mu, color='r', linestyle='--', label=f'Peak at {mu:.2f}')
-    plt.axvline(mu + sigma, color='b', linestyle='--', label='sigma1')
-    plt.axvline(mu - sigma, color='b', linestyle='--', label='sigma1')
-
-    plt.stairs(counts, bins)
-    plt.xlabel('distance')
-    plt.ylabel('frequency')
-    # plt.plot(cov3d_sum, np.ones_like(cov3d_sum), 'ro')
-    plt.show(block=False)
-
 
 
 if __name__ == "__main__":
     from argparse import Namespace
 
-    datasets = {
-        "Al-Cu-Sn": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/Al-Cu-Sn/R4_01750-v01.pos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/Al-Cu-Sn/Al-Cu-Sn_mytry.rrng'
-        ],
-        "CuAl50": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
-        ],
-        "TiAlN_film_cross": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/TiAlN_film_cross-section_1200C/TiAlN_film_cross-section_1200C.epos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/TiAlN_film_cross-section_1200C/TiAlN_film_cross-section_1200C.rrng',
-        ],
-        "R31_06365-v02": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.pos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.rrng'
-        ],
-        "aut_leoben_leitner": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/aut_leoben_leitner/R21_08680-v02.pos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/aut_leoben_leitner/R21_08680.rrng',
-        ],
-        "SeHoKim": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/R31_06365-v02.pos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/APM.LEAP.Datasets.1/SeHoKim_R5076_44076_v02.rng'
-        ],
-        "dataset1": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/dataset1/R56_00385-v01.pos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/dataset1/R56_00385-v01.rrng'
-        ],
-        "dataset2": [
-            '/home/qa43nawu/temp/qa43nawu/input_files/dataset2/R56_00211-v04.epos',
-            '/home/qa43nawu/temp/qa43nawu/input_files/dataset2/CW1-Laser_partsolv.rrng'
-        ],
-    }
-
-    # default_data = "CuAl50"
-    # default_data = "Al-Cu-Sn"
-    # default_data = "TiAlN_film_cross"
-    # default_data = "R31_06365-v02"
-    # default_data = "SeHoKim"
-    # default_data = "dataset1"
-    # default_data = "dataset2"
+    # datasets = {
+    #     "CuAl50": [
+    #         '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/recons/recon-v02/default/R56_01519-v01.pos',
+    #         '/home/qa43nawu/temp/qa43nawu/input_files/CuAl50_Ni_2p3V_10min_02/CuAl50_Ni_range_file_030817.rrng'
+    #     ],
+    #     "dataset1": [
+    #         '/home/qa43nawu/temp/qa43nawu/input_files/dataset1/R56_00385-v01.pos',
+    #         '/home/qa43nawu/temp/qa43nawu/input_files/dataset1/R56_00385-v01.rrng'
+    #     ],
+    #     "dataset2": [
+    #         '/home/qa43nawu/temp/qa43nawu/input_files/dataset2/R56_00211-v04.epos',
+    #         '/home/qa43nawu/temp/qa43nawu/input_files/dataset2/CW1-Laser_partsolv.rrng'
+    #     ],
+    # }
 
     # parse arguments
     parser = ArgumentParser(description="Preprocessing script paramters", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -937,7 +757,9 @@ if __name__ == "__main__":
     parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
     parser.add_argument("--num_sd", default=10000, type=int, help="The number of standard deviations that determines the neighbors that should be considered.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
-    parser.add_argument("--dataset", default="CuAl50", type=str, help="The name of the dataset that should be preprocessed.")
+    parser.add_argument("--epos_path", type=str, required=True, help="The path to the (e)pos file.")
+    parser.add_argument("--rrng_path", type=str, required=True, help="The path to the (r)rng file.")
+    # parser.add_argument("--dataset", default="CuAl50", type=str, help="The name of the dataset that should be preprocessed.")
     parser.add_argument("--out_dir", default= '/home/qa43nawu/temp/qa43nawu/out/', type=str, help="The directory in that the .ply file will be written.")
     parser.add_argument("--out_file_name", default= '', type=str, help="The file name of the .ply file that will be written.")
     parsed_args = parser.parse_args()
@@ -961,27 +783,17 @@ if __name__ == "__main__":
     R = np.matmul(np.matmul(R_x, R_y), R_z)
     T = np.asarray([0.0, -40.0, 200.0])
 
-    # props = {
-    #     "colmap_id": colmap_id,
-    #     "R": R,
-    #     "T": T,
-    #     "FoVx": 0.14,
-    #     "FoVy": 0.28,
-    #     "uid": 0,
-    #     "scale": -2.0,
-    #     "opacity": 1.0,
-    #     "background_color": np.asarray([1.0, 1.0, 1.0]),
-    # }
-
     epos = time.time()
 
-    epos_path = datasets[parsed_args.dataset][0]
-    rrng_path = datasets[parsed_args.dataset][1]
+    epos_path = parsed_args.epos_path # epos_path = datasets[parsed_args.dataset][0]
+    rrng_path = parsed_args.rrng_path # rrng_path = datasets[parsed_args.dataset][1]
 
     if epos_path.lower().endswith('.pos'):
         atom_coords = load_pos_file(parsed_args.num_atoms, epos_path)
-    else:
+    elif epos_path.lower().endswith('.epos'):
         atom_coords = load_e_pos_file(parsed_args.num_atoms, epos_path)
+    else:
+        raise Exception('Please provide either a .pos or .epos file.')
 
     epos = time.time() - epos
     print('load epos', epos, epos / 60.0)
@@ -992,7 +804,7 @@ if __name__ == "__main__":
     elif rrng_path.lower().endswith('.rng'):
         load_rng_file(rrng_path)
     else:
-        load_xrng_file(rrng_path)
+        raise Exception('Please provide either a .rng or .rrng file.')
 
     rrng = time.time() - rrng
     print('load rrng', rrng, rrng / 60.0)
@@ -1010,15 +822,10 @@ if __name__ == "__main__":
 
     if not parsed_args.skip_pca:
         find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.num_sd)
-    # gaussians.cov3D = np.asarray(cov3D_list)
 
     neighbor = time.time() - neighbor
     print('found nearest neighbors', neighbor, neighbor / 60.0)
     write_file = time.time()
-
-    ### ACHTUNG: volumen & distanzen werden verändert!
-    # fit_volume()
-    # fit_distance()
 
     ### ply writing
     gaussians.store_data(np.asarray(atom_coords), np.asarray(cov3D_list), np.asarray(volume_list), np.asarray(distance_list), np.asarray(indices))
@@ -1037,14 +844,12 @@ if __name__ == "__main__":
     comments.append('duration: epos: ' + str(epos) + ' rrng: ' + str(rrng) + ' combine: ' + str(combine_epos_rrng) + ' neighbors: ' + str(neighbor))
 
     if not parsed_args.out_file_name:
-        file_name = parsed_args.dataset + "_" + str(parsed_args.num_neighbors) + '_dist_' + str(parsed_args.max_distance) + '_0_to_1.5' + '.ply'
+        file_name = "data" + "_" +  str(parsed_args.num_atoms) + "atoms_" + str(parsed_args.num_neighbors) + "neighbors" + '.ply'
     else:
         file_name = parsed_args.out_file_name
 
     out_path = os.path.join(parsed_args.out_dir, file_name)
 
-    # file_name = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_50' + '.ply'
-    # file_name = '/home/qa43nawu/temp/qa43nawu/out/DEBUG_spiral.ply'
     gaussians.save_ply(out_path, comments)
 
     write_file = time.time() - write_file
