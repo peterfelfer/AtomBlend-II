@@ -168,7 +168,7 @@ def set_index_properties(gaussians):
     index_properties = []
     for elem in gaussians.num_of_atoms_by_element:
         col = gaussians.num_of_atoms_by_element[elem]['color']
-        scale = gaussians.num_of_atoms_by_element[elem]['scale']
+        scale = gaussians.num_of_atoms_by_element[elem]['scale'] / 50.0
         index_properties.extend([col[0], col[1], col[2], col[3], scale])
 
     g_renderer.raster_settings["index_properties"] = torch.Tensor(index_properties).float().cuda()

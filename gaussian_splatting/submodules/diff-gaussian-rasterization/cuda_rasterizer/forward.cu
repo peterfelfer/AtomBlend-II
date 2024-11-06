@@ -947,19 +947,18 @@ render_gaussianBallOpt(
 			if (alpha_sphere < 3.0f / 255.0f)
 				continue;
 
-//            float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
-            float alpha = con_o.w;
+            float alpha = (con_o.w * exp(power)) / (1 - con_o.w);
 
             alpha = max(0.0, alpha);
 
 			alpha = min(0.99f, alpha);
 
 			float test_T = T * (1 - alpha);
-			if (test_T < 0.0001f)
-			{
-				done = true;
-				continue;
-			}
+//			if (test_T < 0.0001f)
+//			{
+//				done = true;
+//				continue;
+//			}
 
             float dz = exp(0.35 * power);
 
