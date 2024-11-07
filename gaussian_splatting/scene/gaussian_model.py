@@ -47,8 +47,6 @@ class GaussianModel:
         self.active_sh_degree = 0
         self.max_sh_degree = sh_degree
         self._xyz = torch.empty(0)
-        # xyz = torch.tensor([[1, 1, 1], [0, 1, 0], [1, 0, 0]])
-        # self._xyz = torch.from_numpy(np.array(xyz))
         self._features_dc = torch.empty(0)
         self._features_rest = torch.empty(0)
         self._scaling = torch.empty(0)
@@ -62,28 +60,6 @@ class GaussianModel:
         self.percent_dense = 0
         self.spatial_lr_scale = 0
         self.setup_functions()
-
-    # todo: two init functions are not possible
-    # def __init__(self, xyz, sh_degree : int):
-    #     opacity = torch.tensor([[1], [1], [1]])
-    #     rotation = torch.tensor([[1, 0, 0], [1, 0, 0], [1, 0, 0]])
-    #     scaling = torch.tensor([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
-    #
-    #     self.active_sh_degree = 0
-    #     self.max_sh_degree = sh_degree
-    #     self._xyz = torch.from_numpy(np.array(xyz))
-    #     self._features_dc = torch.empty(0)
-    #     self._features_rest = torch.empty(0)
-    #     self._scaling = torch.from_numpy(np.array(scaling))
-    #     self._rotation = torch.from_numpy(np.array(rotation))
-    #     self._opacity = torch.from_numpy(np.array(opacity))
-    #     self.max_radii2D = torch.empty(0)
-    #     self.xyz_gradient_accum = torch.empty(0)
-    #     self.denom = torch.empty(0)
-    #     self.optimizer = None
-    #     self.percent_dense = 0
-    #     self.spatial_lr_scale = 0
-    #     self.setup_functions()
 
     def capture(self):
         return (
@@ -232,19 +208,12 @@ class GaussianModel:
         cov3d_dist_empty = False
         if len(self.cov3D) == 0:
             cov3d_dist_empty = True
-            # dummy_cov3D = np.array([[1.0, 0.0, 0.0, 1.0, 0.0, 1.0]] * len(self._xyz))
-            # self.cov3D = torch.tensor(dummy_cov3D).float().cuda().requires_grad_(False)
-
-            # dummy_distance = np.array([[1.0]] * len(self._xyz))
-            # self.g_distance = torch.tensor(dummy_distance).float().cuda().requires_grad_(False)
 
             self.cov3D = torch.tensor([]).float().cuda().requires_grad_(False)
             self.g_distance = torch.tensor([]).float().cuda().requires_grad_(False)
         cov3D = self.cov3D.detach().cpu().numpy()
 
         if len(self.g_volume) == 0:
-            # dummy_g_volume = np.array([[1.0]] * len(self._xyz))
-            # self.g_volume = torch.tensor(dummy_g_volume).float().cuda().requires_grad_(False)
             self.g_volume = torch.tensor([]).float().cuda().requires_grad_(False)
 
         g_volume = self.g_volume.detach().cpu().numpy()
@@ -271,43 +240,6 @@ class GaussianModel:
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
 
-    def load_atoms(self, path):
-        features_dc = np.zeros((self.xyz.shape[0], 3, 1))
-        features_dc[:, 0, 0] = np.ones(self.xyz.shape[0])
-        features_dc[:, 1, 0] = np.ones(self.xyz.shape[0])
-        features_dc[:, 2, 0] = np.ones(self.xyz.shape[0])
-
-        opacities = np.ones((self.xyz.shape[0], 1))
-        scales = np.ones((self.xyz.shape[0], 1))
-
-        vec = np.array([0.0, 0.0, 0.0, 0.0])
-        rots = np.tile(vec, (self.xyz.shape[0], 1))
-
-        # ???????
-        plydata = PlyData.read(path)
-        extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
-        extra_f_names = sorted(extra_f_names, key=lambda x: int(x.split('_')[-1]))
-        assert len(extra_f_names) == 3 * (self.max_sh_degree + 1) ** 2 - 3
-        features_extra = np.zeros((self.xyz.shape[0], len(extra_f_names)))
-        for idx, attr_name in enumerate(extra_f_names):
-            features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])
-        # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
-        features_extra = features_extra.reshape((features_extra.shape[0], 3, (self.max_sh_degree + 1) ** 2 - 1))
-
-        self._xyz = nn.Parameter(torch.tensor(self.xyz, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._features_dc = nn.Parameter(
-            torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
-                True))
-        self._features_rest = nn.Parameter(
-            torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
-                True))
-        self._opacity = nn.Parameter(torch.tensor(opacities, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._scaling = nn.Parameter(torch.tensor(scales, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
-
-        self.active_sh_degree = self.max_sh_degree
-
-
     def store_data(self, atom_coords, cov3D_list, volume_list, distance_list, indices):
         xyz = np.stack((np.asarray(atom_coords[:, 0]),
                         np.asarray(atom_coords[:, 1]),
@@ -321,53 +253,6 @@ class GaussianModel:
 
         self.active_sh_degree = self.max_sh_degree
 
-
-    def load_ply(self, path):
-        plydata = PlyData.read(path)
-
-        xyz = np.stack((np.asarray(plydata.elements[0]["x"]),
-                        np.asarray(plydata.elements[0]["y"]),
-                        np.asarray(plydata.elements[0]["z"])), axis=1)
-        opacities = np.asarray(plydata.elements[0]["opacity"])[..., np.newaxis]
-
-        features_dc = np.zeros((xyz.shape[0], 3, 1))
-        features_dc[:, 0, 0] = np.asarray(plydata.elements[0]["f_dc_0"])
-        features_dc[:, 1, 0] = np.asarray(plydata.elements[0]["f_dc_1"])
-        features_dc[:, 2, 0] = np.asarray(plydata.elements[0]["f_dc_2"])
-
-        extra_f_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("f_rest_")]
-        extra_f_names = sorted(extra_f_names, key=lambda x: int(x.split('_')[-1]))
-        assert len(extra_f_names) == 3 * (self.max_sh_degree + 1) ** 2 - 3
-        features_extra = np.zeros((xyz.shape[0], len(extra_f_names)))
-        for idx, attr_name in enumerate(extra_f_names):
-            features_extra[:, idx] = np.asarray(plydata.elements[0][attr_name])
-        # Reshape (P,F*SH_coeffs) to (P, F, SH_coeffs except DC)
-        features_extra = features_extra.reshape((features_extra.shape[0], 3, (self.max_sh_degree + 1) ** 2 - 1))
-
-        scale_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("scale_")]
-        scale_names = sorted(scale_names, key=lambda x: int(x.split('_')[-1]))
-        scales = np.zeros((xyz.shape[0], len(scale_names)))
-        for idx, attr_name in enumerate(scale_names):
-            scales[:, idx] = np.asarray(plydata.elements[0][attr_name])
-
-        rot_names = [p.name for p in plydata.elements[0].properties if p.name.startswith("rot")]
-        rot_names = sorted(rot_names, key=lambda x: int(x.split('_')[-1]))
-        rots = np.zeros((xyz.shape[0], len(rot_names)))
-        for idx, attr_name in enumerate(rot_names):
-            rots[:, idx] = np.asarray(plydata.elements[0][attr_name])
-
-        self._xyz = nn.Parameter(torch.tensor(xyz, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._features_dc = nn.Parameter(
-            torch.tensor(features_dc, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
-                True))
-        self._features_rest = nn.Parameter(
-            torch.tensor(features_extra, dtype=torch.float, device="cuda").transpose(1, 2).contiguous().requires_grad_(
-                True))
-        self._opacity = nn.Parameter(torch.tensor(opacities, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._scaling = nn.Parameter(torch.tensor(scales, dtype=torch.float, device="cuda").requires_grad_(True))
-        self._rotation = nn.Parameter(torch.tensor(rots, dtype=torch.float, device="cuda").requires_grad_(True))
-
-        self.active_sh_degree = self.max_sh_degree
 
     def replace_tensor_to_optimizer(self, tensor, name):
         optimizable_tensors = {}

@@ -157,7 +157,6 @@ def load_ply(path):
 
     # plotting settings
     dpg_plotting.plotting_data["volume_min_max"] = [0.0, g_volume.max()]
-    # dpg_plotting.plotting_data["volume_alpha_range"] = [0.0, g_volume.max()]
 
     return GaussianData(xyz, rots, scales, opacities, shs, cov3Ds, num_of_atoms_by_element, g_volume, g_distance, indices)
 

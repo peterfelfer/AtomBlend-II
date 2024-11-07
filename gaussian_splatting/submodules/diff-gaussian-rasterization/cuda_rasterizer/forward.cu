@@ -177,9 +177,6 @@ __device__ float3 computeCov2D(const float3& mean, float focal_x, float focal_y,
     0.0f, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
     0, 0, 0);
 
-//    printf("focal %f, %f, \n", focal_x, focal_y);
-//    printf("tan fov %f, %f, \n", tan_fovx, tan_fovy);
-
 	glm::mat3 W = glm::mat3(
 		viewmatrix[0], viewmatrix[4], viewmatrix[8],
 		viewmatrix[1], viewmatrix[5], viewmatrix[9],
@@ -213,7 +210,7 @@ __device__ void computeCov3D(const glm::vec3 scale, float mod, const glm::vec4 r
 	S[2][2] = mod * scale.z;
 
 	// Normalize quaternion to get valid rotation
-	glm::vec4 q = glm::vec4(0.0f); //rot;// / glm::length(rot);
+	glm::vec4 q = glm::vec4(0.0f);
 	float r = q.x;
 	float x = q.y;
 	float y = q.z;
@@ -294,9 +291,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	float p_w = 1.0f / (p_hom.w + 0.0000001f);
 	float3 p_proj = { p_hom.x * p_w, p_hom.y * p_w, p_hom.z * p_w };
 
-    // Get view interpolation
-//    float view_interpolation_factor = high_high[1];
-
     // Get color and scale for corresponding index
 	int index = indices[idx];
 	float4 col = { index_properties[index * 5], index_properties[index * 5 + 1], index_properties[index * 5 + 2], index_properties[index * 5 + 3]};
@@ -305,47 +299,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
     if (col.w < 0.0001){ // gaussian not visible / element deactivated
         return;
     }
-
-//	if (cov3D_precomp == nullptr){ // precomputed cov3D#
-//        scale *= 30.0f;
-//	}
-
-
-
-
-
-    ////// DEBUG
-
-//    float opacity = opacities[idx];
-//    opacity = opacity / 1000;
-//    opacity = 1 / opacity;
-//    col = { 1, 1, 1, 1 };
-//    col.x = opacity;
-//    col.y = 0.0f;
-//    col.z = 0.0f;
-//
-//    if (opacity < 0.5){
-//        col.x = 0.0f;
-//        col.y = 1.0f;
-//        col.z = 0.0f;
-//    }
-
-//    if (opacity < 1){
-//        col = { 1, 0, 0, 1 };
-//    }
-//    if (opacity < 0.8){
-//        col = { 0, 1, 0, 1 };
-//    }
-//    if (opacity < 0.6){
-//        col = { 0, 0, 1, 1 };
-//    }
-//    if (opacity < 0.4){
-//        col = { 1, 1, 0, 1 };
-//    }
-//    if (opacity < 0.2){
-//        col = { 0, 1, 1, 1 };
-//    }
-
 
 	// If 3D covariance matrix is precomputed, use it, otherwise compute
 	// from scaling and rotation parameters. 
@@ -368,7 +321,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
 	}
 	else if (cov3D_precomp == nullptr) // using identity matrix as cov3D
 	{
-//		computeCov3D(scales[idx], scale_modifier, rotations[idx], cov3Ds + idx * 6);
 		int cov3D_idx = idx * 6;
         cov3Ds[cov3D_idx] = 1.0f;
         cov3Ds[cov3D_idx + 1] = 0.0f;
@@ -391,7 +343,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
         col_view_interp = col.w;
 	}
 
-	//    if (col.w != 0.0 && g_filter != nullptr && !view_interpolation){
     if (col.w != 0.0 && g_filter != nullptr){
         col.w = individual_opacity_factor / g_filter[idx];
         col.w = glm::clamp(col.w, 0.0f, 1.0f);
@@ -437,13 +388,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
     rgb[idx * C + 1] = col.y;
     rgb[idx * C + 2] = col.z;
 
-    // Calculate opacity
-//    float volume = 4/3 * 3.14159 * cov3D[0] * cov3D[3] * cov3D[5];
-//    float opacity = 1 / volume;
-//
-//    printf("%f, %f, %f, %f \n", cov3D[0], cov3D[3], cov3D[5], volume);
-//    printf("%f \n", opacity);
-
 	// Store some useful helper data for the next steps.
 	depths[idx] = p_view.z;
 	radii[idx] = my_radius;
@@ -451,7 +395,6 @@ __global__ void preprocessCUDA(int P, int D, int M,
     radii_xy[idx + 1] = my_radius_y;
 	points_xy_image[idx] = point_image;
 	// Inverse 2D covariance and opacity neatly pack into one float4
-//	conic_opacity[idx] = { conic.x, conic.y, conic.z, opacities[idx] };
 	conic_opacity[idx] = { conic.x, conic.y, conic.z, col.w };
 	tiles_touched[idx] = (rect_max.y - rect_min.y) * (rect_max.x - rect_min.x);
 }
@@ -685,15 +628,7 @@ render_flatCUDA(
 			for (int ch = 0; ch < CHANNELS; ch++)
 				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
 
-
-
-//             C[0] = 1;
-//             C[1] = 0;
-//             C[2] = 0;
-//             C[3] = 1;
-
 			T = test_T;
-// 			T = 1.0f - test_T;
 
 			// Keep track of last range entry to update this
 			// pixel.
@@ -709,10 +644,6 @@ render_flatCUDA(
 		n_contrib[pix_id] = last_contributor;
 		for (int ch = 0; ch < CHANNELS; ch++)
 			out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
-
-// 			out_color[ch * H * W + pix_id] = T;
-//             out_color[ch * H * W + pix_id] = C[ch];
-
 	}
 }
 
@@ -851,9 +782,7 @@ render_gaussianBall(
     }
 }
 
-// Main rasterization method. Collaboratively works on one tile per
-// block, each thread treats one pixel. Alternates between fetching
-// and rasterizing data.
+// Gaussian Ball shader but without the early exit as soon as alpha >= 1.
 template <uint32_t CHANNELS>
 __global__ void __launch_bounds__(BLOCK_X * BLOCK_Y)
 render_gaussianBallOpt(

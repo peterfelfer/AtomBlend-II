@@ -76,7 +76,6 @@ class Scene:
 
         if self.loaded_iter:
             self.gaussians.store_data(atom_coords, props)
-            # self.gaussians.load_atoms(os.path.join(self.model_path, "point_cloud", "iteration_" + str(self.loaded_iter), "point_cloud.ply"))
 
 
         else:

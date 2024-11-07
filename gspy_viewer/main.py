@@ -445,9 +445,9 @@ def main():
                         g_renderer.raster_settings["individual_opacity_factor"] = new
                         g_renderer.sort_and_update(g_camera)
 
-                    if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
+                    if imgui.tree_node("Advanced settings (experimental!)", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
 
-                        if imgui.button("Show distance plot", 100, 100):
+                        if imgui.button("Show distance plot (experimental!)", 500, 100):
                             thread = threading.Thread(target=dpg_plotting.open_plotting_window, args=(gaussians, g_renderer))
                             thread.start()
 
