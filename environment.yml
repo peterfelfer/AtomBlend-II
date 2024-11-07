@@ -35,10 +35,14 @@ dependencies:
   - xz=5.4.6=h5eee18b_1
   - zlib=1.2.13=h5eee18b_1
   - pip:
+      - asciitree==0.3.3
       - contourpy==1.2.1
       - cuda-python==12.4.0
       - cycler==0.12.1
+      - dearpygui==2.0.0b1
+      - diff-gaussian-rasterization==0.0.0
       - fake-bpy-module-2-80==20240604
+      - fasteners==0.19
       - filelock==3.14.0
       - fonttools==4.53.1
       - fsspec==2024.3.1
@@ -50,9 +54,11 @@ dependencies:
       - kiwisolver==1.4.5
       - markupsafe==2.1.5
       - matplotlib==3.9.1
+      - minireload==0.0.8
       - mpl-tools==0.4.0
       - mpmath==1.3.0
       - networkx==3.3
+      - numcodecs==0.13.0
       - nvidia-cublas-cu12==12.1.3.1
       - nvidia-cuda-cupti-cu12==12.1.105
       - nvidia-cuda-nvrtc-cu12==12.1.105
@@ -65,15 +71,19 @@ dependencies:
       - nvidia-nccl-cu12==2.20.5
       - nvidia-nvjitlink-cu12==12.4.127
       - nvidia-nvtx-cu12==12.1.105
+      - objtoolbox==0.0.10
       - packaging==24.1
       - pillow==10.3.0
       - plyfile==1.0.3
       - pyglm==2.7.1
       - pyopengl==3.1.7
       - pyparsing==3.1.2
+      - pyqt5-qt5==5.15.15
+      - pyqt5-sip==12.15.0
       - python-dateutil==2.9.0.post0
       - scikit-learn==1.5.1
       - scipy==1.14.0
+      - simple-knn==0.0.0
       - six==1.16.0
       - sympy==1.12
       - threadpoolctl==3.5.0
@@ -82,4 +92,7 @@ dependencies:
       - torchvision==0.18.0
       - tqdm==4.66.4
       - typing-extensions==4.11.0
+      - watchdog==5.0.2
+      - xmltodict==0.13.0
+      - zarr==2.18.3
 prefix: /home/qa43nawu/temp/qa43nawu/miniconda3/envs/gaussian-splatting
