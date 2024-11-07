@@ -206,7 +206,7 @@ def save_img():
     gl.glReadBuffer(gl.GL_FRONT)
     bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
     img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
-    imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
+    imageio.imwrite("save.png", img[::-1])
 
 def main():
     global g_camera, g_renderer, g_renderer_list, g_renderer_idx, g_scale_modifier, g_auto_sort, \
@@ -367,7 +367,7 @@ def main():
                 if imgui.tree_node("Load file", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
                     if imgui.button(label='open .ply'):
                         file_path = filedialog.askopenfilename(title="open ply",
-                                                               initialdir="/home/qa43nawu/temp/qa43nawu/out/",
+                                                               initialdir="../",
                                                                filetypes=[('ply file', '.ply')]
                                                                )
                         if file_path:
@@ -544,7 +544,7 @@ def main():
                         gl.glReadBuffer(gl.GL_FRONT)
                         bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
                         img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
-                        imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
+                        imageio.imwrite("save.png", img[::-1])
 
                     imgui.tree_pop()
 

@@ -759,7 +759,7 @@ if __name__ == "__main__":
     parser.add_argument("--epos_path", type=str, required=True, help="The path to the (e)pos file.")
     parser.add_argument("--rrng_path", type=str, required=True, help="The path to the (r)rng file.")
     # parser.add_argument("--dataset", default="CuAl50", type=str, help="The name of the dataset that should be preprocessed.")
-    parser.add_argument("--out_dir", default= '.', type=str, help="The directory in that the .ply file will be written.")
+    parser.add_argument("--out_dir", default= '/home/qa43nawu/temp/qa43nawu/out/', type=str, help="The directory in that the .ply file will be written.")
     parser.add_argument("--out_file_name", default= '', type=str, help="The file name of the .ply file that will be written.")
     parsed_args = parser.parse_args()
 
