@@ -40,7 +40,6 @@ dependencies:
       - cuda-python==12.4.0
       - cycler==0.12.1
       - dearpygui==2.0.0b1
-      - diff-gaussian-rasterization==0.0.0
       - fake-bpy-module-2-80==20240604
       - fasteners==0.19
       - filelock==3.14.0
@@ -83,7 +82,6 @@ dependencies:
       - python-dateutil==2.9.0.post0
       - scikit-learn==1.5.1
       - scipy==1.14.0
-      - simple-knn==0.0.0
       - six==1.16.0
       - sympy==1.12
       - threadpoolctl==3.5.0
