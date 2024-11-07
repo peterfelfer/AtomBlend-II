@@ -637,7 +637,7 @@ def calc_pca(point_cloud):
 
     return transformed_cov_matrix, volume_vec
 
-def find_nearest_neighbors(num_neighbors, max_distance, normalization, num_sd = 1):
+def find_nearest_neighbors(num_neighbors, max_distance, normalization):
     global cov3D_list, scale_list, volume_list, distance_list
     counter = 0
     atoms = 0
@@ -755,7 +755,6 @@ if __name__ == "__main__":
     parser.add_argument("--max_distance", default=5, type=int, help="Maximum distance of neighbors that should be considered for PCA.")
     parser.add_argument("--normalization", default=1, type=int, help="When performing PCA the values can get quite large. Therefore it can be helpful to scale the covariance matrix down by using a normalization parameter.")
     parser.add_argument("--num_atoms", default=100000, type=int, help="The numbers of atoms that the .ply file should contain.")
-    parser.add_argument("--num_sd", default=10000, type=int, help="The number of standard deviations that determines the neighbors that should be considered.")
     parser.add_argument("--skip_pca", default=False, type=bool, help="If set to true, the PCA part will be skipped.")
     parser.add_argument("--epos_path", type=str, required=True, help="The path to the (e)pos file.")
     parser.add_argument("--rrng_path", type=str, required=True, help="The path to the (r)rng file.")
@@ -821,7 +820,7 @@ if __name__ == "__main__":
     atom_coords_list = atom_coords_update()
 
     if not parsed_args.skip_pca:
-        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization, parsed_args.num_sd)
+        find_nearest_neighbors(parsed_args.num_neighbors, parsed_args.max_distance, parsed_args.normalization)
 
     neighbor = time.time() - neighbor
     print('found nearest neighbors', neighbor, neighbor / 60.0)
