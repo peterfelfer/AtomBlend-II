@@ -36,10 +36,10 @@ g_renderer: GaussianRenderBase = g_renderer_list[g_renderer_idx]
 g_scale_modifier = 1.
 g_auto_sort = False
 g_show_control_win = True
-g_show_help_win = False
+g_show_help_win = True
 g_show_camera_win = True
 g_show_atom_settings_win = True
-g_show_debug_win = True
+g_show_debug_win = False
 g_render_mode_tables_ogl = ["Gaussian Ball", "Flat Ball", "Billboard", "Depth", "SH:0", "SH:0~1", "SH:0~2", "SH:0~3"]
 g_render_mode_tables_cuda = ["Gaussian Splatting", "Gaussian Ball", "Flat", "Debug"]
 g_render_mode = 1
@@ -64,7 +64,6 @@ def impl_glfw_init():
     glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
     glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
     glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-    # glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
 
     # Create a windowed mode window and its OpenGL context
     global window
@@ -74,7 +73,6 @@ def impl_glfw_init():
     glfw.maximize_window(window)
     glfw.make_context_current(window)
     glfw.swap_interval(0)
-    # glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_NORMAL);
     if not window:
         glfw.terminate()
         print("Could not initialize Window")
@@ -143,8 +141,6 @@ def update_activated_renderer_state(gaus: util_gau.GaussianData):
     g_renderer.update_camera_pose(g_camera)
     g_renderer.update_camera_intrin(g_camera)
     g_renderer.set_render_reso(g_camera.w, g_camera.h)
-
-    # set_individual_opacity(gaus)
 
 def window_resize_callback(window, width, height):
     gl.glViewport(0, 0, width, height)
@@ -246,14 +242,8 @@ def main():
 
     g_renderer = g_renderer_list[g_renderer_idx]
 
-    # time_t = 0.0
-
-    # gaussian data; naive gaussian
-    # gaussians = util_gau.naive_gaussian()
-
     # load "dummy" ply
-    # gaussians = util_gau.load_ply('/home/qa43nawu/temp/qa43nawu/out/Al-Cu-Sn_50_dist_20_0_to_1.5.ply')
-    gaussians = util_gau.load_ply('/home/qa43nawu/temp/qa43nawu/out/test.ply')
+    gaussians = util_gau.load_ply('debug_spiral.ply')
     update_activated_renderer_state(gaussians)
     set_index_properties(gaussians)
 
@@ -275,7 +265,6 @@ def main():
         scale_step = 0.001
         if g_render_cov3D:
             max_scale = 10.0
-            # scale_step = 0.1
 
         # imgui ui
         if imgui.begin_main_menu_bar():
@@ -351,16 +340,11 @@ def main():
 
                     imgui.core.push_item_width(300)
 
-                    # imgui.table_set_column_index(1)
                     changed, gaussians.num_of_atoms_by_element[elem]['color'] = imgui.core.color_edit4('##slider_scale' + elem, *gaussians.num_of_atoms_by_element[elem]['color'])
 
                     if changed:
                         set_index_properties(gaussians)
 
-                    # imgui.same_line(510, 50)
-                    # imgui.text(elem)
-
-                    # imgui.table_set_column_index(2)
                     imgui.same_line(550, spacing=25)
 
                     imgui.core.push_item_width(100)
@@ -381,19 +365,6 @@ def main():
                 imgui.core.set_window_font_scale(2.0)
 
                 if imgui.tree_node("Load file", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
-                    if imgui.button(label='open test.ply'):
-                        # file_path = '/home/qa43nawu/temp/qa43nawu/out/point_cloud_cov_normalized.ply'
-                        file_path = '/home/qa43nawu/temp/qa43nawu/out/test.ply'
-
-                        if file_path:
-                            try:
-                                gaussians = util_gau.load_ply(file_path)
-                                set_index_properties(gaussians)
-                                g_renderer.update_gaussian_data(gaussians)
-                                g_renderer.sort_and_update(g_camera)
-                            except RuntimeError as e:
-                                pass
-
                     if imgui.button(label='open .ply'):
                         file_path = filedialog.askopenfilename(title="open ply",
                                                                initialdir="/home/qa43nawu/temp/qa43nawu/out/",
@@ -408,41 +379,17 @@ def main():
                             except RuntimeError as e:
                                 pass
 
-                    if imgui.button(label='open CuAl50'):
-                        file_path = '/home/qa43nawu/temp/qa43nawu/out/CuAl/1M/CuAl50_1mio.ply'
-
-                        if file_path:
-                            try:
-                                gaussians = util_gau.load_ply(file_path)
-                                set_index_properties(gaussians)
-                                g_renderer.update_gaussian_data(gaussians)
-                                g_renderer.sort_and_update(g_camera)
-                            except RuntimeError as e:
-                                pass
-
-                    if imgui.button(label='open dataset 1'):
-                        file_path = '/home/qa43nawu/temp/qa43nawu/out/dataset1.ply'
-
-                        if file_path:
-                            try:
-                                gaussians = util_gau.load_ply(file_path)
-                                set_index_properties(gaussians)
-                                g_renderer.update_gaussian_data(gaussians)
-                                g_renderer.sort_and_update(g_camera)
-                            except RuntimeError as e:
-                                pass
-
-                    if imgui.button(label='open dataset 2'):
-                        file_path = '/home/qa43nawu/temp/qa43nawu/out/dataset2.ply'
-
-                        if file_path:
-                            try:
-                                gaussians = util_gau.load_ply(file_path)
-                                set_index_properties(gaussians)
-                                g_renderer.update_gaussian_data(gaussians)
-                                g_renderer.sort_and_update(g_camera)
-                            except RuntimeError as e:
-                                pass
+                    # if imgui.button(label='open CuAl50'):
+                    #     file_path = '/home/qa43nawu/temp/qa43nawu/out/CuAl/1M/CuAl50_1mio.ply'
+                    #
+                    #     if file_path:
+                    #         try:
+                    #             gaussians = util_gau.load_ply(file_path)
+                    #             set_index_properties(gaussians)
+                    #             g_renderer.update_gaussian_data(gaussians)
+                    #             g_renderer.sort_and_update(g_camera)
+                    #         except RuntimeError as e:
+                    #             pass
 
                     imgui.text("Loaded file: " + file_path.split('/')[-1])
                     imgui.text(f"Number of Atoms = {len(gaussians)}")
@@ -457,7 +404,6 @@ def main():
                     if changed:
                         g_renderer.sort_and_update(g_camera)
 
-                    # g_renderer.raster_settings["view_interpolation_factor"] = time_t;
                     changed, g_renderer.raster_settings["view_interpolation_factor"] = imgui.core.drag_float("##view_interp_fac", g_renderer.raster_settings["view_interpolation_factor"], 0.01, 0.0, 1.0)
 
                     if changed or True:
@@ -502,13 +448,8 @@ def main():
                     if imgui.tree_node("Advanced settings", imgui.TREE_NODE_FRAMED | imgui.TREE_NODE_DEFAULT_OPEN):
 
                         if imgui.button("Show distance plot", 100, 100):
-                            # glfw.make_context_current(None)
-                            # dpg_plotting.open_plotting_window(gaussians, g_renderer)
-
                             thread = threading.Thread(target=dpg_plotting.open_plotting_window, args=(gaussians, g_renderer))
                             thread.start()
-
-                            # glfw.make_context_current(window)
 
                         imgui.tree_pop()
                     imgui.tree_pop()
@@ -518,16 +459,6 @@ def main():
                 imgui.spacing()
 
                 if imgui.tree_node("Camera settings", imgui.TREE_NODE_FRAMED):
-
-                    # if imgui.button(label='rot 180'):
-                    #     g_camera.flip_ground()
-
-                    # changed, g_camera.target_dist = imgui.drag_float(
-                    #     "t", g_camera.target_dist, 0.1, 1., 8., "target dist = %.3f"
-                    # )
-                    # if changed:
-                    #     g_camera.update_target_distance()
-
                     imgui.push_id("0")
                     changed, g_camera.rot_sensitivity = imgui.drag_float(
                         "##r", g_camera.rot_sensitivity, 0.01, 0.001, 1.0, "rotate speed = %.3f"
@@ -576,7 +507,6 @@ def main():
                 imgui.spacing()
 
                 if imgui.tree_node("Rendering", imgui.TREE_NODE_FRAMED):
-
                     #### render mode ####
                     if g_renderer_idx == 0:  # ogl
                         changed, g_render_mode = imgui.combo("shading", g_render_mode, g_render_mode_tables_ogl)
@@ -615,21 +545,7 @@ def main():
                         bufferdata = gl.glReadPixels(0, 0, width, height, gl.GL_RGB, gl.GL_UNSIGNED_BYTE)
                         img = np.frombuffer(bufferdata, np.uint8, -1).reshape(height, width, 3)
                         imageio.imwrite("/home/qa43nawu/temp/qa43nawu/out/viewer/save.png", img[::-1])
-                        # save intermediate information
-                        # np.savez(
-                        #     "save.npz",
-                        #     gau_xyz=gaussians.xyz,
-                        #     gau_s=gaussians.scale,
-                        #     gau_rot=gaussians.rot,
-                        #     gau_c=gaussians.sh,
-                        #     gau_a=gaussians.opacity,
-                        #     viewmat=g_camera.get_view_matrix(),
-                        #     projmat=g_camera.get_project_matrix(),
-                        #     hfovxyfocal=g_camera.get_htanfovxy_focal()
-                        # )
 
-                        ########################
-                        # matrix = [[0.0 for _ in range(3)] for _ in range(3)]
                     imgui.tree_pop()
 
                 imgui.spacing()
@@ -660,7 +576,6 @@ def main():
             imgui.text("Control:")
             imgui.text("WASD or right mouse button: Move the camera")
             imgui.text("Left mouse button: Rotate the camera")
-            imgui.text("Q/E: Roll camera")
             imgui.text("Mouse wheel scrolling: Zoom in or out")
 
             imgui.text('')
@@ -682,21 +597,14 @@ def main():
                 imgui.core.set_window_font_scale(2.0)
 
                 #### rendering backend ####
-                changed, g_renderer_idx = imgui.combo("backend", g_renderer_idx, ["ogl", "cuda"][:len(g_renderer_list)])
-                if changed:
-                    g_renderer = g_renderer_list[g_renderer_idx]
-                    update_activated_renderer_state(gaussians)
+                # changed, g_renderer_idx = imgui.combo("backend", g_renderer_idx, ["ogl", "cuda"][:len(g_renderer_list)])
+                # if changed:
+                #     g_renderer = g_renderer_list[g_renderer_idx]
+                #     update_activated_renderer_state(gaussians)
 
                 #### covmat ####
                 imgui.text('Debug CovMat:')
                 if imgui.begin_table("matrix_table", 3):
-                    # Fill the table with matrix data
-                    # for row in range(3):
-                    #     imgui.table_next_row()
-                    #     for col in range(3):
-                    #         imgui.table_set_column_index(col)
-                            # changed, debug_covmat[row][col] = imgui.slider_float(f"##cell{row}{col}", debug_covmat[row][col], -1, 1, format="%.3f")
-
                     c1, c2, c3, c4, c5, c6 = False, False, False, False, False, False
 
                     imgui.table_next_row()
@@ -722,7 +630,6 @@ def main():
                         gaussians.cov3D = np.tile(debug_covmat, (gaussians.opacity.shape[0], 1))
                         g_renderer.update_gaussian_data(gaussians)
 
-                        # print(gaussians.cov3D)
 
                     imgui.end_table()
 
@@ -784,13 +691,6 @@ def main():
         imgui.render()
         impl.render(imgui.get_draw_data())
         glfw.swap_buffers(window)
-
-        # time_t += 0.0003
-        # if time_t > 0.5:
-        #     time_t += 0.0002
-        # if time_t > 1.0:
-        #     time_t = 0.0
-        # print(time_t)
 
     impl.shutdown()
     glfw.terminate()
