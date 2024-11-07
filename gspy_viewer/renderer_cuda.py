@@ -2,7 +2,6 @@
 Part of the code (CUDA and OpenGL memory transfer) is derived from https://github.com/jbaron34/torchwindow/tree/master
 '''
 from OpenGL import GL as gl
-import OpenGL.GL.shaders as shaders
 import util
 import util_gau
 import numpy as np
@@ -10,13 +9,7 @@ import torch
 from renderer_ogl import GaussianRenderBase
 from dataclasses import dataclass
 from cuda import cudart as cu
-import diff_gaussian_rasterization
 from diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
-# from ..gaussian_splatting/submodules/diff_gaussian_rasterization import GaussianRasterizationSettings, GaussianRasterizer
-# from ..gaussian_splatting.submodules
-# import importlib
-# diff_gaussian_rasterization = importlib.import_module()
-import dpg_plotting
 
 
 try:
@@ -167,22 +160,11 @@ class CUDARenderer(GaussianRenderBase):
     def update_vsync(self):
         if wglSwapIntervalEXT is not None:
             wglSwapIntervalEXT(1 if self.reduce_updates else 0)
-        # else:
-        #     print("VSync is not supported")
 
     def update_gaussian_data(self, gaus: util_gau.GaussianData):
         self.need_rerender = True
         self.gaussians = gaus_cuda_from_cpu(gaus)
         self.raster_settings["sh_degree"] = int(np.round(np.sqrt(self.gaussians.sh_dim))) - 1
-
-        # set index colors
-        # index_properties = []
-        # for elem in gaus.num_of_atoms_by_element:
-        #     col = gaus.num_of_atoms_by_element[elem]['color']
-        #     scale = gaus.num_of_atoms_by_element[elem]['scale']
-        #     index_properties.extend([col[0], col[1], col[2], scale])
-        #
-        # self.raster_settings["index_properties"] = torch.Tensor(index_properties).float().cuda()
 
     def sort_and_update(self, camera: util.Camera):
         self.need_rerender = True
@@ -258,14 +240,8 @@ class CUDARenderer(GaussianRenderBase):
 
         self.need_rerender = False
 
-        # run cuda rasterizer now is just a placeholder
-        # img = torch.meshgrid((torch.linspace(0, 1, 720), torch.linspace(0, 1, 1280)))
-        # img = torch.stack([img[0], img[1], img[1], img[1]], dim=-1)
-        # img = img.float().cuda(0)
-        # img = img.contiguous()
         raster_settings = GaussianRasterizationSettings(**self.raster_settings)
         rasterizer = GaussianRasterizer(raster_settings=raster_settings)
-        # means2D = torch.zeros_like(self.gaussians.xyz, dtype=self.gaussians.xyz.dtype, requires_grad=False, device="cuda")
 
         filter_param = None
         if opac_state == 0 or opac_state == 3:
@@ -273,10 +249,6 @@ class CUDARenderer(GaussianRenderBase):
         elif opac_state == 1:
             filter_param = self.gaussians.g_distance
 
-        # opacity_param = self.gaussians.opacity
-
-
-        # if g_render_cov3D:
         with torch.no_grad():
             img, radii = rasterizer(
                 means3D = self.gaussians.xyz,
@@ -288,9 +260,6 @@ class CUDARenderer(GaussianRenderBase):
                 index_properties = self.raster_settings["index_properties"],
                 g_filter = filter_param
             )
-
-        # print('viewmatrix', raster_settings.viewmatrix)
-        # print('projmatrix', raster_settings.projmatrix)
 
         img = img.permute(1, 2, 0)
         img = torch.concat([img, torch.ones_like(img[..., :1])], dim=-1)
