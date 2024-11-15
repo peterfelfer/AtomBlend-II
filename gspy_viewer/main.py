@@ -296,7 +296,7 @@ def main():
 
                 imgui.text('Display settings:')
 
-                imgui.core.push_item_width(700)
+                imgui.core.push_item_width(500)
                 changed, global_alpha = imgui.core.drag_float('Global alpha', global_alpha, 0.01, 0.0, 1.0)
                 if changed:
                     set_global_alpha(gaussians, global_alpha)
